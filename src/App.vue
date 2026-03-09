@@ -3,7 +3,7 @@ import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BarChart2, BookOpen, Brain, X, Volume2,
-  Info, AlertTriangle, CheckSquare, Eraser, Save, Trash2,
+  Info, AlertTriangle, CheckCheck, Square, Save, Trash2,
 } from 'lucide-vue-next'
 import { useAppStore, BASE_PRESETS, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
@@ -130,6 +130,22 @@ function isNavActive(path) {
   return route.path === path
 }
 
+// Block background scroll when any overlay/modal is open
+const isAnyModalOpen = computed(() =>
+  !!(
+    store.quizSetupModalOpen ||
+    store.vocabSetupModalOpen ||
+    store.difficultyModalOpen ||
+    store.showSaveProgressAfterQuiz ||
+    store.saveErrorModal ||
+    store.customAlert ||
+    store.confirmModal ||
+    store.selectedKanaModal ||
+    store.selectedVocabModal ||
+    (store.answerFeedback && (!store.answerFeedback.ok || store.quizType === 'vocab-kana-to-romaji'))
+  )
+)
+
 const quizScrollRef = ref(null)
 const quizCardRef = ref(null)
 const manualInputRef = ref(null)
@@ -242,8 +258,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- overflow-hidden sul root impedisce lo scroll del body quando una modale è aperta -->
-  <div class="min-h-screen bg-[#fff0f5] font-sans text-slate-800 flex flex-col items-center overflow-x-hidden">
+  <!-- Blocca scroll contenuto dietro quando una modale è aperta -->
+  <div
+    class="min-h-screen bg-[#fff0f5] font-sans text-slate-800 flex flex-col items-center overflow-x-hidden"
+    :class="{ 'overflow-y-hidden': isAnyModalOpen }"
+  >
 
     <!-- LOADING SCREEN -->
     <template v-if="!store.isCloudLoaded">
@@ -278,28 +297,28 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Card selezione -->
-          <div class="bg-white/80 backdrop-blur-sm rounded-[2.5rem] shadow-2xl border border-pink-100 px-8 py-8 w-full max-w-xs z-10">
-            <p class="text-center text-[11px] font-black text-pink-300 uppercase tracking-[0.3em] mb-6">
+          <!-- Card selezione: contenitore colorato per stacco, bottoni bianchi -->
+          <div class="bg-pink-50/90 backdrop-blur-sm rounded-[2.5rem] shadow-2xl border border-pink-200/80 px-8 py-8 w-full max-w-xs z-10">
+            <p class="text-center text-[11px] font-black text-pink-400 uppercase tracking-[0.3em] mb-6">
               👤 Chi sei?
             </p>
 
             <!-- Bottone Andrea -->
             <button
-              class="w-full mb-4 rounded-3xl border-4 border-indigo-100 bg-gradient-to-br from-indigo-50 to-blue-50 px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all shadow-md hover:shadow-lg hover:border-indigo-300 group"
+              class="w-full mb-4 rounded-3xl border-4 border-indigo-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-indigo-200 group"
               @click="store.selectProfile('andrea')"
             >
-              <span class="text-5xl group-active:scale-110 transition-transform">🧑‍💻</span>
+              <img src="/avatar-andrea.png" alt="Andrea" class="w-16 h-16 object-contain object-center bg-transparent group-active:scale-110 transition-transform" />
               <span class="text-xl font-black text-indigo-600 tracking-wide">Andrea</span>
               <span class="text-xs font-semibold text-indigo-300 uppercase tracking-widest">Il mio profilo</span>
             </button>
 
             <!-- Bottone Erica -->
             <button
-              class="w-full rounded-3xl border-4 border-pink-100 bg-gradient-to-br from-pink-50 to-rose-50 px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all shadow-md hover:shadow-lg hover:border-pink-300 group"
+              class="w-full rounded-3xl border-4 border-pink-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-pink-200 group"
               @click="store.selectProfile('erica')"
             >
-              <span class="text-5xl group-active:scale-110 transition-transform">👩‍🎨</span>
+              <img src="/avatar-erica.png" alt="Erica" class="w-16 h-16 object-contain object-center bg-transparent group-active:scale-110 transition-transform" />
               <span class="text-xl font-black text-pink-500 tracking-wide">Erica</span>
               <span class="text-xs font-semibold text-pink-300 uppercase tracking-widest">Il mio profilo</span>
             </button>
@@ -376,7 +395,8 @@ onMounted(() => {
                   @input="store.newPresetName = $event.target.value"
                 />
                 <button
-                  class="bg-pink-400 text-white px-4 py-2.5 rounded-xl font-black uppercase text-xs tracking-widest active:scale-95 active:bg-pink-500 transition-all shrink-0"
+                  :disabled="!store.newPresetName.trim()"
+                  class="bg-pink-400 text-white px-4 py-2.5 rounded-xl font-black uppercase text-xs tracking-widest active:scale-95 active:bg-pink-500 transition-all shrink-0 disabled:opacity-40 disabled:pointer-events-none"
                   @click="() => {
                     if (!store.newPresetName.trim() || store.selectedKanaIds.length === 0) return
                     store.kanaPresets = [...store.kanaPresets, { id: 'p' + Date.now(), name: store.newPresetName, kanaIds: [...store.selectedKanaIds] }]
@@ -384,23 +404,35 @@ onMounted(() => {
                     store.newPresetName = ''
                   }"
                 >Salva</button>
-                <!-- Seleziona tutto -->
+                <!-- Seleziona tutto: rosa quando tutti sono selezionati -->
                 <button
+                  type="button"
                   title="Seleziona tutti"
-                  class="p-2.5 rounded-xl bg-pink-50 text-pink-400 active:bg-pink-100 transition-all shrink-0"
+                  :class="[
+                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
+                    store.selectedKanaIds.length === store.kanaData.length
+                      ? 'bg-pink-400 border-pink-400 text-white'
+                      : 'bg-pink-50 text-pink-500 border-pink-100 hover:bg-pink-100'
+                  ]"
                   @click="store.selectedKanaIds = store.kanaData.map(k => k.id)"
-                ><CheckSquare :size="18" /></button>
-                <!-- Svuota selezione -->
+                ><CheckCheck :size="20" :stroke-width="2.5" /></button>
+                <!-- Svuota selezione: rosa quando nessuno è selezionato -->
                 <button
+                  type="button"
                   title="Svuota selezione"
-                  class="p-2.5 rounded-xl bg-rose-50 text-rose-400 active:bg-rose-100 transition-all shrink-0"
+                  :class="[
+                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
+                    store.selectedKanaIds.length === 0
+                      ? 'bg-pink-400 border-pink-400 text-white'
+                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                  ]"
                   @click="store.selectedKanaIds = []"
-                ><Eraser :size="18" /></button>
+                ><Square :size="20" :stroke-width="2.5" /></button>
               </div>
             </div>
 
-            <!-- Griglia kana selezionabili -->
-            <div class="grid grid-cols-8 gap-2 pb-2">
+            <!-- Griglia kana selezionabili (5 colonne = una riga per tipologia: vocali, ka, ga, sa, …) -->
+            <div class="grid grid-cols-5 gap-2 pb-2">
               <button
                 v-for="k in store.kanaData"
                 :key="k.id"
@@ -422,7 +454,8 @@ onMounted(() => {
 
           <div class="px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-50">
             <button
-              class="w-full bg-pink-400 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base"
+              :disabled="store.selectedKanaIds.length < 4"
+              class="w-full bg-pink-400 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
               @click="store.proceedFromSetup()"
             >Continua →</button>
           </div>
@@ -457,25 +490,22 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Header quiz -->
-        <div class="shrink-0 flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-white border-b border-pink-50">
+        <!-- Header quiz: solo barra avanzamento -->
+        <div class="shrink-0 flex items-center gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-white border-b border-pink-50">
           <button
-            class="p-3 bg-slate-50 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
+            class="p-2.5 bg-slate-50 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
             @click="store.endQuiz()"
-          ><X :size="22" /></button>
-          <div class="flex-1 min-w-0">
-            <p class="text-[11px] font-black text-pink-300 uppercase tracking-[0.3em] truncate">{{ quizModeLabel }}</p>
-            <div class="flex items-center gap-2 mt-1">
-              <div class="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  :class="['h-full transition-all duration-300', isKanaQuiz ? 'bg-pink-400' : 'bg-emerald-500']"
-                  :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
-                ></div>
-              </div>
-              <span class="text-xs font-black text-slate-400 shrink-0">
-                {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
-              </span>
+          ><X :size="20" /></button>
+          <div class="flex-1 min-w-0 flex items-center gap-2">
+            <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                :class="['h-full transition-all duration-300', isKanaQuiz ? 'bg-pink-400' : 'bg-emerald-500']"
+                :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
+              ></div>
             </div>
+            <span class="text-[11px] font-black text-slate-400 shrink-0">
+              {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
+            </span>
           </div>
         </div>
 
@@ -903,13 +933,6 @@ onMounted(() => {
                 >↺ Reset</button>
               </div>
             </div>
-            <textarea
-              class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base outline-none resize-none focus:border-pink-200 transition-all"
-              rows="4"
-              placeholder="Nota personale..."
-              :value="selectedKanaModalLive.personalNote"
-              @input="store.updateKanaNoteLocal(selectedKanaModalLive.id, $event.target.value)"
-            />
             <button
               class="w-full bg-pink-400 active:bg-pink-500 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest"
               @click="store.speakText(selectedKanaModalLive.character)"
@@ -1045,7 +1068,7 @@ onMounted(() => {
       <!-- ===== BOTTONE SALVA (solo icona) ===== -->
       <button
         v-if="store.currentProfile && !store.quizActive"
-        class="fixed top-[calc(0.75rem+env(safe-area-inset-top))] right-4 z-[300] flex items-center justify-center w-11 h-11 rounded-2xl shadow-lg transition-all duration-300 disabled:pointer-events-none"
+        class="fixed top-[calc(1.75rem+env(safe-area-inset-top))] left-6 z-[300] flex items-center justify-center w-11 h-11 rounded-2xl shadow-lg transition-all duration-300 disabled:pointer-events-none"
         :class="store.isSyncing
           ? 'bg-amber-400 text-white'
           : store.saveSuccess
@@ -1081,7 +1104,11 @@ onMounted(() => {
       </div>
 
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
-      <main ref="mainScrollRef" class="w-full flex-1 overflow-y-auto bg-[#fff0f5] pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center">
+      <main
+        ref="mainScrollRef"
+        class="w-full flex-1 bg-[#fff0f5] pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center"
+        :class="isAnyModalOpen ? 'overflow-hidden' : 'overflow-y-auto'"
+      >
         <div class="w-full max-w-2xl mx-auto flex flex-col items-center">
           <RouterView />
         </div>
@@ -1104,24 +1131,18 @@ onMounted(() => {
           <NavItem label="Ripasso" :active="isNavActive('/review')" color="red" @click="router.push('/review')">
             <Brain :size="22" />
           </NavItem>
-          <!-- Avatar profilo + spinner sync -->
+          <!-- Cambia utente: avatar Andrea o Erica -->
           <button
-            class="flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 text-slate-400 active:scale-95 group relative"
+            class="flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 text-slate-400 active:scale-95 group"
+            title="Cambia utente"
             @click="store.switchProfile()"
           >
-            <span class="text-xl">{{ store.currentProfile === 'andrea' ? '🧑‍💻' : '👩‍🎨' }}</span>
-            <span class="text-[10px] font-black uppercase tracking-[0.08em] mt-0.5 leading-none capitalize">{{ store.currentProfile }}</span>
-            <!-- Indicatore sync in corso -->
-            <span
-              v-if="store.isSyncing"
-              class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse"
-              title="Salvataggio in corso..."
-            ></span>
-            <span
-              v-else
-              class="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400"
-              title="Dati salvati"
-            ></span>
+            <img
+              :src="store.currentProfile === 'erica' ? '/avatar-erica.png' : '/avatar-andrea.png'"
+              :alt="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'"
+              class="w-7 h-7 object-contain object-center bg-transparent group-hover:scale-110 transition-transform"
+            />
+            <span class="text-[10px] font-black tracking-[0.08em] mt-0.5 leading-none capitalize">{{ store.currentProfile === 'andrea' ? 'Andrea' : 'Erica' }}</span>
           </button>
         </div>
       </nav>

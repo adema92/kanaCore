@@ -31,33 +31,35 @@ export const getMasteryDot = (score) => {
 }
 
 // --- DATASET INIZIALE ---
-export const INITIAL_KANA = [
-  { id: 'k1',  character: 'あ', romaji: 'a',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'k2',  character: 'い', romaji: 'i',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'k3',  character: 'う', romaji: 'u',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'k4',  character: 'え', romaji: 'e',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'k5',  character: 'お', romaji: 'o',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'k6',  character: 'か', romaji: 'ka',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k7',  character: 'き', romaji: 'ki',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k8',  character: 'く', romaji: 'ku',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k9',  character: 'け', romaji: 'ke',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k10', character: 'こ', romaji: 'ko',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k11', character: 'が', romaji: 'ga',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k12', character: 'ぎ', romaji: 'gi',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k13', character: 'ぐ', romaji: 'gu',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k14', character: 'げ', romaji: 'ge',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k15', character: 'ご', romaji: 'go',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k16', character: 'さ', romaji: 'sa',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k17', character: 'し', romaji: 'shi', personalNote: '', score: 0, attempts: 0 },
-  { id: 'k18', character: 'す', romaji: 'su',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k19', character: 'せ', romaji: 'se',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k20', character: 'そ', romaji: 'so',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k21', character: 'ざ', romaji: 'za',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k22', character: 'じ', romaji: 'ji',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k23', character: 'ず', romaji: 'zu',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k24', character: 'ぜ', romaji: 'ze',  personalNote: '', score: 0, attempts: 0 },
-  { id: 'k25', character: 'ぞ', romaji: 'zo',  personalNote: '', score: 0, attempts: 0 },
+export const HIRAGANA_GRID = [
+  [{ c: 'あ', r: 'a' }, { c: 'い', r: 'i' }, { c: 'う', r: 'u' }, { c: 'え', r: 'e' }, { c: 'お', r: 'o' }],
+  [{ c: 'か', r: 'ka' }, { c: 'き', r: 'ki' }, { c: 'く', r: 'ku' }, { c: 'け', r: 'ke' }, { c: 'こ', r: 'ko' }],
+  [{ c: 'が', r: 'ga' }, { c: 'ぎ', r: 'gi' }, { c: 'ぐ', r: 'gu' }, { c: 'げ', r: 'ge' }, { c: 'ご', r: 'go' }],
+  [{ c: 'さ', r: 'sa' }, { c: 'し', r: 'shi' }, { c: 'す', r: 'su' }, { c: 'せ', r: 'se' }, { c: 'そ', r: 'so' }],
+  [{ c: 'ざ', r: 'za' }, { c: 'じ', r: 'ji' }, { c: 'ず', r: 'zu' }, { c: 'ぜ', r: 'ze' }, { c: 'ぞ', r: 'zo' }],
+  [{ c: 'た', r: 'ta' }, { c: 'ち', r: 'chi' }, { c: 'つ', r: 'tsu' }, { c: 'て', r: 'te' }, { c: 'と', r: 'to' }],
+  [{ c: 'だ', r: 'da' }, { c: 'ぢ', r: 'ji' }, { c: 'づ', r: 'zu' }, { c: 'で', r: 'de' }, { c: 'ど', r: 'do' }],
+  [{ c: 'な', r: 'na' }, { c: 'に', r: 'ni' }, { c: 'ぬ', r: 'nu' }, { c: 'ね', r: 'ne' }, { c: 'の', r: 'no' }],
+  [{ c: 'は', r: 'ha' }, { c: 'ひ', r: 'hi' }, { c: 'ふ', r: 'fu' }, { c: 'へ', r: 'he' }, { c: 'ほ', r: 'ho' }],
+  [{ c: 'ば', r: 'ba' }, { c: 'び', r: 'bi' }, { c: 'ぶ', r: 'bu' }, { c: 'べ', r: 'be' }, { c: 'ぼ', r: 'bo' }],
+  [{ c: 'ぱ', r: 'pa' }, { c: 'ぴ', r: 'pi' }, { c: 'ぷ', r: 'pu' }, { c: 'ぺ', r: 'pe' }, { c: 'ぽ', r: 'po' }],
+  [{ c: 'ま', r: 'ma' }, { c: 'み', r: 'mi' }, { c: 'む', r: 'mu' }, { c: 'め', r: 'me' }, { c: 'も', r: 'mo' }],
+  [{ c: 'や', r: 'ya' }, null, { c: 'ゆ', r: 'yu' }, null, { c: 'よ', r: 'yo' }],
+  [{ c: 'ら', r: 'ra' }, { c: 'り', r: 'ri' }, { c: 'る', r: 'ru' }, { c: 'れ', r: 're' }, { c: 'ろ', r: 'ro' }],
+  [{ c: 'わ', r: 'wa' }, null, null, null, { c: 'を', r: 'wo' }],
+  [{ c: 'ん', r: 'n' }, null, null, null, null],
 ]
+
+// Tutti i kana della griglia, abilitati con score 0 (rosso). I preset usano i primi (es. k1–k5 Vocali).
+const _gridCells = HIRAGANA_GRID.flat().filter(Boolean)
+export const INITIAL_KANA = _gridCells.map((cell, i) => ({
+  id: `k${i + 1}`,
+  character: cell.c,
+  romaji: cell.r,
+  personalNote: '',
+  score: 0,
+  attempts: 0,
+}))
 
 export const BASE_PRESETS = [
   { id: 'p1', name: 'Vocali', kanaIds: ['k1', 'k2', 'k3', 'k4', 'k5'] },
@@ -108,25 +110,6 @@ export const INITIAL_VOCAB = [
   { id: 'v32',  word: 'いがく', romaji: 'Igaku',    meaning: 'Medicina (facoltà)', category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
 ]
 
-export const HIRAGANA_GRID = [
-  [{ c: 'あ', r: 'a' }, { c: 'い', r: 'i' }, { c: 'う', r: 'u' }, { c: 'え', r: 'e' }, { c: 'お', r: 'o' }],
-  [{ c: 'か', r: 'ka' }, { c: 'き', r: 'ki' }, { c: 'く', r: 'ku' }, { c: 'け', r: 'ke' }, { c: 'こ', r: 'ko' }],
-  [{ c: 'が', r: 'ga' }, { c: 'ぎ', r: 'gi' }, { c: 'ぐ', r: 'gu' }, { c: 'げ', r: 'ge' }, { c: 'ご', r: 'go' }],
-  [{ c: 'さ', r: 'sa' }, { c: 'し', r: 'shi' }, { c: 'す', r: 'su' }, { c: 'せ', r: 'se' }, { c: 'そ', r: 'so' }],
-  [{ c: 'ざ', r: 'za' }, { c: 'じ', r: 'ji' }, { c: 'ず', r: 'zu' }, { c: 'ぜ', r: 'ze' }, { c: 'ぞ', r: 'zo' }],
-  [{ c: 'た', r: 'ta' }, { c: 'ち', r: 'chi' }, { c: 'つ', r: 'tsu' }, { c: 'て', r: 'te' }, { c: 'と', r: 'to' }],
-  [{ c: 'だ', r: 'da' }, { c: 'ぢ', r: 'ji' }, { c: 'づ', r: 'zu' }, { c: 'で', r: 'de' }, { c: 'ど', r: 'do' }],
-  [{ c: 'な', r: 'na' }, { c: 'に', r: 'ni' }, { c: 'ぬ', r: 'nu' }, { c: 'ね', r: 'ne' }, { c: 'の', r: 'no' }],
-  [{ c: 'は', r: 'ha' }, { c: 'ひ', r: 'hi' }, { c: 'ふ', r: 'fu' }, { c: 'へ', r: 'he' }, { c: 'ほ', r: 'ho' }],
-  [{ c: 'ば', r: 'ba' }, { c: 'び', r: 'bi' }, { c: 'ぶ', r: 'bu' }, { c: 'べ', r: 'be' }, { c: 'ぼ', r: 'bo' }],
-  [{ c: 'ぱ', r: 'pa' }, { c: 'ぴ', r: 'pi' }, { c: 'ぷ', r: 'pu' }, { c: 'ぺ', r: 'pe' }, { c: 'ぽ', r: 'po' }],
-  [{ c: 'ま', r: 'ma' }, { c: 'み', r: 'mi' }, { c: 'む', r: 'mu' }, { c: 'め', r: 'me' }, { c: 'も', r: 'mo' }],
-  [{ c: 'や', r: 'ya' }, null, { c: 'ゆ', r: 'yu' }, null, { c: 'よ', r: 'yo' }],
-  [{ c: 'ら', r: 'ra' }, { c: 'り', r: 'ri' }, { c: 'る', r: 'ru' }, { c: 'れ', r: 're' }, { c: 'ろ', r: 'ro' }],
-  [{ c: 'わ', r: 'wa' }, null, null, null, { c: 'を', r: 'wo' }],
-  [{ c: 'ん', r: 'n' }, null, null, null, null],
-]
-
 // Mappa romaji → kana (lookup per il quiz romaji→kana)
 export const ROMAJI_TO_KANA = Object.fromEntries(
   HIRAGANA_GRID.flat().filter(Boolean).map(x => [x.r.toLowerCase(), x.c])
@@ -138,6 +121,20 @@ export const useAppStore = defineStore('app', () => {
   const kanaData = ref(INITIAL_KANA.map(k => ({ ...k })))
   const vocabData = ref(INITIAL_VOCAB.map(v => ({ ...v })))
   const dailyStats = ref({})
+
+  /** Normalize a day entry to { total, correct, kana: { total, correct }, vocab: { total, correct } }. Legacy entries have only total/correct → treat as kana. */
+  function _normalizeDayStats(day) {
+    if (!day || typeof day !== 'object') return { total: 0, correct: 0, kana: { total: 0, correct: 0 }, vocab: { total: 0, correct: 0 } }
+    const total = day.total ?? 0
+    const correct = day.correct ?? 0
+    const kana = day.kana && typeof day.kana === 'object'
+      ? { total: day.kana.total ?? 0, correct: day.kana.correct ?? 0 }
+      : { total, correct }
+    const vocab = day.vocab && typeof day.vocab === 'object'
+      ? { total: day.vocab.total ?? 0, correct: day.vocab.correct ?? 0 }
+      : { total: 0, correct: 0 }
+    return { total, correct, kana, vocab }
+  }
   const kanaPresets = ref([])
   const user = ref(null)
   const isCloudLoaded = ref(false)
@@ -559,15 +556,23 @@ export const useAppStore = defineStore('app', () => {
 
     const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
       .toISOString().split('T')[0]
-    const cur = dailyStats.value[todayStr] || { correct: 0, total: 0 }
-    const nextStats = {
-      ...dailyStats.value,
-      [todayStr]: {
-        correct: cur.correct + (ok ? 1 : 0),
-        total: cur.total + 1,
-      },
+    const cur = _normalizeDayStats(dailyStats.value[todayStr])
+    const isKanaQuiz = quizType.value === 'kana'
+    const nextDay = {
+      ...cur,
+      total: cur.total + 1,
+      correct: cur.correct + (ok ? 1 : 0),
+      kana: isKanaQuiz
+        ? { total: cur.kana.total + 1, correct: cur.kana.correct + (ok ? 1 : 0) }
+        : cur.kana,
+      vocab: !isKanaQuiz
+        ? { total: cur.vocab.total + 1, correct: cur.vocab.correct + (ok ? 1 : 0) }
+        : cur.vocab,
     }
-    dailyStats.value = nextStats
+    dailyStats.value = {
+      ...dailyStats.value,
+      [todayStr]: nextDay,
+    }
 
     const upd = (data) =>
       data.map((x) => {
@@ -698,7 +703,8 @@ export const useAppStore = defineStore('app', () => {
         customAlert.value = '🌸 Aggiungi almeno 4 Kana prima!'
         return
       }
-      selectedKanaIds.value = kanaData.value.map(k => k.id)
+      selectedKanaIds.value = []
+      newPresetName.value = ''
       quizSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
       const randomWords = vocabData.value.filter(v => v.category === 'Random')
@@ -780,11 +786,6 @@ export const useAppStore = defineStore('app', () => {
     isAnswered.value = false
   }
 
-  function updateKanaNoteLocal(id, val) {
-    kanaData.value = kanaData.value.map(k => k.id === id ? { ...k, personalNote: val } : k)
-    saveNow().catch(() => {})
-  }
-
   function updateVocabNoteLocal(id, val) {
     vocabData.value = vocabData.value.map(v => v.id === id ? { ...v, personalNote: val } : v)
     saveNow().catch(() => {})
@@ -826,16 +827,18 @@ export const useAppStore = defineStore('app', () => {
   let _unsubSnapshot = null
 
   // Merge: unisce i dati del cloud con l'array base locale
-  // - Per ogni item in initArr: se è nel cloud usa merge base+cloud, altrimenti NON riaggiungerlo (utente l'ha cancellato)
-  // - Aggiunge gli item presenti solo nel cloud (parole aggiunte dall'utente)
-  // - Se cloud è vuoto/mancante (profilo nuovo) restituisce la base così com'è
-  function _mergeFunc(initArr, cloud) {
+  // - keepAllInit true (kana): tutti gli item di init restano, il cloud sovrascrive dove presente
+  // - keepAllInit false (vocab): solo gli item di init presenti nel cloud (le parole cancellate non riappaiono)
+  // - Aggiunge sempre gli item solo nel cloud (es. parole aggiunte dall'utente)
+  function _mergeFunc(initArr, cloud, keepAllInit = false) {
     if (!cloud || !Array.isArray(cloud) || cloud.length === 0) return initArr.map(i => ({ ...i }))
     const cloudMap = new Map(cloud.map(i => [i.id, i]))
     const initIds = new Set(initArr.map(i => i.id))
-    const mergedFromInit = initArr
-      .filter((base) => cloudMap.has(base.id))
-      .map((base) => ({ ...base, ...cloudMap.get(base.id) }))
+    const mergedFromInit = keepAllInit
+      ? initArr.map((base) => ({ ...base, ...cloudMap.get(base.id) }))
+      : initArr
+          .filter((base) => cloudMap.has(base.id))
+          .map((base) => ({ ...base, ...cloudMap.get(base.id) }))
     const cloudOnly = cloud.filter((c) => !initIds.has(c.id))
     return [...mergedFromInit, ...cloudOnly]
   }
@@ -846,9 +849,15 @@ export const useAppStore = defineStore('app', () => {
     if (typeof d?.data === 'string') {
       try { raw = JSON.parse(d.data) } catch (_) { raw = d }
     }
-    kanaData.value = _mergeFunc(INITIAL_KANA, raw.kanaData)
+    kanaData.value = _mergeFunc(INITIAL_KANA, raw.kanaData, true)
     vocabData.value = _mergeFunc(INITIAL_VOCAB, raw.vocabData)
-    if (raw.dailyStats && typeof raw.dailyStats === 'object') dailyStats.value = { ...raw.dailyStats }
+    if (raw.dailyStats && typeof raw.dailyStats === 'object') {
+      const normalized = {}
+      for (const [date, day] of Object.entries(raw.dailyStats)) {
+        normalized[date] = _normalizeDayStats(day)
+      }
+      dailyStats.value = normalized
+    }
     if (Array.isArray(raw.kanaPresets)) kanaPresets.value = raw.kanaPresets.map(p => ({ ...p }))
   }
 
@@ -999,7 +1008,7 @@ export const useAppStore = defineStore('app', () => {
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback,
     handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal,
-    updateKanaNoteLocal, updateVocabNoteLocal,
+    updateVocabNoteLocal,
     resetKanaScore, resetVocabScore, deleteVocabWord, addVocabWord,
     selectProfile, switchProfile,
     init,

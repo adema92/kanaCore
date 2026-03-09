@@ -51,4 +51,18 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* Numero giorni consecutivi: gradiente che sale dal basso all'alto, animazione perenne */
+  @keyframes gradient-rise {
+    0% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  .text-gradient-rise {
+    background: linear-gradient(to bottom, #f9a8d4 0%, #c4b5fd 50%, #8b5cf6 100%);
+    background-size: 100% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-rise 2.5s linear infinite;
+  }
 }
