@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { toHiragana } from 'wanakana'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
@@ -159,6 +160,7 @@ export const useAppStore = defineStore('app', () => {
 
   // Stato quiz
   const quizActive = ref(false)
+  const showSaveProgressAfterQuiz = ref(false)
   const quizSetupModalOpen = ref(false)
   const vocabSetupModalOpen = ref(false)
   const difficultyModalOpen = ref(false)
@@ -267,7 +269,8 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Sync automatico: debounce 300ms, fire-and-forget via REST API
+  // Persistence: BE only (no localStorage for kana/vocab/stats). All mutations sync directly to Firestore via REST.
+  // Sync automatico: debounce 300ms, usato solo durante quiz per non saturare il BE; azioni utente usano saveNow().
   function sync() {
     if (!currentProfile.value) return
     if (_syncTimer) clearTimeout(_syncTimer)
@@ -381,6 +384,9 @@ export const useAppStore = defineStore('app', () => {
   async function saveNow() {
     if (!currentProfile.value || isSyncing.value) return
     if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null }
+    // Capture payload immediately so onSnapshot / other async cannot overwrite state before we send
+    const payload = _buildPayload()
+    const clean = JSON.parse(JSON.stringify(payload))
     isSyncing.value = true
     saveSuccess.value = false
     saveErrorModal.value = null
@@ -389,10 +395,7 @@ export const useAppStore = defineStore('app', () => {
       const u = await _ensureAuth()
       if (!u) throw new Error('no-auth')
 
-      const payload = _buildPayload()
-      const clean = JSON.parse(JSON.stringify(payload))
       _lastSyncAt = Date.now()
-
       await _saveViaRestApi(clean)
       saveSuccess.value = true
       setTimeout(() => { saveSuccess.value = false }, 2500)
@@ -425,7 +428,15 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  function endQuiz() {
+  function endQuiz(askToSave = false) {
+    if (askToSave) {
+      showSaveProgressAfterQuiz.value = true
+    } else {
+      _clearQuizState()
+    }
+  }
+
+  function _clearQuizState() {
     quizActive.value = false
     quizQueue.value = []
     vocabRomajiBlocks.value = []
@@ -433,6 +444,12 @@ export const useAppStore = defineStore('app', () => {
     vocabRomajiBlockInput.value = ''
     vocabWriteMistakes.value = 0
     answerFeedback.value = null
+    showSaveProgressAfterQuiz.value = false
+  }
+
+  async function closeQuizAndOptionalSave(save) {
+    if (save) await saveNow()
+    _clearQuizState()
   }
 
   function genOptions(cur) {
@@ -520,12 +537,15 @@ export const useAppStore = defineStore('app', () => {
       } else if (quizType.value === 'vocab-romaji') {
         _genVocabRomajiOptions(next)
         manualInput.value = ''
+      } else if (quizType.value === 'vocab-kana-to-romaji') {
+        manualInput.value = ''
+        isAnswered.value = false
       } else {
         genOptions(next)
         manualInput.value = ''
       }
     } else {
-      endQuiz()
+      endQuiz(true)
     }
   }
 
@@ -569,24 +589,24 @@ export const useAppStore = defineStore('app', () => {
 
     // Determina le label per il feedback
     const isKana = quizType.value === 'kana'
+    const isVocabKanaToRomaji = quizType.value === 'vocab-kana-to-romaji'
     let correctAnswer = ''
     if (quizType.value === 'kana') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.romaji : item.character
     } else if (quizType.value === 'vocab') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.meaning : item.word
-    } else if (quizType.value === 'vocab-romaji') {
+    } else if (quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') {
       correctAnswer = item.romaji.split('/')[0]
     } else {
       correctAnswer = isKana ? item.romaji : item.meaning
     }
 
     if (!skipFeedback) {
-      if (ok) {
-        // Corretto: nessun overlay, avanza subito dopo breve pausa per mostrare input verde
-        // answerFeedback rimane null — l'input si colora di verde da solo tramite finalInputClass
+      if (ok && !isVocabKanaToRomaji) {
+        // Corretto: nessun overlay, avanza subito dopo breve pausa (tranne vocab-kana-to-romaji)
         setTimeout(() => { _advanceQuiz() }, 600)
-      } else {
-        // Sbagliato: mostra modale con spiegazione, aspetta "Avanti"
+      } else if (!ok || isVocabKanaToRomaji) {
+        // Sbagliato: modale con spiegazione; oppure vocab-kana-to-romaji: sempre modale (anche se corretto)
         answerFeedback.value = {
           ok,
           userAnswer: userAnswerText || '',
@@ -620,14 +640,30 @@ export const useAppStore = defineStore('app', () => {
         correctText = quizDirection.value === 'ja-to-romaji'
           ? item.meaning.trim().toLowerCase()
           : item.word.split('/')[0].trim()
-      } else if (quizType.value === 'vocab-romaji') {
-        correctText = item.romaji.split('/')[0].trim().toLowerCase()
+      } else if (quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') {
+        correctText = normalizeRomajiForCompare(item.romaji.split('/')[0].trim())
       } else {
         correctText = item.romaji.split('/')[0].trim().toLowerCase()
       }
-      const ok = userText.toLowerCase() === correctText.toLowerCase()
+      const normalizedUser = (quizType.value === 'vocab-kana-to-romaji' || quizType.value === 'vocab-romaji')
+        ? normalizeRomajiForCompare(userText)
+        : userText.toLowerCase()
+      const ok = normalizedUser === correctText
       processAnswer(ok, item, userText)
     }
+  }
+
+  // Normalize romaji for comparison (macrons → single vowel, lowercase)
+  function normalizeRomajiForCompare(str) {
+    return str
+      .toLowerCase()
+      .replace(/ō/g, 'o')
+      .replace(/ū/g, 'u')
+      .replace(/ē/g, 'e')
+      .replace(/ā/g, 'a')
+      .replace(/ī/g, 'i')
+      .replace(/\s+/g, ' ')
+      .trim()
   }
 
   function handleAnswer(option) {
@@ -664,6 +700,14 @@ export const useAppStore = defineStore('app', () => {
       }
       selectedKanaIds.value = kanaData.value.map(k => k.id)
       quizSetupModalOpen.value = true
+    } else if (type === 'vocab-kana-to-romaji') {
+      const randomWords = vocabData.value.filter(v => v.category === 'Random')
+      if (randomWords.length < 1) {
+        customAlert.value = '🌸 Aggiungi almeno una parola nella categoria Random!'
+        return
+      }
+      quizPendingItems.value = randomWords
+      difficultyModalOpen.value = true
     } else {
       // Quiz vocabolario: apri la modal selezione categorie
       const allCats = [...new Set(vocabData.value.map(v => v.category))]
@@ -710,6 +754,9 @@ export const useAppStore = defineStore('app', () => {
     } else if (quizType.value === 'vocab-romaji') {
       _genVocabRomajiOptions(shuffled[0])
       manualInput.value = ''
+    } else if (quizType.value === 'vocab-kana-to-romaji') {
+      manualInput.value = ''
+      isAnswered.value = false
     } else {
       genOptions(shuffled[0])
       manualInput.value = ''
@@ -735,39 +782,62 @@ export const useAppStore = defineStore('app', () => {
 
   function updateKanaNoteLocal(id, val) {
     kanaData.value = kanaData.value.map(k => k.id === id ? { ...k, personalNote: val } : k)
-    sync()
+    saveNow().catch(() => {})
   }
 
   function updateVocabNoteLocal(id, val) {
     vocabData.value = vocabData.value.map(v => v.id === id ? { ...v, personalNote: val } : v)
-    sync()
+    saveNow().catch(() => {})
   }
 
   function resetKanaScore(id) {
     kanaData.value = kanaData.value.map(k => k.id === id ? { ...k, score: 0, attempts: 0 } : k)
-    sync()
+    saveNow().catch(() => {})
   }
 
   function resetVocabScore(id) {
     vocabData.value = vocabData.value.map(v => v.id === id ? { ...v, score: 0, attempts: 0 } : v)
-    sync()
+    saveNow().catch(() => {})
   }
 
-  // --- INIZIALIZZAZIONE FIREBASE ---
+  function deleteVocabWord(id) {
+    vocabData.value = vocabData.value.filter(v => v.id !== id)
+    selectedVocabModal.value = null
+    saveNow().catch(() => {})
+  }
+
+  function addVocabWord(payload) {
+    const romaji = payload.romaji?.trim() || ''
+    const word = payload.word?.trim() || (romaji ? toHiragana(romaji) : '')
+    const newWord = {
+      id: 'v' + Date.now(),
+      word,
+      romaji,
+      meaning: payload.meaning?.trim() || '',
+      category: payload.category?.trim() || 'Random',
+      tone: payload.tone || 'Neutro',
+      personalNote: payload.personalNote?.trim() || '',
+      score: 0,
+      attempts: 0,
+    }
+    vocabData.value = [...vocabData.value, newWord]
+    saveNow().catch(() => {})
+  }
   let _unsubSnapshot = null
 
   // Merge: unisce i dati del cloud con l'array base locale
-  // - Parole già nel cloud → mantieni score/attempts/note dal cloud
-  // - Parole nuove (solo in INITIAL, non nel cloud) → aggiungile con score:0
-  // - Parole nel cloud ma non in INITIAL → ignorate (parole rimosse)
+  // - Per ogni item in initArr: se è nel cloud usa merge base+cloud, altrimenti NON riaggiungerlo (utente l'ha cancellato)
+  // - Aggiunge gli item presenti solo nel cloud (parole aggiunte dall'utente)
+  // - Se cloud è vuoto/mancante (profilo nuovo) restituisce la base così com'è
   function _mergeFunc(initArr, cloud) {
     if (!cloud || !Array.isArray(cloud) || cloud.length === 0) return initArr.map(i => ({ ...i }))
     const cloudMap = new Map(cloud.map(i => [i.id, i]))
-    return initArr.map(base => {
-      const c = cloudMap.get(base.id)
-      // Se esiste nel cloud, cloud vince per score/attempts/note; base vince per dati statici
-      return c ? { ...base, ...c } : { ...base }
-    })
+    const initIds = new Set(initArr.map(i => i.id))
+    const mergedFromInit = initArr
+      .filter((base) => cloudMap.has(base.id))
+      .map((base) => ({ ...base, ...cloudMap.get(base.id) }))
+    const cloudOnly = cloud.filter((c) => !initIds.has(c.id))
+    return [...mergedFromInit, ...cloudOnly]
   }
 
   function _applyData(d) {
@@ -916,21 +986,21 @@ export const useAppStore = defineStore('app', () => {
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, statsTimeRange,
-    quizActive, quizSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen,
+    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen,
     selectedKanaIds, newPresetName, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput,
     answerFeedback,
-    speakText, sync, saveNow, endQuiz, genOptions, initVocabKanaRead, initVocabRomajiInput,
+    speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, genOptions, initVocabKanaRead, initVocabRomajiInput,
     processAnswer,
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback,
     handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal,
     updateKanaNoteLocal, updateVocabNoteLocal,
-    resetKanaScore, resetVocabScore,
+    resetKanaScore, resetVocabScore, deleteVocabWord, addVocabWord,
     selectProfile, switchProfile,
     init,
   }

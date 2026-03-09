@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { X } from 'lucide-vue-next'
 import { useAppStore } from '../stores/appStore'
 
 const store = useAppStore()
@@ -11,6 +12,39 @@ const vocabByCategory = computed(() => {
     return acc
   }, {})
 })
+
+const existingCategories = computed(() => [...new Set(store.vocabData.map(v => v.category))].sort())
+
+const addWordModalOpen = ref(false)
+const customCategoryInput = ref('')
+const newWord = ref({
+  romaji: '',
+  meaning: '',
+  category: 'Random',
+  tone: 'Neutro',
+  personalNote: '',
+})
+
+function openAddWordModal() {
+  newWord.value = { romaji: '', meaning: '', category: 'Random', tone: 'Neutro', personalNote: '' }
+  customCategoryInput.value = ''
+  addWordModalOpen.value = true
+}
+
+function submitNewWord() {
+  const { romaji, meaning, tone, personalNote } = newWord.value
+  let category = newWord.value.category?.trim() || 'Random'
+  if (category === '__custom__') category = customCategoryInput.value?.trim() || 'Random'
+  if (!romaji.trim() || !meaning.trim()) return
+  store.addVocabWord({
+    romaji: romaji.trim(),
+    meaning: meaning.trim(),
+    category,
+    tone: tone || 'Neutro',
+    personalNote: personalNote?.trim() || '',
+  })
+  addWordModalOpen.value = false
+}
 
 // Accordion: tutte le categorie chiuse di default
 const openCategories = ref(new Set())
@@ -62,11 +96,104 @@ function catStats(words) {
         </button>
         <button
           class="flex-1 bg-white/30 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
-          @click="store.handleStartQuizClick('vocab')"
+          @click="store.handleStartQuizClick('vocab-kana-to-romaji')"
         >
-          <span class="text-lg">📖</span>
-          <span>Quiz Kana</span>
+          <span class="text-xl font-black">あ</span>
+          <span>Kana → Romaji</span>
         </button>
+      </div>
+      <button
+        class="w-full bg-white/20 backdrop-blur border border-white/40 text-white font-black py-3 rounded-2xl text-xs uppercase tracking-widest flex items-center justify-center gap-2 active:bg-white/30 transition-all"
+        @click="openAddWordModal()"
+      >
+        <span class="text-lg">+</span>
+        <span>Aggiungi parola</span>
+      </button>
+    </div>
+
+    <!-- Modal Aggiungi parola -->
+    <div
+      v-if="addWordModalOpen"
+      class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-4"
+      @click.self="addWordModalOpen = false"
+    >
+      <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[90dvh]">
+        <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+          <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
+        </div>
+        <div class="flex items-center justify-between px-5 pt-4 pb-3 shrink-0 border-b border-slate-100">
+          <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest">➕ Nuova parola</h3>
+          <button
+            class="p-2.5 rounded-full text-slate-400 active:bg-slate-100 transition-all"
+            @click="addWordModalOpen = false"
+          ><X :size="20" /></button>
+        </div>
+        <form
+          class="flex-1 overflow-y-auto px-5 py-4 space-y-4"
+          @submit.prevent="submitNewWord()"
+        >
+          <div>
+            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Romaji</label>
+            <input
+              v-model="newWord.romaji"
+              type="text"
+              placeholder="es: sushi, ohayō"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none transition-all"
+            />
+            <p class="text-[10px] text-slate-400 mt-1">Il kana verrà generato automaticamente</p>
+          </div>
+          <div>
+            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Traduzione</label>
+            <input
+              v-model="newWord.meaning"
+              type="text"
+              placeholder="es: sushi"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Categoria</label>
+            <select
+              v-model="newWord.category"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none transition-all bg-white"
+            >
+              <option v-for="c in existingCategories" :key="c" :value="c">{{ c }}</option>
+              <option value="__custom__">Altra (scrivi sotto)</option>
+            </select>
+            <input
+              v-if="newWord.category === '__custom__'"
+              v-model="customCategoryInput"
+              type="text"
+              placeholder="Nome nuova categoria"
+              class="w-full mt-2 px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tono</label>
+            <select
+              v-model="newWord.tone"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none transition-all bg-white"
+            >
+              <option value="Neutro">Neutro</option>
+              <option value="Formale">Formale</option>
+              <option value="Informale">Informale</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Note personali (opzionale)</label>
+            <textarea
+              v-model="newWord.personalNote"
+              rows="3"
+              placeholder="Appunti..."
+              class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-emerald-300 outline-none resize-none transition-all"
+            />
+          </div>
+          <button
+            type="submit"
+            :disabled="!newWord.romaji.trim() || !newWord.meaning.trim()"
+            class="w-full bg-emerald-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest shadow-lg active:scale-95 active:bg-emerald-600 disabled:opacity-40 transition-all text-sm"
+          >Aggiungi e salva</button>
+        </form>
       </div>
     </div>
 

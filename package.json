@@ -3,18 +3,20 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && npx vercel --prod --yes"
+    "deploy": "pnpm run build && pnpm exec vercel --prod --yes"
   },
   "dependencies": {
     "firebase": "^11.0.2",
     "lucide-vue-next": "^0.460.0",
     "pinia": "^2.2.6",
     "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
+    "vue-router": "^4.5.0",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",

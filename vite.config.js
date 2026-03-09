@@ -19,5 +19,10 @@ export default defineConfig(({ mode }) => {
       __firebase_config: JSON.stringify(firebaseConfig),
       __app_id: JSON.stringify(env.VITE_FIREBASE_PROJECT_ID || 'hiragana-study'),
     },
+    build: {
+      reportCompressedSize: false,
+      minify: 'esbuild',
+      target: 'esnext',
+    },
   }
 })

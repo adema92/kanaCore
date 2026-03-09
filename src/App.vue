@@ -3,7 +3,7 @@ import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BarChart2, BookOpen, Brain, X, Volume2,
-  Info, AlertTriangle, CheckSquare, Eraser, Save,
+  Info, AlertTriangle, CheckSquare, Eraser, Save, Trash2,
 } from 'lucide-vue-next'
 import { useAppStore, BASE_PRESETS, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
@@ -25,6 +25,7 @@ const quizModeLabel = computed(() => {
   const type = store.quizType
   const dir = store.quizDirection
   if (type === 'vocab-kana-read' || type === 'vocab-romaji-input') return '👁 Leggi i kana → scrivi romaji'
+  if (type === 'vocab-kana-to-romaji') return '👁 Kana → scrivi romaji'
   if (type === 'vocab-romaji') return '🗣️ Significato → scrivi il romaji'
   if (type === 'kana') return dir === 'ja-to-romaji' ? '👁 Kana → Lettura' : '👁 Lettura → Kana'
   if (type === 'vocab') return dir === 'ja-to-romaji' ? '👁 Parola → Significato' : '👁 Romaji → Parola'
@@ -34,6 +35,7 @@ const quizModeLabel = computed(() => {
 const questionText = computed(() => {
   if (!currentQuestion.value) return ''
   if (store.quizType === 'vocab-kana-read' || store.quizType === 'vocab-romaji-input') return currentQuestion.value.meaning
+  if (store.quizType === 'vocab-kana-to-romaji') return currentQuestion.value.word?.split('/')[0] ?? ''
   if (store.quizType === 'vocab-romaji') return currentQuestion.value.meaning
   if (store.quizDirection === 'ja-to-romaji')
     return isKanaQuiz.value ? currentQuestion.value.character : currentQuestion.value.word
@@ -54,20 +56,26 @@ const finalInputClass = computed(() => {
   const userText = store.manualInput.trim().toLowerCase()
   const q = currentQuestion.value
   let correctText = ''
-  if (store.quizType === 'kana') {
+  let correct = false
+  if (store.quizType === 'vocab-kana-to-romaji' && store.answerFeedback != null) {
+    correct = store.answerFeedback.ok
+  } else if (store.quizType === 'kana') {
     correctText = store.quizDirection === 'ja-to-romaji'
       ? (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || '')
       : (q?.character?.trim() || '')
+    correct = userText === correctText
   } else if (store.quizType === 'vocab') {
     correctText = store.quizDirection === 'ja-to-romaji'
       ? (q?.meaning?.trim()?.toLowerCase() || '')
       : (q?.word?.split('/')[0]?.trim()?.toLowerCase() || '')
-  } else if (store.quizType === 'vocab-romaji') {
+    correct = userText === correctText
+  } else if (store.quizType === 'vocab-romaji' || store.quizType === 'vocab-kana-to-romaji') {
     correctText = q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''
+    correct = userText === correctText
   } else {
     correctText = q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''
+    correct = userText === correctText
   }
-  const correct = userText === correctText.toLowerCase()
   return base + (correct
     ? 'border-emerald-400 bg-emerald-50 text-emerald-600'
     : 'border-rose-400 bg-rose-50 text-rose-600 shadow-lg')
@@ -125,6 +133,7 @@ function isNavActive(path) {
 const quizScrollRef = ref(null)
 const quizCardRef = ref(null)
 const manualInputRef = ref(null)
+const feedbackModalRef = ref(null)
 
 async function onInputFocus() {
   await nextTick()
@@ -138,13 +147,13 @@ async function onInputFocus() {
 async function handleManualSubmitEvent(e) {
   e.preventDefault()
   store.handleManualSubmit()
-  // Rifocussa dopo che _advanceQuiz resetta isAnswered e carica la domanda successiva (~600ms per corretto)
-  setTimeout(async () => {
-    await nextTick()
-    if (manualInputRef.value) {
-      manualInputRef.value.focus()
-    }
-  }, 680)
+  // Refocus input after advance (when no feedback modal); for vocab-kana-to-romaji focus is set by watcher when modal closes
+  if (store.quizType !== 'vocab-kana-to-romaji') {
+    setTimeout(async () => {
+      await nextTick()
+      if (manualInputRef.value) manualInputRef.value.focus()
+    }, 680)
+  }
 }
 
 function resetKana() {
@@ -153,7 +162,7 @@ function resetKana() {
     text: 'Vuoi azzerare i progressi dei Kana?',
     onConfirm: () => {
       store.kanaData = INITIAL_KANA.map((k) => ({ ...k, score: 0, attempts: 0 }))
-      store.sync()
+      store.saveNow().catch(() => {})
       store.confirmModal = null
     },
   }
@@ -165,7 +174,7 @@ function resetVocab() {
     text: 'Vuoi azzerare i progressi delle Parole?',
     onConfirm: () => {
       store.vocabData = INITIAL_VOCAB.map((v) => ({ ...v, score: 0, attempts: 0 }))
-      store.sync()
+      store.saveNow().catch(() => {})
       store.confirmModal = null
     },
   }
@@ -197,6 +206,30 @@ function scrollToTop() {
 watch(() => store.quizActive, (active) => {
   if (!active) scrollToTop()
 })
+
+// Focus sull'input tra una domanda e l'altra (e all'avvio quiz) così si può usare solo la tastiera
+watch(
+  () => [
+    store.quizActive,
+    store.currentQuestionIndex,
+    store.answerFeedback,
+    store.isAnswered,
+  ],
+  () => {
+    const manualMode = store.quizDifficulty === 'difficile' || store.quizType === 'vocab-kana-to-romaji'
+    if (!store.quizActive || !manualMode) return
+    if (store.answerFeedback != null) {
+      // Modal feedback aperta: focus sulla modale così Invio fa Avanti
+      nextTick(() => feedbackModalRef.value?.focus())
+      return
+    }
+    if (store.isAnswered) return
+    nextTick(() => {
+      setTimeout(() => manualInputRef.value?.focus(), 80)
+    })
+  },
+  { flush: 'post' }
+)
 
 // Scroll in cima ad ogni cambio di pagina
 watch(() => route.path, () => {
@@ -328,7 +361,7 @@ onMounted(() => {
                     class="px-3 text-pink-300 border-l-2 border-pink-100 h-full py-2.5"
                     @click="() => {
                       store.kanaPresets = store.kanaPresets.filter(x => x.id !== p.id)
-                      store.sync()
+                      store.saveNow().catch(() => {})
                     }"
                   ><X :size="13" /></button>
                 </div>
@@ -347,7 +380,7 @@ onMounted(() => {
                   @click="() => {
                     if (!store.newPresetName.trim() || store.selectedKanaIds.length === 0) return
                     store.kanaPresets = [...store.kanaPresets, { id: 'p' + Date.now(), name: store.newPresetName, kanaIds: [...store.selectedKanaIds] }]
-                    store.sync()
+                    store.saveNow().catch(() => {})
                     store.newPresetName = ''
                   }"
                 >Salva</button>
@@ -402,6 +435,28 @@ onMounted(() => {
         class="fixed inset-0 bg-[#fff0f5] z-[300] flex flex-col"
         style="height: 100dvh;"
       >
+        <!-- Modale: Vuoi salvare i progressi? (alla fine del quiz) -->
+        <div
+          v-if="store.showSaveProgressAfterQuiz"
+          class="fixed inset-0 z-[310] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+        >
+          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+            <div class="text-5xl mb-4">💾</div>
+            <h3 class="font-black text-slate-700 text-xl mb-2">Salvare i progressi?</h3>
+            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Così non perdi le statistiche aggiornate del quiz.</p>
+            <div class="flex gap-3">
+              <button
+                class="flex-1 bg-emerald-500 active:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all text-sm"
+                @click="store.closeQuizAndOptionalSave(true)"
+              >Salva</button>
+              <button
+                class="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl uppercase tracking-widest transition-all active:bg-slate-200 text-sm"
+                @click="store.closeQuizAndOptionalSave(false)"
+              >No, grazie</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Header quiz -->
         <div class="shrink-0 flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 bg-white border-b border-pink-50">
           <button
@@ -540,10 +595,27 @@ onMounted(() => {
         >
           <div
             ref="quizCardRef"
-            class="bg-white rounded-3xl shadow-lg border border-pink-100 flex flex-col items-center w-full max-w-sm px-6 py-5 shrink-0"
+            :class="[
+              'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm px-6 py-5 shrink-0',
+              store.quizType === 'vocab-kana-to-romaji' ? 'bg-white border-emerald-100' : 'bg-white border-pink-100'
+            ]"
           >
-            <!-- Layout vocab-romaji: titolo + parola grande + sottotitolo tono -->
-            <template v-if="store.quizType === 'vocab-romaji'">
+            <!-- Layout vocab-kana-to-romaji: kana grande → scrivi romaji -->
+            <template v-if="store.quizType === 'vocab-kana-to-romaji'">
+              <p class="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-3">👁 Leggi il kana</p>
+              <div
+                :class="[
+                  'font-black text-slate-700 text-center leading-tight break-words w-full',
+                  (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-4xl' : 'text-[4.5rem]'
+                ]"
+              >{{ questionText }}</div>
+              <p class="text-slate-400 text-xs font-semibold mt-2">Scrivi il romaji della parola sotto</p>
+              <button
+                class="text-slate-200 active:text-emerald-400 transition-all p-3 mt-1"
+                @click="store.speakText(currentQuestion?.word)"
+              ><Volume2 :size="28" /></button>
+            </template>
+            <template v-else-if="store.quizType === 'vocab-romaji'">
               <p class="text-[11px] font-black text-blue-300 uppercase tracking-[0.3em] mb-3">🗣️ Come si legge?</p>
               <p :class="[
                 'font-black text-slate-700 text-center leading-tight break-words w-full',
@@ -573,11 +645,11 @@ onMounted(() => {
             </template>
           </div>
 
-          <!-- Input difficile -->
+          <!-- Input difficile o quiz Kana→Romaji -->
           <form
-            v-if="store.quizDifficulty === 'difficile'"
+            v-if="store.quizDifficulty === 'difficile' || store.quizType === 'vocab-kana-to-romaji'"
             class="w-full max-w-sm flex flex-col gap-3"
-            @submit="handleManualSubmitEvent"
+            @submit.prevent="handleManualSubmitEvent"
           >
             <input
               ref="manualInputRef"
@@ -589,11 +661,13 @@ onMounted(() => {
               autocapitalize="off"
               spellcheck="false"
               enterkeyhint="done"
-              :placeholder="store.quizType === 'kana'
-                ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
-                : store.quizType === 'vocab-romaji'
-                  ? 'es: ohayō, arigatō...'
-                  : (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')"
+              :placeholder="store.quizType === 'vocab-kana-to-romaji'
+                ? 'es: sushi, ohayō...'
+                : store.quizType === 'kana'
+                  ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
+                  : store.quizType === 'vocab-romaji'
+                    ? 'es: ohayō, arigatō...'
+                    : (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')"
               :class="finalInputClass"
               @input="store.manualInput = $event.target.value"
               @focus="onInputFocus"
@@ -601,11 +675,14 @@ onMounted(() => {
             <button
               type="submit"
               :disabled="store.isAnswered || !store.manualInput.trim()"
-              class="w-full bg-pink-400 text-white font-black py-5 rounded-2xl uppercase shadow-xl tracking-widest active:scale-95 active:bg-pink-500 text-base disabled:opacity-40"
+              :class="[
+                'w-full text-white font-black py-5 rounded-2xl uppercase shadow-xl tracking-widest active:scale-95 text-base disabled:opacity-40 transition-all',
+                store.quizType === 'vocab-kana-to-romaji' ? 'bg-emerald-500 active:bg-emerald-600' : 'bg-pink-400 active:bg-pink-500'
+              ]"
             >Conferma</button>
           </form>
 
-          <!-- Scelta multipla -->
+          <!-- Scelta multipla (solo se non difficile e non vocab-kana-to-romaji) -->
           <div
             v-else
             class="w-full max-w-sm grid grid-cols-2 gap-3"
@@ -708,7 +785,8 @@ onMounted(() => {
                 <span>🎮</span> Setup Quiz
               </h3>
               <p class="text-slate-400 font-semibold mt-1 text-sm leading-relaxed">
-                <template v-if="store.quizType === 'kana' && store.quizDirection === 'ja-to-romaji'">Vedi il <b>kana</b> → indovina la <b>lettura</b></template>
+                <template v-if="store.quizType === 'vocab-kana-to-romaji'">Parola in <b>kana</b> → scrivi <b>romaji</b>. Verranno proposte solo le parole della categoria <b>Random</b>.</template>
+                <template v-else-if="store.quizType === 'kana' && store.quizDirection === 'ja-to-romaji'">Vedi il <b>kana</b> → indovina la <b>lettura</b></template>
                 <template v-else-if="store.quizType === 'kana' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina il <b>kana</b></template>
                 <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'ja-to-romaji'">Vedi la <b>parola</b> → indovina il <b>significato</b></template>
                 <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina la <b>parola</b></template>
@@ -724,8 +802,8 @@ onMounted(() => {
             </button>
           </div>
 
-          <!-- Toggle direzione (solo per kana e vocab standard) -->
-          <div v-if="store.quizType === 'kana' || store.quizType === 'vocab'" class="px-6 pb-4">
+          <!-- Toggle direzione (solo per kana e vocab standard, non per vocab-kana-to-romaji) -->
+          <div v-if="(store.quizType === 'kana' || store.quizType === 'vocab')" class="px-6 pb-4">
             <p class="text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Direzione</p>
             <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100">
               <button
@@ -739,8 +817,8 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Difficoltà -->
-          <div v-if="store.quizType !== 'vocab-kana-read' && store.quizType !== 'vocab-romaji-input'" class="px-6 space-y-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <!-- Difficoltà (nascosta per vocab-kana-read, vocab-romaji-input, vocab-kana-to-romaji) -->
+          <div v-if="store.quizType !== 'vocab-kana-read' && store.quizType !== 'vocab-romaji-input' && store.quizType !== 'vocab-kana-to-romaji'" class="px-6 space-y-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <button
               class="w-full py-4 rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
               @click="store.startQuizFinal('facile')"
@@ -766,10 +844,11 @@ onMounted(() => {
 
           <div v-else class="px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <button
-              class="w-full py-5 rounded-2xl bg-emerald-500 text-white font-black uppercase tracking-widest text-base active:scale-95 active:bg-emerald-600 transition-all shadow-xl"
-              @click="store.startQuizFinal('medio')"
+              class="w-full py-5 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
+              :class="store.quizType === 'vocab-kana-to-romaji' ? 'bg-emerald-500 active:bg-emerald-600' : 'bg-emerald-500 active:bg-emerald-600'"
+              @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
             >
-              👁 Inizia Quiz →
+              あ Inizia Quiz →
             </button>
           </div>
         </div>
@@ -851,13 +930,29 @@ onMounted(() => {
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
-          <!-- Header con X -->
+          <!-- Header con X e cestino -->
           <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
             <span class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">✨ Dettaglio Parola</span>
-            <button
-              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
-              @click="store.selectedVocabModal = null"
-            ><X :size="18" /></button>
+            <div class="flex items-center gap-2">
+              <button
+                class="p-2.5 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all"
+                title="Elimina parola"
+                @click="store.confirmModal = {
+                  title: 'Elimina parola',
+                  text: 'Rimuovere questa parola dalla lista? Non potrai annullare.',
+                  confirmLabel: 'Elimina',
+                  onConfirm: async () => {
+                    store.deleteVocabWord(selectedVocabModalLive.id)
+                    store.confirmModal = null
+                    await store.saveNow()
+                  }
+                }"
+              ><Trash2 :size="18" /></button>
+              <button
+                class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
+                @click="store.selectedVocabModal = null"
+              ><X :size="18" /></button>
+            </div>
           </div>
 
           <div class="flex flex-col items-center px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] gap-4 overflow-y-auto">
@@ -1085,7 +1180,7 @@ onMounted(() => {
             <button
               class="flex-1 bg-rose-500 active:bg-rose-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all text-sm"
               @click="store.confirmModal.onConfirm()"
-            >Reset</button>
+            >{{ store.confirmModal.confirmLabel || 'Reset' }}</button>
             <button
               class="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl uppercase tracking-widest transition-all active:bg-slate-200 text-sm"
               @click="store.confirmModal = null"
@@ -1094,12 +1189,14 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- ===== FEEDBACK RISPOSTA (solo sbagliato) ===== -->
-      <!-- Sbagliato: modale dal basso con spiegazione, richiede "Avanti" -->
+      <!-- ===== FEEDBACK RISPOSTA (sbagliato, oppure corretto per Quiz Kana→Romaji) ===== -->
       <Transition name="slide-up">
         <div
-          v-if="store.answerFeedback && !store.answerFeedback.ok"
-          class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[500] flex items-end justify-center"
+          v-if="store.answerFeedback && (!store.answerFeedback.ok || store.quizType === 'vocab-kana-to-romaji')"
+          ref="feedbackModalRef"
+          tabindex="-1"
+          class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[500] flex items-end justify-center outline-none"
+          @keydown.enter.prevent="store.advanceAfterFeedback()"
         >
           <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <!-- Handle -->
@@ -1107,19 +1204,23 @@ onMounted(() => {
               <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
             </div>
 
-            <!-- Contenuto errore -->
+            <!-- Contenuto: errore o corretto (per vocab-kana-to-romaji) -->
             <div class="px-6 pt-2 pb-5 flex flex-col gap-5">
               <!-- Titolo -->
               <div class="flex items-center gap-3">
-                <div class="text-4xl">😅</div>
+                <div class="text-4xl">{{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? '🎉' : '😅' }}</div>
                 <div>
-                  <p class="font-black text-rose-500 text-xl uppercase tracking-widest">Quasi!</p>
-                  <p class="text-slate-400 text-sm font-semibold">Ripassala e vai avanti</p>
+                  <p :class="['font-black text-xl uppercase tracking-widest', store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'text-emerald-500' : 'text-rose-500']">
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Quasi!' }}
+                  </p>
+                  <p class="text-slate-400 text-sm font-semibold">
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Ripassala e vai avanti' }}
+                  </p>
                 </div>
               </div>
 
-              <!-- Confronto risposta tua vs corretta -->
-              <div class="grid grid-cols-2 gap-3">
+              <!-- Confronto risposta tua vs corretta (solo se sbagliato) -->
+              <div v-if="!store.answerFeedback.ok" class="grid grid-cols-2 gap-3">
                 <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-center">
                   <p class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2">Hai risposto</p>
                   <p class="font-black text-rose-500 text-lg leading-tight break-words">
@@ -1134,7 +1235,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Info extra sulla parola -->
+              <!-- Info parola: kana + romaji + significato (sempre, per Quiz Kana→Romaji anche quando corretto) -->
               <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
                 <p class="text-3xl font-black text-slate-700 mb-1">{{ store.answerFeedback.questionLabel }}</p>
                 <p

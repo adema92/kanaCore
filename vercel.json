@@ -1,1 +1,1 @@
-{"installCommand":"npm install","buildCommand":"npm run build","outputDirectory":"dist"}
+{"installCommand":"pnpm install","buildCommand":"pnpm run build","outputDirectory":"dist"}
