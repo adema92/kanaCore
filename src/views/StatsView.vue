@@ -418,23 +418,20 @@ const selectDay = (key) => {
         <p class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
           {{ displayedSummaryTitle }}
         </p>
-        <div class="flex items-center justify-center gap-3 sm:gap-6 py-2.5 sm:py-3 px-3 sm:px-4 bg-slate-50/80 rounded-xl sm:rounded-2xl border border-slate-100">
-          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center text-[10px] sm:text-[11px]">
-            <span class="font-bold text-slate-400 uppercase tracking-wider">Kana:</span>
-            <span class="font-bold text-pink-600">{{ displayedSummary.kanaCorrect }} corretti</span>
-            <span class="text-slate-300">·</span>
-            <span class="font-bold text-rose-500">{{ displayedSummary.kanaWrong }} errati</span>
+        <div class="grid grid-cols-[1fr_auto_1fr] gap-0 py-3 px-4 sm:py-4 sm:px-6 bg-slate-50/80 rounded-xl sm:rounded-2xl border border-slate-100 text-[11px] sm:text-[12px] w-full max-w-md mx-auto">
+          <div class="flex flex-col items-center gap-1">
+            <span class="font-bold text-slate-400 uppercase tracking-wider">Kana</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.kanaCorrect }}</span> corretti</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.kanaWrong }}</span> errati</span>
+          </div>
+          <div class="w-px self-stretch bg-slate-200 min-h-[2.5rem]" aria-hidden="true"></div>
+          <div class="flex flex-col items-center gap-1">
+            <span class="font-bold text-slate-400 uppercase tracking-wider">Parole</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabCorrect }}</span> corrette</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabWrong }}</span> errate</span>
           </div>
         </div>
-        <div class="flex items-center justify-center gap-3 sm:gap-6 py-2.5 sm:py-3 px-3 sm:px-4 bg-slate-50/80 rounded-xl sm:rounded-2xl border border-slate-100">
-          <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center text-[10px] sm:text-[11px]">
-            <span class="font-bold text-slate-400 uppercase tracking-wider">Parole:</span>
-            <span class="font-bold text-pink-500">{{ displayedSummary.vocabCorrect }} corrette</span>
-            <span class="text-slate-300">·</span>
-            <span class="font-bold text-rose-500">{{ displayedSummary.vocabWrong }} errate</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-center gap-2 py-2 px-3 text-[10px] sm:text-[11px]">
+        <div class="flex items-center justify-center gap-2 py-2 px-3 text-[11px] sm:text-[12px]">
           <span class="font-semibold text-slate-500">{{ displayedSummary.total }} tot</span>
         </div>
         <p v-if="selectedDayKey" class="text-[9px] text-slate-400 text-center">Tocca di nuovo la barra per tornare al riepilogo periodo</p>

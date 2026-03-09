@@ -547,6 +547,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function processAnswer(ok, item, userAnswerText, skipFeedback = false) {
+    _lastSyncAt = Date.now()
     if (ok) quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
     speakText(
       quizType.value === 'kana'
