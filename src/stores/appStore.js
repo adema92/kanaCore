@@ -773,12 +773,6 @@ export const useAppStore = defineStore('app', () => {
     saveNow().catch(() => {})
   }
 
-  function deleteVocabWord(id) {
-    vocabData.value = vocabData.value.filter(v => v.id !== id)
-    selectedVocabModal.value = null
-    saveNow().catch(() => {})
-  }
-
   let _unsubSnapshot = null
 
   // Merge: unisce i dati del cloud con l'array base locale
@@ -964,7 +958,7 @@ export const useAppStore = defineStore('app', () => {
     advanceAfterFeedback,
     handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal,
     updateVocabNoteLocal,
-    resetKanaScore, resetVocabScore, deleteVocabWord,
+    resetKanaScore, resetVocabScore,
     selectProfile, switchProfile,
     init,
   }

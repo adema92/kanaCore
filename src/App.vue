@@ -3,7 +3,7 @@ import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BarChart2, BookOpen, Brain, X, Volume2,
-  Info, AlertTriangle, CheckCheck, Square, Save, Trash2,
+  Info, AlertTriangle, CheckCheck, Square, Save,
 } from 'lucide-vue-next'
 import { useAppStore, BASE_PRESETS, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
@@ -51,7 +51,10 @@ const vocabRomajiSubtitle = computed(() => {
 })
 
 const finalInputClass = computed(() => {
-  const base = 'w-full p-5 rounded-2xl border-4 text-center font-black text-2xl focus:outline-none transition-all duration-150 '
+  const isKanaRomaji = store.quizType === 'vocab-kana-to-romaji'
+  const base = isKanaRomaji
+    ? 'w-full p-3 rounded-xl border-2 text-center font-black text-base focus:outline-none transition-all duration-150 '
+    : 'w-full p-5 rounded-2xl border-4 text-center font-black text-2xl focus:outline-none transition-all duration-150 '
   if (!store.isAnswered) return base + 'border-slate-100 focus:border-pink-300 bg-white shadow-lg'
   const userText = store.manualInput.trim().toLowerCase()
   const q = currentQuestion.value
@@ -479,13 +482,13 @@ onMounted(() => {
             <p class="text-slate-500 text-sm mb-8 leading-relaxed">Così non perdi le statistiche aggiornate del quiz.</p>
             <div class="flex gap-3">
               <button
-                class="flex-1 bg-emerald-500 active:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all text-sm"
-                @click="store.closeQuizAndOptionalSave(true)"
-              >Salva</button>
-              <button
                 class="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl uppercase tracking-widest transition-all active:bg-slate-200 text-sm"
                 @click="store.closeQuizAndOptionalSave(false)"
               >No, grazie</button>
+              <button
+                class="flex-1 bg-emerald-500 active:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all text-sm"
+                @click="store.closeQuizAndOptionalSave(true)"
+              >Salva</button>
             </div>
           </div>
         </div>
@@ -626,24 +629,23 @@ onMounted(() => {
           <div
             ref="quizCardRef"
             :class="[
-              'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm px-6 py-5 shrink-0',
-              store.quizType === 'vocab-kana-to-romaji' ? 'bg-white border-emerald-100' : 'bg-white border-pink-100'
+              'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm shrink-0',
+              store.quizType === 'vocab-kana-to-romaji' ? 'bg-white border-emerald-100 px-5 py-4' : 'bg-white border-pink-100 px-6 py-5'
             ]"
           >
-            <!-- Layout vocab-kana-to-romaji: kana grande → scrivi romaji -->
+            <!-- Layout vocab-kana-to-romaji: kana → scrivi romaji -->
             <template v-if="store.quizType === 'vocab-kana-to-romaji'">
-              <p class="text-[11px] font-black text-emerald-500 uppercase tracking-[0.3em] mb-3">👁 Leggi il kana</p>
               <div
                 :class="[
                   'font-black text-slate-700 text-center leading-tight break-words w-full',
-                  (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-4xl' : 'text-[4.5rem]'
+                  (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-3xl' : 'text-[2.75rem]'
                 ]"
               >{{ questionText }}</div>
-              <p class="text-slate-400 text-xs font-semibold mt-2">Scrivi il romaji della parola sotto</p>
+              <p class="text-slate-400 text-xs font-semibold mt-1.5">Scrivi il romaji della parola sotto</p>
               <button
-                class="text-slate-200 active:text-emerald-400 transition-all p-3 mt-1"
+                class="text-slate-200 active:text-emerald-400 transition-all p-2 mt-0.5"
                 @click="store.speakText(currentQuestion?.word)"
-              ><Volume2 :size="28" /></button>
+              ><Volume2 :size="24" /></button>
             </template>
             <template v-else-if="store.quizType === 'vocab-romaji'">
               <p class="text-[11px] font-black text-blue-300 uppercase tracking-[0.3em] mb-3">🗣️ Come si legge?</p>
@@ -678,7 +680,7 @@ onMounted(() => {
           <!-- Input difficile o quiz Kana→Romaji -->
           <form
             v-if="store.quizDifficulty === 'difficile' || store.quizType === 'vocab-kana-to-romaji'"
-            class="w-full max-w-sm flex flex-col gap-3"
+            :class="['w-full max-w-sm flex flex-col gap-3', store.quizType === 'vocab-kana-to-romaji' ? 'gap-2' : '']"
             @submit.prevent="handleManualSubmitEvent"
           >
             <input
@@ -706,8 +708,8 @@ onMounted(() => {
               type="submit"
               :disabled="store.isAnswered || !store.manualInput.trim()"
               :class="[
-                'w-full text-white font-black py-5 rounded-2xl uppercase shadow-xl tracking-widest active:scale-95 text-base disabled:opacity-40 transition-all',
-                store.quizType === 'vocab-kana-to-romaji' ? 'bg-emerald-500 active:bg-emerald-600' : 'bg-pink-400 active:bg-pink-500'
+                'w-full text-white font-black rounded-2xl uppercase shadow-xl tracking-widest active:scale-95 disabled:opacity-40 transition-all',
+                store.quizType === 'vocab-kana-to-romaji' ? 'py-4 text-sm bg-emerald-500 active:bg-emerald-600' : 'py-5 text-base bg-pink-400 active:bg-pink-500'
               ]"
             >Conferma</button>
           </form>
@@ -973,43 +975,27 @@ onMounted(() => {
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
         @click.self="store.selectedVocabModal = null"
       >
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
+        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[92dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
-          <!-- Header con X e cestino -->
+          <!-- Header con X -->
           <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
             <span class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">✨ Dettaglio Parola</span>
-            <div class="flex items-center gap-2">
-              <button
-                class="p-2.5 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all"
-                title="Elimina parola"
-                @click="store.confirmModal = {
-                  title: 'Elimina parola',
-                  text: 'Rimuovere questa parola dalla lista? Non potrai annullare.',
-                  confirmLabel: 'Elimina',
-                  onConfirm: async () => {
-                    store.deleteVocabWord(selectedVocabModalLive.id)
-                    store.confirmModal = null
-                    await store.saveNow()
-                  }
-                }"
-              ><Trash2 :size="18" /></button>
-              <button
-                class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
-                @click="store.selectedVocabModal = null"
-              ><X :size="18" /></button>
-            </div>
+            <button
+              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
+              @click="store.selectedVocabModal = null"
+            ><X :size="18" /></button>
           </div>
 
-          <div class="flex flex-col items-center px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] gap-4 overflow-y-auto">
-            <!-- Parola grande -->
-            <h2 class="text-5xl font-black text-slate-700 leading-tight text-center">
+          <div class="flex flex-col flex-1 min-h-0 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] gap-3 overflow-y-auto">
+            <!-- Parola kana -->
+            <h2 class="text-4xl font-black text-slate-700 leading-tight text-center shrink-0">
               {{ selectedVocabModalLive.word }}
             </h2>
 
             <!-- Romaji + Significato -->
-            <div class="flex gap-2 flex-wrap justify-center">
+            <div class="flex gap-2 flex-wrap justify-center shrink-0">
               <div class="text-sm font-bold text-emerald-600 bg-emerald-50 px-5 py-2 rounded-2xl border border-emerald-100 tracking-[0.2em]">
                 {{ selectedVocabModalLive.romaji }}
               </div>
@@ -1018,37 +1004,26 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Tag informativi sintetici -->
-            <div class="flex flex-wrap gap-2 justify-center w-full">
-              <!-- Tono/Registro -->
-              <template v-if="selectedVocabModalLive.tone">
-                <div
-                  :class="[
-                    'flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest',
-                    getToneConfig(selectedVocabModalLive.tone).bg,
-                    getToneConfig(selectedVocabModalLive.tone).text,
-                    getToneConfig(selectedVocabModalLive.tone).border
-                  ]"
-                >
-                  <span>{{ getToneConfig(selectedVocabModalLive.tone).emoji }}</span>
-                  <span>{{ selectedVocabModalLive.tone }}</span>
-                </div>
-              </template>
-              <!-- Categoria -->
+            <!-- Solo Tono (badge categoria rimosso) -->
+            <div v-if="selectedVocabModalLive.tone" class="flex flex-wrap gap-2 justify-center w-full shrink-0">
               <div
-                v-if="selectedVocabModalLive.category"
-                class="flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest bg-pink-50 text-pink-500 border-pink-100"
+                :class="[
+                  'flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest',
+                  getToneConfig(selectedVocabModalLive.tone).bg,
+                  getToneConfig(selectedVocabModalLive.tone).text,
+                  getToneConfig(selectedVocabModalLive.tone).border
+                ]"
               >
-                <span>🏷️</span>
-                <span>{{ selectedVocabModalLive.category }}</span>
+                <span>{{ getToneConfig(selectedVocabModalLive.tone).emoji }}</span>
+                <span>{{ selectedVocabModalLive.tone }}</span>
               </div>
             </div>
 
             <!-- Separatore -->
-            <div class="w-full border-t border-slate-100"></div>
+            <div class="w-full border-t border-slate-100 shrink-0"></div>
 
             <!-- Barra progressi mastery -->
-            <div class="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100">
+            <div class="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 shrink-0">
               <div class="flex justify-between text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">
                 <span>Padronanza</span>
                 <span>{{ selectedVocabModalLive.score }}%</span>
@@ -1072,15 +1047,16 @@ onMounted(() => {
               </div>
             </div>
 
+            <!-- Note: più spazio -->
             <textarea
-              class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base outline-none resize-none focus:border-emerald-200 transition-all"
-              rows="4"
+              class="w-full flex-1 min-h-[7rem] bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base outline-none resize-none focus:border-emerald-200 transition-all"
+              rows="6"
               placeholder="Appunti personali..."
               :value="selectedVocabModalLive.personalNote"
               @input="store.updateVocabNoteLocal(selectedVocabModalLive.id, $event.target.value)"
             />
             <button
-              class="w-full bg-emerald-500 active:bg-emerald-600 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest"
+              class="w-full bg-emerald-500 active:bg-emerald-600 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest shrink-0"
               @click="store.speakText(selectedVocabModalLive.word)"
             >
               <Volume2 :size="26" /> Pronuncia
