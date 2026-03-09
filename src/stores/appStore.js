@@ -46,12 +46,24 @@ export const INITIAL_KANA = [
   { id: 'k13', character: 'ぐ', romaji: 'gu',  personalNote: '', score: 0, attempts: 0 },
   { id: 'k14', character: 'げ', romaji: 'ge',  personalNote: '', score: 0, attempts: 0 },
   { id: 'k15', character: 'ご', romaji: 'go',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k16', character: 'さ', romaji: 'sa',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k17', character: 'し', romaji: 'shi', personalNote: '', score: 0, attempts: 0 },
+  { id: 'k18', character: 'す', romaji: 'su',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k19', character: 'せ', romaji: 'se',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k20', character: 'そ', romaji: 'so',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k21', character: 'ざ', romaji: 'za',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k22', character: 'じ', romaji: 'ji',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k23', character: 'ず', romaji: 'zu',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k24', character: 'ぜ', romaji: 'ze',  personalNote: '', score: 0, attempts: 0 },
+  { id: 'k25', character: 'ぞ', romaji: 'zo',  personalNote: '', score: 0, attempts: 0 },
 ]
 
 export const BASE_PRESETS = [
   { id: 'p1', name: 'Vocali', kanaIds: ['k1', 'k2', 'k3', 'k4', 'k5'] },
-  { id: 'p2', name: 'Riga K', kanaIds: ['k6', 'k7', 'k8', 'k9', 'k10'] },
-  { id: 'p3', name: 'Riga G', kanaIds: ['k11', 'k12', 'k13', 'k14', 'k15'] },
+  { id: 'p2', name: 'KA', kanaIds: ['k6', 'k7', 'k8', 'k9', 'k10'] },
+  { id: 'p3', name: 'GA', kanaIds: ['k11', 'k12', 'k13', 'k14', 'k15'] },
+  { id: 'p4', name: 'SA', kanaIds: ['k16', 'k17', 'k18', 'k19', 'k20'] },
+  { id: 'p5', name: 'ZA', kanaIds: ['k21', 'k22', 'k23', 'k24', 'k25'] },
 ]
 
 export const INITIAL_VOCAB = [
