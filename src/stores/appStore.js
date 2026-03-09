@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { toHiragana } from 'wanakana'
 import { initializeApp } from 'firebase/app'
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth'
 import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
+
+import salutiVocab from '../data/saluti.json'
+import randomVocab from '../data/random.json'
 
 // --- CONFIGURAZIONE FIREBASE ---
 /* global __firebase_config, __app_id */
@@ -69,46 +71,7 @@ export const BASE_PRESETS = [
   { id: 'p5', name: 'ZA', kanaIds: ['k21', 'k22', 'k23', 'k24', 'k25'] },
 ]
 
-export const INITIAL_VOCAB = [
-  // --- Saluti ---
-  { id: 'v1a',  word: 'おはよう',           romaji: 'Ohayō',             meaning: 'Buongiorno',       category: 'Saluti', tone: 'Informale', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v1b',  word: 'おはようございます',  romaji: 'Ohayōgozaimasu',    meaning: 'Buongiorno',       category: 'Saluti', tone: 'Formale',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'v2',   word: 'こんにちは',          romaji: 'Konnichiwa',        meaning: 'Buon pomeriggio',  category: 'Saluti', tone: 'Neutro',    personalNote: '', score: 0, attempts: 0 },
-  { id: 'v3',   word: 'こんばんは',          romaji: 'Konbanwa',          meaning: 'Buonasera',        category: 'Saluti', tone: 'Neutro',    personalNote: '', score: 0, attempts: 0 },
-  { id: 'v4a',  word: 'おやすみ',            romaji: 'Oyasumi',           meaning: 'Buonanotte',       category: 'Saluti', tone: 'Informale', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v4b',  word: 'おやすみなさい',      romaji: 'Oyasuminasai',      meaning: 'Buonanotte',       category: 'Saluti', tone: 'Formale',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'v5',   word: 'やっほー',            romaji: 'Yahhō',             meaning: 'Ciao',             category: 'Saluti', tone: 'Informale', personalNote: 'Tra giovani quando ci si incontra', score: 0, attempts: 0 },
-  { id: 'v6',   word: 'おっす',              romaji: 'Ossu',              meaning: 'Ciao / Hey',       category: 'Saluti', tone: 'Informale', personalNote: 'Tra maschi', score: 0, attempts: 0 },
-  { id: 'v7a',  word: 'ひさしぶり',          romaji: 'Hisashiburi',       meaning: 'Da quanto tempo',  category: 'Saluti', tone: 'Informale', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v7b',  word: 'ひさしぶりです',      romaji: 'Hisashiburi desu',  meaning: 'Da quanto tempo',  category: 'Saluti', tone: 'Formale',   personalNote: '', score: 0, attempts: 0 },
-  { id: 'v8a',  word: 'じゃあね',            romaji: 'Jā ne',             meaning: 'Ciao (arrivederci)', category: 'Saluti', tone: 'Informale', personalNote: 'Quando ci si separa', score: 0, attempts: 0 },
-  { id: 'v8b',  word: 'またね',              romaji: 'Mata ne',           meaning: 'Ciao (arrivederci)', category: 'Saluti', tone: 'Informale', personalNote: 'Quando ci si separa', score: 0, attempts: 0 },
-  // --- Random ---
-  { id: 'v9',   word: 'あい',  romaji: 'Ai',        meaning: 'Amore',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v10',  word: 'いえ',  romaji: 'Ie',        meaning: 'Casa',             category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v11',  word: 'うえ',  romaji: 'Ue',        meaning: 'Sopra',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v12',  word: 'あおい', romaji: 'Aoi',      meaning: 'Blu',              category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v13',  word: 'あう',  romaji: 'Au',        meaning: 'Incontrare',       category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v14',  word: 'おい',  romaji: 'Oi',        meaning: 'Nipote',           category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v15',  word: 'かい',  romaji: 'Kai',       meaning: 'Conchiglia',       category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v16',  word: 'きかい', romaji: 'Kikai',    meaning: 'Macchinario',      category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v17',  word: 'いく',  romaji: 'Iku',       meaning: 'Andare',           category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v18',  word: 'いけ',  romaji: 'Ike',       meaning: 'Stagno',           category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v19',  word: 'こい',  romaji: 'Koi',       meaning: 'Carpa',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v20',  word: 'かお',  romaji: 'Kao',       meaning: 'Viso',             category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v21',  word: 'えき',  romaji: 'Eki',       meaning: 'Stazione',         category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v22',  word: 'あかい', romaji: 'Akai',     meaning: 'Rosso',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v23',  word: 'こえ',  romaji: 'Koe',       meaning: 'Voce',             category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v24',  word: 'あき',  romaji: 'Aki',       meaning: 'Autunno',          category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v25',  word: 'がか',  romaji: 'Gaka',      meaning: 'Pittore',          category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v26',  word: 'かぎ',  romaji: 'Kagi',      meaning: 'Chiave',           category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v27',  word: 'かぐ',  romaji: 'Kagu',      meaning: 'Mobile',           category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v28',  word: 'かげ',  romaji: 'Kage',      meaning: 'Ombra',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v29',  word: 'ごご',  romaji: 'Gogo',      meaning: 'Pomeriggio',       category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v30',  word: 'がいこく', romaji: 'Gaikoku', meaning: 'Paese straniero', category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v31',  word: 'あご',  romaji: 'Ago',       meaning: 'Mento',            category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-  { id: 'v32',  word: 'いがく', romaji: 'Igaku',    meaning: 'Medicina (facoltà)', category: 'Random', tone: 'Neutro', personalNote: '', score: 0, attempts: 0 },
-]
+export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab]
 
 // Mappa romaji → kana (lookup per il quiz romaji→kana)
 export const ROMAJI_TO_KANA = Object.fromEntries(
@@ -167,6 +130,8 @@ export const useAppStore = defineStore('app', () => {
   const selectedVocabCategories = ref([])
   const quizDifficulty = ref('medio')
   const quizDirection = ref('ja-to-romaji')
+  /** Max number of questions for vocab-kana-to-romaji quiz; null = all Random words */
+  const vocabKanaToRomajiMaxQuestions = ref(null)
   const quizQueue = ref([])
   const currentQuestionIndex = ref(0)
   const quizType = ref('kana')
@@ -714,6 +679,7 @@ export const useAppStore = defineStore('app', () => {
         return
       }
       quizPendingItems.value = randomWords
+      vocabKanaToRomajiMaxQuestions.value = null
       difficultyModalOpen.value = true
     } else {
       // Quiz vocabolario: apri la modal selezione categorie
@@ -751,7 +717,12 @@ export const useAppStore = defineStore('app', () => {
   function startQuizFinal(diff) {
     quizDifficulty.value = diff
     difficultyModalOpen.value = false
-    const shuffled = [...quizPendingItems.value].sort(() => 0.5 - Math.random())
+    let shuffled = [...quizPendingItems.value].sort(() => 0.5 - Math.random())
+    if (quizType.value === 'vocab-kana-to-romaji') {
+      const max = vocabKanaToRomajiMaxQuestions.value
+      const num = typeof max === 'number' && !Number.isNaN(max) && max > 0 ? max : null
+      if (num != null) shuffled = shuffled.slice(0, num)
+    }
     quizQueue.value = shuffled
     currentQuestionIndex.value = 0
     quizResults.value = { correct: 0, total: shuffled.length }
@@ -808,30 +779,13 @@ export const useAppStore = defineStore('app', () => {
     saveNow().catch(() => {})
   }
 
-  function addVocabWord(payload) {
-    const romaji = payload.romaji?.trim() || ''
-    const word = payload.word?.trim() || (romaji ? toHiragana(romaji) : '')
-    const newWord = {
-      id: 'v' + Date.now(),
-      word,
-      romaji,
-      meaning: payload.meaning?.trim() || '',
-      category: payload.category?.trim() || 'Random',
-      tone: payload.tone || 'Neutro',
-      personalNote: payload.personalNote?.trim() || '',
-      score: 0,
-      attempts: 0,
-    }
-    vocabData.value = [...vocabData.value, newWord]
-    saveNow().catch(() => {})
-  }
   let _unsubSnapshot = null
 
   // Merge: unisce i dati del cloud con l'array base locale
   // - keepAllInit true (kana): tutti gli item di init restano, il cloud sovrascrive dove presente
   // - keepAllInit false (vocab): solo gli item di init presenti nel cloud (le parole cancellate non riappaiono)
-  // - Aggiunge sempre gli item solo nel cloud (es. parole aggiunte dall'utente)
-  function _mergeFunc(initArr, cloud, keepAllInit = false) {
+  // - skipCloudOnly true (vocab): lista = solo INITIAL_VOCAB con merge per id, niente voci solo-cloud (lista canonica come “primo giorno”)
+  function _mergeFunc(initArr, cloud, keepAllInit = false, skipCloudOnly = false) {
     if (!cloud || !Array.isArray(cloud) || cloud.length === 0) return initArr.map(i => ({ ...i }))
     const cloudMap = new Map(cloud.map(i => [i.id, i]))
     const initIds = new Set(initArr.map(i => i.id))
@@ -840,7 +794,7 @@ export const useAppStore = defineStore('app', () => {
       : initArr
           .filter((base) => cloudMap.has(base.id))
           .map((base) => ({ ...base, ...cloudMap.get(base.id) }))
-    const cloudOnly = cloud.filter((c) => !initIds.has(c.id))
+    const cloudOnly = skipCloudOnly ? [] : cloud.filter((c) => !initIds.has(c.id))
     return [...mergedFromInit, ...cloudOnly]
   }
 
@@ -851,7 +805,7 @@ export const useAppStore = defineStore('app', () => {
       try { raw = JSON.parse(d.data) } catch (_) { raw = d }
     }
     kanaData.value = _mergeFunc(INITIAL_KANA, raw.kanaData, true)
-    vocabData.value = _mergeFunc(INITIAL_VOCAB, raw.vocabData)
+    vocabData.value = _mergeFunc(INITIAL_VOCAB, raw.vocabData, true, true)
     if (raw.dailyStats && typeof raw.dailyStats === 'object') {
       const normalized = {}
       for (const [date, day] of Object.entries(raw.dailyStats)) {
@@ -996,7 +950,7 @@ export const useAppStore = defineStore('app', () => {
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, statsTimeRange,
-    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen,
+    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
     selectedKanaIds, newPresetName, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
@@ -1010,7 +964,7 @@ export const useAppStore = defineStore('app', () => {
     advanceAfterFeedback,
     handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal,
     updateVocabNoteLocal,
-    resetKanaScore, resetVocabScore, deleteVocabWord, addVocabWord,
+    resetKanaScore, resetVocabScore, deleteVocabWord,
     selectProfile, switchProfile,
     init,
   }

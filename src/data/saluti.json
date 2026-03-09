@@ -1,0 +1,17 @@
+[
+  { "id": "v1a", "word": "おはよう", "romaji": "Ohayō", "meaning": "Buongiorno", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v1b", "word": "おはようございます", "romaji": "Ohayōgozaimasu", "meaning": "Buongiorno", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v2", "word": "こんにちは", "romaji": "Konnichiwa", "meaning": "Buon pomeriggio", "category": "Saluti", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v3", "word": "こんばんは", "romaji": "Konbanwa", "meaning": "Buonasera", "category": "Saluti", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v4a", "word": "おやすみ", "romaji": "Oyasumi", "meaning": "Buonanotte", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v4b", "word": "おやすみなさい", "romaji": "Oyasuminasai", "meaning": "Buonanotte", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v5", "word": "やっほー", "romaji": "Yahhō", "meaning": "Ciao", "category": "Saluti", "tone": "Informale", "personalNote": "Quando ci si incontra", "score": 0, "attempts": 0 },
+  { "id": "v6", "word": "よ", "romaji": "Yo", "meaning": "Hey", "category": "Saluti", "tone": "Informale", "personalNote": "Tra maschi", "score": 0, "attempts": 0 },
+  { "id": "v7a", "word": "ひさしぶり", "romaji": "Hisashiburi", "meaning": "Da quanto tempo", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v7b", "word": "ひさしぶりです", "romaji": "Hisashiburi desu", "meaning": "Da quanto tempo", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v8", "word": "じゃあね", "romaji": "Jā ne", "meaning": "Ciao/A dopo", "category": "Saluti", "tone": "Informale", "personalNote": "Quando ci si separa", "score": 0, "attempts": 0 },
+  { "id": "v9a", "word": "おつかれさま", "romaji": "Otsukaresama", "meaning": "Arrivederci, hai fatto un buon lavoro", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v9b", "word": "おつかれさまでした", "romaji": "Otsukaresama deshita", "meaning": "Arrivederci, hai fatto un buon lavoro", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v10a", "word": "おさきに", "romaji": "Osakini", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v10b", "word": "おさきにしつれいします", "romaji": "Osakini shitsurei shimasu", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 }
+]
