@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Font base ottimizzato per high-DPI (16px → leggibile su 450dpi) */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    /* Previene highlight azzurro al tap su Android */
+    -webkit-tap-highlight-color: transparent;
+    /* Scroll inerziale nativo iOS/Android */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    /* Safe areas per gesture bar e notch */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Disabilita zoom doppio tap su tutti i bottoni */
+  button, a, input, textarea, select {
+    touch-action: manipulation;
+  }
+
+  /* Cursore pointer su tutti i bottoni mobile */
+  button {
+    cursor: pointer;
+  }
+
+  /* Scrollbar invisibile ma funzionante */
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+@layer utilities {
+  /* Safe area padding per navigation bar Android gesture */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Dimensione touch target minima 44px (Apple HIG / Google MD) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

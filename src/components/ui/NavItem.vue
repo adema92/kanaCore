@@ -1,0 +1,39 @@
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  label: String,
+  color: String,
+  active: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+defineEmits(['click'])
+
+const colorMap = {
+  pink:    { on: 'text-pink-500 bg-pink-50 border border-pink-100',       off: 'text-slate-400' },
+  emerald: { on: 'text-emerald-600 bg-emerald-50 border border-emerald-100', off: 'text-slate-400' },
+  blue:    { on: 'text-blue-600 bg-blue-50 border border-blue-100',       off: 'text-slate-400' },
+  red:     { on: 'text-red-600 bg-red-50 border border-red-100',           off: 'text-slate-400' },
+  indigo:  { on: 'text-indigo-500 bg-indigo-50 border border-indigo-100', off: 'text-slate-400' },
+  purple:  { on: 'text-indigo-500 bg-indigo-50 border border-indigo-100', off: 'text-slate-400' },
+  orange:  { on: 'text-red-600 bg-red-50 border border-red-100',           off: 'text-slate-400' },
+}
+
+const buttonClass = computed(() => {
+  const c = colorMap[props.color] || colorMap.indigo
+  const state = props.active ? c.on + ' scale-105' : c.off
+  return `flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 ${state} active:scale-95 group`
+})
+</script>
+
+<template>
+  <button type="button" :class="buttonClass" @click="$emit('click')">
+    <div class="flex items-center justify-center h-6 group-hover:scale-110 transition-transform">
+      <slot />
+    </div>
+    <span class="text-[10px] font-black uppercase tracking-[0.08em] mt-0.5 leading-none">{{ label }}</span>
+  </button>
+</template>
