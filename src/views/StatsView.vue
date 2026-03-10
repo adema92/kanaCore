@@ -152,6 +152,14 @@ const consecutiveDays = computed(() => {
   return count
 })
 
+// Immagine streak: 1–23 giorni mappati su /1.png … /23.png.
+const streakImage = computed(() => {
+  const days = consecutiveDays.value
+  if (!days || days < 1) return '/1.png'
+  const clamped = Math.min(days, 23)
+  return `/${clamped}.png`
+})
+
 const totalAnswers = computed(() => Object.values(store.dailyStats).reduce((a, d) => a + (d.total || 0), 0))
 const totalCorrect = computed(() => Object.values(store.dailyStats).reduce((a, d) => a + (d.correct || 0), 0))
 
@@ -261,11 +269,11 @@ const selectDay = (key) => {
       </div>
     </div>
 
-    <!-- Giorni consecutivi: numero con gradiente animato (sale dal basso) -->
+    <!-- Giorni consecutivi: icona streak + numero -->
     <div class="bg-white rounded-3xl shadow-sm border border-amber-50 p-5 flex flex-col justify-center">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <img src="/onigiri.png" alt="" class="w-7 h-7 object-contain shrink-0" />
+          <img :src="streakImage" alt="Streak giorni consecutivi" class="w-9 h-9 object-contain shrink-0" />
           <h2 class="text-sm font-black text-slate-600 uppercase tracking-widest">Giorni consecutivi</h2>
         </div>
         <div class="flex items-center gap-1">
