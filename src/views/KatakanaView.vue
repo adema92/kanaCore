@@ -35,7 +35,7 @@ const store = useAppStore()
     </div>
 
     <!-- Legenda colori -->
-    <div class="flex flex-wrap items-center gap-2 px-1">
+    <div class="flex flex-wrap items-center ml-[20px] gap-2 px-1">
       <div class="flex items-center gap-1.5">
         <div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
         <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Da studiare</span>

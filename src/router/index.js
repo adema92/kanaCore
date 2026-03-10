@@ -17,7 +17,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach((to, from, next) => {
   const store = useAppStore()
   if (to.path === '/andrea' || to.path === '/erica') {
     const profile = to.path.slice(1)
@@ -25,6 +25,7 @@ router.beforeEach((to) => {
       store.setProfileFromRoute(profile)
     }
   }
+  next()
 })
 
 export default router

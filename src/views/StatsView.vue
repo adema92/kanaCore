@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
-import { RotateCcw } from 'lucide-vue-next'
+import { RotateCcw, BookOpen } from 'lucide-vue-next'
 import { useAppStore, INITIAL_KANA, INITIAL_VOCAB } from '../stores/appStore'
 
 const store = useAppStore()
@@ -229,11 +229,11 @@ const selectDay = (key) => {
 <template>
   <div class="w-full px-4 space-y-4 pb-6">
 
-    <!-- Banner principale: Onigiri Sensei -->
+    <!-- Banner principale: Onigiri Sensei (logo Erica solo per profilo Erica) -->
     <div class="w-full relative overflow-hidden bg-transparent max-w-sm mx-auto">
       <img
-        src="/onigiri_sensei.png"
-        alt="Onigiri Sensei – La via del riso"
+        :src="store.currentProfile === 'erica' ? '/erica-home-logo.png' : '/andrea-home-logo.png'"
+        :alt="store.currentProfile === 'erica' ? 'Onigiri Sensei – La via del riso' : 'Onigiri Sensei'"
         class="w-full h-auto object-contain object-center block max-h-56"
       />
     </div>
@@ -242,7 +242,7 @@ const selectDay = (key) => {
     <!-- Card statistiche padronanza -->
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5">
-        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest">🌸 Kana</span>
+        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest"><span class="text-base"></span> Kana</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.kanaData.filter(k => k.score >= 80).length }}
         </div>
@@ -255,7 +255,7 @@ const selectDay = (key) => {
         <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length }} memorizzati</span>
       </div>
       <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5">
-        <span class="text-[11px] font-black text-violet-500 uppercase block tracking-widest">🌿 Vocaboli</span>
+        <span class="text-[11px] font-black text-green-600 uppercase block tracking-widest flex items-center gap-0.5">Vocaboli</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.vocabData.filter(v => v.score >= 80).length }}
         </div>
@@ -275,10 +275,9 @@ const selectDay = (key) => {
         <div class="flex items-center gap-2">
           <img :src="streakImage" alt="Streak giorni consecutivi" class="w-12 h-12 object-contain shrink-0" />
         </div>
-        <h2 class="text-sm font-black text-slate-600 uppercase tracking-widest text-center ">Giorni <br> consecutivi</h2>
+        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest text-center ">Giorni <br> consecutivi</h2>
         <div class="flex items-center gap-1">
-          <span class="text-3xl font-black text-gradient-rise">{{ consecutiveDays }}</span>
-          <span class="text-base font-bold text-violet-400 normal-case">gg</span>
+          <span class="text-5xl font-black text-gradient-rise">{{ consecutiveDays }}</span>
         </div>
       </div>
     </div>
@@ -287,11 +286,11 @@ const selectDay = (key) => {
     <div class="bg-white rounded-3xl shadow-sm border border-violet-50/80 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span>あ</span> Kana oggi
+          <span class="text-pink-400">あ</span> Kana oggi
         </h2>
         <button
           type="button"
-          class="p-1.5 rounded-full border border-violet-100 text-violet-300 hover:bg-violet-50 active:scale-95 transition-all"
+          class="p-1.5 rounded-full border border-pink-100 text-pink-300 hover:bg-pink-50 active:scale-95 transition-all"
           title="Reset progressi Kana"
           @click="resetKana"
         >
@@ -336,7 +335,7 @@ const selectDay = (key) => {
     <div class="bg-white rounded-3xl shadow-sm border border-emerald-50/80 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🌿</span> Vocaboli oggi
+          <span class="text-green-600"><BookOpen :size="12" class="shrink-0" /></span> Vocaboli oggi
         </h2>
         <button
           type="button"

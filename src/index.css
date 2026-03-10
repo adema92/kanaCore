@@ -47,18 +47,27 @@
     min-width: 44px;
   }
 
-  /* Gradiente animato per numero giorni consecutivi (sale dal basso). */
+  /* Gradiente animato per numero giorni consecutivi: più colori, ciclo continuo senza stacco. */
   @keyframes gradient-rise {
     0% { background-position: 0% 100%; }
     100% { background-position: 0% 0%; }
   }
   .text-gradient-rise {
-    background: linear-gradient(to bottom, #f9a8d4 0%, #c4b5fd 50%, #8b5cf6 100%);
-    background-size: 100% 300%;
+    background: linear-gradient(
+      to bottom,
+      #e9d5ff 0%,
+      #f5d0eb 16%,
+      #ddd6fe 33%,
+      #fbcfe8 50%,
+      #c4b5fd 66%,
+      #f9a8d4 83%,
+      #e9d5ff 100%
+    );
+    background-size: 100% 400%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    animation: gradient-rise 2.5s linear infinite;
+    animation: gradient-rise 4s ease-in-out infinite;
   }
 
   /* Gradiente bianco-rosa da sinistra a destra per scritta caricamento. */
@@ -73,6 +82,15 @@
     background-clip: text;
     color: transparent;
     animation: gradient-shimmer 2s linear infinite;
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.15s ease;
+  }
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
   }
 
   /* Palette sezione vocabolario (#ffc99e e gradienti). */

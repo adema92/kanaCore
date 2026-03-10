@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { BookOpen } from 'lucide-vue-next'
 import { useAppStore } from '../stores/appStore'
 
 const store = useAppStore()
@@ -58,18 +59,20 @@ function catStats(words) {
       </p>
       <div class="flex gap-3 mb-2">
         <button
-          class="flex-1 bg-white/95 text-[var(--vocab-darker)] font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest flex flex-col items-center gap-0.5"
-          @click="store.handleStartQuizClick('vocab-romaji')"
+          class="flex-1 bg-white/25 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
+          @click="store.handleStartQuizClick('vocab-kana-to-romaji')"
         >
-          <span class="text-lg">🌸</span>
+         
+
+           <BookOpen :size="22" class="shrink-0 text-white mb-1" />
           <span>Quiz Parole</span>
         </button>
         <button
           class="flex-1 bg-white/25 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
-          @click="store.handleStartQuizClick('vocab-kana-to-romaji')"
+          @click="store.handleStartQuizClick('vocab-romaji')"
         >
-          <span class="text-xl font-black">あ</span>
-          <span>Kana → Romaji</span>
+        <span class="text-xl font-black">あ</span>
+        <span>Traduci</span>
         </button>
       </div>
     </div>
@@ -87,10 +90,9 @@ function catStats(words) {
         @click="toggleCategory(cat)"
       >
         <div class="flex items-center gap-3 min-w-0">
-          <span class="text-base">🏷️</span>
           <div class="text-left min-w-0">
-            <p class="font-black text-slate-700 uppercase text-sm tracking-wide leading-tight">{{ cat }}</p>
-            <p class="text-[11px] text-slate-500 font-semibold mt-0.5">{{ words.length }} parole</p>
+            <p class="font-black text-slate-500 uppercase text-sm tracking-wide leading-tight">{{ cat }}</p>
+            <p class="text-[11px] text-slate-400 font-semibold mt-0.5">{{ words.length }} parole</p>
           </div>
         </div>
         <!-- Mini barre mastery + chevron -->
@@ -99,9 +101,9 @@ function catStats(words) {
           <div class="flex gap-1 items-center">
             <span class="text-[10px] font-black text-emerald-600">{{ catStats(words).padronanza }}</span>
             <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-            <span class="text-[10px] font-black text-amber-500">{{ catStats(words).inCorso }}</span>
+            <span class="text-[10px] font-black text-amber-600">{{ catStats(words).inCorso }}</span>
             <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
-            <span class="text-[10px] font-black text-rose-500">{{ catStats(words).daStud }}</span>
+            <span class="text-[10px] font-black text-rose-700">{{ catStats(words).daStud }}</span>
             <div class="w-1.5 h-1.5 rounded-full bg-rose-400"></div>
           </div>
           <!-- Chevron -->

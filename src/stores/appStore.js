@@ -6,6 +6,7 @@ import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
 
 import salutiVocab from '../data/saluti.json'
 import randomVocab from '../data/random.json'
+import preferitiVocab from '../data/preferiti.json'
 import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
@@ -63,7 +64,7 @@ export const hiraganaPresets = hiraganaPresetsJson
 
 export const katakanaPresets = katakanaPresetsJson
 
-export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab]
+export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab, ...preferitiVocab]
 
 // Mappa romaji → kana per quiz lettura.
 export const ROMAJI_TO_KANA = Object.fromEntries(
