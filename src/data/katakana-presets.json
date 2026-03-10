@@ -1,0 +1,5 @@
+[
+  { "id": "ktp1", "name": "Vocali", "kanaIds": ["kt1", "kt2", "kt3", "kt4", "kt5"] },
+  { "id": "ktp2", "name": "KA",     "kanaIds": ["kt6", "kt7", "kt8", "kt9", "kt10"] }
+]
+

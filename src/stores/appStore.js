@@ -6,6 +6,10 @@ import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
 
 import salutiVocab from '../data/saluti.json'
 import randomVocab from '../data/random.json'
+import hiraganaGrid from '../data/hiragana-grid.json'
+import katakanaGrid from '../data/katakana-grid.json'
+import hiraganaPresetsJson from '../data/hiragana-presets.json'
+import katakanaPresetsJson from '../data/katakana-presets.json'
 
 // --- CONFIGURAZIONE FIREBASE ---
 /* global __firebase_config, __app_id */
@@ -33,24 +37,19 @@ export const getMasteryDot = (score) => {
 }
 
 // --- DATASET INIZIALE ---
-export const HIRAGANA_GRID = [
-  [{ c: 'あ', r: 'a' }, { c: 'い', r: 'i' }, { c: 'う', r: 'u' }, { c: 'え', r: 'e' }, { c: 'お', r: 'o' }],
-  [{ c: 'か', r: 'ka' }, { c: 'き', r: 'ki' }, { c: 'く', r: 'ku' }, { c: 'け', r: 'ke' }, { c: 'こ', r: 'ko' }],
-  [{ c: 'が', r: 'ga' }, { c: 'ぎ', r: 'gi' }, { c: 'ぐ', r: 'gu' }, { c: 'げ', r: 'ge' }, { c: 'ご', r: 'go' }],
-  [{ c: 'さ', r: 'sa' }, { c: 'し', r: 'shi' }, { c: 'す', r: 'su' }, { c: 'せ', r: 'se' }, { c: 'そ', r: 'so' }],
-  [{ c: 'ざ', r: 'za' }, { c: 'じ', r: 'ji' }, { c: 'ず', r: 'zu' }, { c: 'ぜ', r: 'ze' }, { c: 'ぞ', r: 'zo' }],
-  [{ c: 'た', r: 'ta' }, { c: 'ち', r: 'chi' }, { c: 'つ', r: 'tsu' }, { c: 'て', r: 'te' }, { c: 'と', r: 'to' }],
-  [{ c: 'だ', r: 'da' }, { c: 'ぢ', r: 'ji' }, { c: 'づ', r: 'zu' }, { c: 'で', r: 'de' }, { c: 'ど', r: 'do' }],
-  [{ c: 'な', r: 'na' }, { c: 'に', r: 'ni' }, { c: 'ぬ', r: 'nu' }, { c: 'ね', r: 'ne' }, { c: 'の', r: 'no' }],
-  [{ c: 'は', r: 'ha' }, { c: 'ひ', r: 'hi' }, { c: 'ふ', r: 'fu' }, { c: 'へ', r: 'he' }, { c: 'ほ', r: 'ho' }],
-  [{ c: 'ば', r: 'ba' }, { c: 'び', r: 'bi' }, { c: 'ぶ', r: 'bu' }, { c: 'べ', r: 'be' }, { c: 'ぼ', r: 'bo' }],
-  [{ c: 'ぱ', r: 'pa' }, { c: 'ぴ', r: 'pi' }, { c: 'ぷ', r: 'pu' }, { c: 'ぺ', r: 'pe' }, { c: 'ぽ', r: 'po' }],
-  [{ c: 'ま', r: 'ma' }, { c: 'み', r: 'mi' }, { c: 'む', r: 'mu' }, { c: 'め', r: 'me' }, { c: 'も', r: 'mo' }],
-  [{ c: 'や', r: 'ya' }, null, { c: 'ゆ', r: 'yu' }, null, { c: 'よ', r: 'yo' }],
-  [{ c: 'ら', r: 'ra' }, { c: 'り', r: 'ri' }, { c: 'る', r: 'ru' }, { c: 'れ', r: 're' }, { c: 'ろ', r: 'ro' }],
-  [{ c: 'わ', r: 'wa' }, null, null, null, { c: 'を', r: 'wo' }],
-  [{ c: 'ん', r: 'n' }, null, null, null, null],
-]
+export const KATAKANA_GRID = katakanaGrid
+
+const _kataGridCells = KATAKANA_GRID.flat().filter(Boolean)
+export const INITIAL_KATAKANA = _kataGridCells.map((cell, i) => ({
+  id: `kt${i + 1}`,
+  character: cell.c,
+  romaji: cell.r,
+  personalNote: '',
+  score: 0,
+  attempts: 0,
+}))
+
+export const HIRAGANA_GRID = hiraganaGrid
 
 // Tutti i kana della griglia, abilitati con score 0 (rosso). I preset usano i primi (es. k1–k5 Vocali).
 const _gridCells = HIRAGANA_GRID.flat().filter(Boolean)
@@ -63,13 +62,9 @@ export const INITIAL_KANA = _gridCells.map((cell, i) => ({
   attempts: 0,
 }))
 
-export const BASE_PRESETS = [
-  { id: 'p1', name: 'Vocali', kanaIds: ['k1', 'k2', 'k3', 'k4', 'k5'] },
-  { id: 'p2', name: 'KA', kanaIds: ['k6', 'k7', 'k8', 'k9', 'k10'] },
-  { id: 'p3', name: 'GA', kanaIds: ['k11', 'k12', 'k13', 'k14', 'k15'] },
-  { id: 'p4', name: 'SA', kanaIds: ['k16', 'k17', 'k18', 'k19', 'k20'] },
-  { id: 'p5', name: 'ZA', kanaIds: ['k21', 'k22', 'k23', 'k24', 'k25'] },
-]
+export const hiraganaPresets = hiraganaPresetsJson
+
+export const katakanaPresets = katakanaPresetsJson
 
 export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab]
 
@@ -82,6 +77,7 @@ export const ROMAJI_TO_KANA = Object.fromEntries(
 export const useAppStore = defineStore('app', () => {
   // Dati persistenti
   const kanaData = ref(INITIAL_KANA.map(k => ({ ...k })))
+  const katakanaData = ref(INITIAL_KATAKANA.map(k => ({ ...k })))
   const vocabData = ref(INITIAL_VOCAB.map(v => ({ ...v })))
   const dailyStats = ref({})
 
@@ -119,20 +115,25 @@ export const useAppStore = defineStore('app', () => {
 
   // Stato UI
   const selectedKanaModal = ref(null)
+  const selectedKatakanaModal = ref(null)
   const selectedVocabModal = ref(null)
   const customAlert = ref(null)
   const confirmModal = ref(null)
   const hideGridRomaji = ref(true)
+  const hideKatakanaGridRomaji = ref(true)
   const statsTimeRange = ref('settimana')
 
   // Stato quiz
   const quizActive = ref(false)
   const showSaveProgressAfterQuiz = ref(false)
   const quizSetupModalOpen = ref(false)
+  const katakanaSetupModalOpen = ref(false)
   const vocabSetupModalOpen = ref(false)
   const difficultyModalOpen = ref(false)
   const selectedKanaIds = ref([])
+  const selectedKatakanaIds = ref([])
   const newPresetName = ref('')
+  const newKatakanaPresetName = ref('')
   const quizPendingItems = ref([])
   const selectedVocabCategories = ref([])
   const quizDifficulty = ref('medio')
@@ -161,6 +162,7 @@ export const useAppStore = defineStore('app', () => {
   const answerFeedback = ref(null)
   // Ultimo set di kana usato per un quiz (per riavviare rapidamente)
   const lastKanaQuizSelection = ref([])
+  const lastKatakanaQuizSelection = ref([])
 
   // --- AZIONI ---
 
@@ -232,6 +234,7 @@ export const useAppStore = defineStore('app', () => {
   function _buildPayload() {
     return {
       kanaData: kanaData.value.map(k => ({ ...k })),
+      katakanaData: katakanaData.value.map(k => ({ ...k })),
       vocabData: vocabData.value.map(v => ({ ...v })),
       dailyStats: { ...dailyStats.value },
       kanaPresets: kanaPresets.value.map(p => ({ ...p })),
@@ -524,7 +527,7 @@ export const useAppStore = defineStore('app', () => {
     _lastSyncAt = Date.now()
     if (ok) quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
     speakText(
-      quizType.value === 'kana'
+      quizType.value === 'kana' || quizType.value === 'katakana'
         ? item.character
         : item.word
     )
@@ -532,7 +535,7 @@ export const useAppStore = defineStore('app', () => {
     const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
       .toISOString().split('T')[0]
     const cur = _normalizeDayStats(dailyStats.value[todayStr])
-    const isKanaQuiz = quizType.value === 'kana'
+    const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
     const nextDay = {
       ...cur,
       total: cur.total + 1,
@@ -560,6 +563,8 @@ export const useAppStore = defineStore('app', () => {
 
     if (quizType.value === 'kana') {
       kanaData.value = upd(kanaData.value)
+    } else if (quizType.value === 'katakana') {
+      katakanaData.value = upd(katakanaData.value)
     } else {
       vocabData.value = upd(vocabData.value)
     }
@@ -612,7 +617,7 @@ export const useAppStore = defineStore('app', () => {
       const item = quizQueue.value[currentQuestionIndex.value]
       const userText = manualInput.value.trim()
       let correctText
-      if (quizType.value === 'kana') {
+      if (quizType.value === 'kana' || quizType.value === 'katakana') {
         correctText = quizDirection.value === 'ja-to-romaji'
           ? item.romaji.split('/')[0].trim().toLowerCase()
           : item.character.trim()
@@ -662,8 +667,8 @@ export const useAppStore = defineStore('app', () => {
   function getOptionLabel_internal(opt) {
     if (quizType.value === 'vocab-romaji') return opt.romaji.split('/')[0]
     if (quizDirection.value === 'ja-to-romaji')
-      return quizType.value === 'kana' ? opt.romaji : opt.meaning
-    return quizType.value === 'kana' ? opt.character : opt.word.split('/')[0]
+      return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.romaji : opt.meaning
+    return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.character : opt.word.split('/')[0]
   }
 
   function handleStartQuizClick(type, forced = null) {
@@ -681,6 +686,14 @@ export const useAppStore = defineStore('app', () => {
       selectedKanaIds.value = []
       newPresetName.value = ''
       quizSetupModalOpen.value = true
+    } else if (type === 'katakana') {
+      if (katakanaData.value.length < 4) {
+        customAlert.value = '💙 Aggiungi almeno 4 Katakana prima!'
+        return
+      }
+      selectedKatakanaIds.value = []
+      newKatakanaPresetName.value = ''
+      katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
       const randomWords = vocabData.value.filter(v => v.category === 'Random')
       if (randomWords.length < 1) {
@@ -724,6 +737,18 @@ export const useAppStore = defineStore('app', () => {
     difficultyModalOpen.value = true
   }
 
+  function proceedFromKatakanaSetup() {
+    if (selectedKatakanaIds.value.length < 4) {
+      customAlert.value = 'Seleziona almeno 4 Katakana!'
+      return
+    }
+    const selectedItems = katakanaData.value.filter(k => selectedKatakanaIds.value.includes(k.id))
+    lastKatakanaQuizSelection.value = [...selectedKatakanaIds.value]
+    quizPendingItems.value = selectedItems
+    katakanaSetupModalOpen.value = false
+    difficultyModalOpen.value = true
+  }
+
   // Riavvia un quiz kana usando l'ultima selezione di kana usata
   function restartLastKanaQuiz() {
     if (!lastKanaQuizSelection.value || lastKanaQuizSelection.value.length < 4) {
@@ -739,6 +764,23 @@ export const useAppStore = defineStore('app', () => {
     selectedKanaIds.value = [...lastKanaQuizSelection.value]
     quizPendingItems.value = selectedItems
     quizSetupModalOpen.value = false
+    difficultyModalOpen.value = true
+  }
+
+  function restartLastKatakanaQuiz() {
+    if (!lastKatakanaQuizSelection.value || lastKatakanaQuizSelection.value.length < 4) {
+      customAlert.value = 'Non c\'è ancora un quiz katakana precedente con almeno 4 caratteri.'
+      return
+    }
+    quizType.value = 'katakana'
+    const selectedItems = katakanaData.value.filter(k => lastKatakanaQuizSelection.value.includes(k.id))
+    if (selectedItems.length < 4) {
+      customAlert.value = 'Alcuni katakana dell\'ultimo quiz non esistono più. Seleziona di nuovo.'
+      return
+    }
+    selectedKatakanaIds.value = [...lastKatakanaQuizSelection.value]
+    quizPendingItems.value = selectedItems
+    katakanaSetupModalOpen.value = false
     difficultyModalOpen.value = true
   }
 
@@ -796,6 +838,11 @@ export const useAppStore = defineStore('app', () => {
     saveNow().catch(() => {})
   }
 
+  function resetKatakanaScore(id) {
+    katakanaData.value = katakanaData.value.map(k => k.id === id ? { ...k, score: 0, attempts: 0 } : k)
+    saveNow().catch(() => {})
+  }
+
   function resetVocabScore(id) {
     vocabData.value = vocabData.value.map(v => v.id === id ? { ...v, score: 0, attempts: 0 } : v)
     saveNow().catch(() => {})
@@ -827,6 +874,7 @@ export const useAppStore = defineStore('app', () => {
       try { raw = JSON.parse(d.data) } catch (_) { raw = d }
     }
     kanaData.value = _mergeFunc(INITIAL_KANA, raw.kanaData, true)
+    katakanaData.value = _mergeFunc(INITIAL_KATAKANA, raw.katakanaData, true)
     vocabData.value = _mergeFunc(INITIAL_VOCAB, raw.vocabData, true, true)
     if (raw.dailyStats && typeof raw.dailyStats === 'object') {
       const normalized = {}
@@ -926,6 +974,7 @@ export const useAppStore = defineStore('app', () => {
     profileSelectOpen.value = false
     // Resetta ai valori iniziali (la cache locale verrà caricata subito dentro _loadProfileData)
     kanaData.value = INITIAL_KANA.map(k => ({ ...k }))
+    katakanaData.value = INITIAL_KATAKANA.map(k => ({ ...k }))
     vocabData.value = INITIAL_VOCAB.map(v => ({ ...v }))
     dailyStats.value = {}
     kanaPresets.value = []
@@ -968,25 +1017,25 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    kanaData, vocabData, dailyStats, kanaPresets, user, isCloudLoaded,
+    kanaData, katakanaData, vocabData, dailyStats, kanaPresets, user, isCloudLoaded,
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
-    selectedKanaModal, selectedVocabModal, customAlert, confirmModal,
-    hideGridRomaji, statsTimeRange,
-    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
-    selectedKanaIds, newPresetName, quizPendingItems,
+    selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
+    hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
+    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
+    selectedKanaIds, selectedKatakanaIds, newPresetName, newKatakanaPresetName, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
-    vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection,
+    vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
     answerFeedback,
     speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, genOptions, initVocabKanaRead, initVocabRomajiInput,
     processAnswer,
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback,
-    handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz,
+    handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
-    resetKanaScore, resetVocabScore,
+    resetKanaScore, resetKatakanaScore, resetVocabScore,
     selectProfile, switchProfile,
     init,
   }

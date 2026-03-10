@@ -26,8 +26,8 @@ const statsData = computed(() => {
     const correct = (kana.correct + vocab.correct) || 0
     const isToday = key === today
     const label = range === 'mese'
-      ? (isToday ? 'Oggi' : d.getDate().toString())
-      : (isToday ? 'Oggi' : d.toLocaleDateString('it-IT', { weekday: 'short' }))
+      ? d.getDate().toString()
+      : d.toLocaleDateString('it-IT', { weekday: 'short' })
     return {
       key,
       label,
@@ -456,7 +456,7 @@ const selectDay = (key) => {
           <span
             :class="[
               'text-[9px] sm:text-[10px] font-bold mt-0.5 uppercase truncate max-w-full',
-              selectedDayKey === d.key ? 'text-red-500 font-black' : d.isToday ? 'text-pink-600 font-black' : 'text-slate-400'
+              selectedDayKey === d.key ? 'text-red-500 font-black' : 'text-slate-400'
             ]"
           >{{ d.label }}</span>
         </div>

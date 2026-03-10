@@ -2,10 +2,10 @@
 import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  BarChart2, BookOpen, Brain, X, Volume2,
+  BarChart2, BookOpen, X, Volume2,
   Info, AlertTriangle, CheckCheck, Square, Save,
 } from 'lucide-vue-next'
-import { useAppStore, BASE_PRESETS, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
+import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
 import StrokeOrderSvg from './components/features/StrokeOrderSvg.vue'
 
@@ -13,7 +13,7 @@ const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
-const isKanaQuiz = computed(() => store.quizType === 'kana')
+const isKanaQuiz = computed(() => store.quizType === 'kana' || store.quizType === 'katakana')
 
 const currentQuestion = computed(() =>
   store.quizQueue.length && store.currentQuestionIndex < store.quizQueue.length
@@ -28,6 +28,7 @@ const quizModeLabel = computed(() => {
   if (type === 'vocab-kana-to-romaji') return '👁 Kana → scrivi romaji'
   if (type === 'vocab-romaji') return '🗣️ Significato → scrivi il romaji'
   if (type === 'kana') return dir === 'ja-to-romaji' ? '👁 Kana → Lettura' : '👁 Lettura → Kana'
+  if (type === 'katakana') return dir === 'ja-to-romaji' ? '👁 Katakana → Lettura' : '👁 Lettura → Katakana'
   if (type === 'vocab') return dir === 'ja-to-romaji' ? '👁 Parola → Significato' : '👁 Romaji → Parola'
   return 'Quiz'
 })
@@ -39,7 +40,7 @@ const questionText = computed(() => {
   if (store.quizType === 'vocab-romaji') return currentQuestion.value.meaning
   if (store.quizDirection === 'ja-to-romaji')
     return isKanaQuiz.value ? currentQuestion.value.character : currentQuestion.value.word
-  return currentQuestion.value.romaji.split('/')[0]
+  return isKanaQuiz.value ? currentQuestion.value.romaji.split('/')[0] : currentQuestion.value.romaji.split('/')[0]
 })
 
 // Per vocab-romaji: titolo fisso + sottotitolo con tono
@@ -62,7 +63,7 @@ const finalInputClass = computed(() => {
   let correct = false
   if (store.quizType === 'vocab-kana-to-romaji' && store.answerFeedback != null) {
     correct = store.answerFeedback.ok
-  } else if (store.quizType === 'kana') {
+  } else if (store.quizType === 'kana' || store.quizType === 'katakana') {
     correctText = store.quizDirection === 'ja-to-romaji'
       ? (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || '')
       : (q?.character?.trim() || '')
@@ -88,6 +89,12 @@ const selectedKanaModalLive = computed(() => {
   if (!store.selectedKanaModal) return null
   const live = store.kanaData.find(k => k.id === store.selectedKanaModal.id)
   return live || store.selectedKanaModal
+})
+
+const selectedKatakanaModalLive = computed(() => {
+  if (!store.selectedKatakanaModal) return null
+  const live = store.katakanaData.find(k => k.id === store.selectedKatakanaModal.id)
+  return live || store.selectedKatakanaModal
 })
 
 const selectedVocabModalLive = computed(() => {
@@ -121,8 +128,8 @@ function getToneConfig(tone) {
 function getOptionLabel(opt) {
   if (store.quizType === 'vocab-romaji') return opt.romaji.split('/')[0]
   if (store.quizDirection === 'ja-to-romaji')
-    return store.quizType === 'kana' ? opt.romaji : opt.meaning
-  return store.quizType === 'kana' ? opt.character : opt.word.split('/')[0]
+    return (store.quizType === 'kana' || store.quizType === 'katakana') ? opt.romaji : opt.meaning
+  return (store.quizType === 'kana' || store.quizType === 'katakana') ? opt.character : opt.word.split('/')[0]
 }
 
 function getOptionTone(opt) {
@@ -149,6 +156,7 @@ function isNavActive(path) {
 const isAnyModalOpen = computed(() =>
   !!(
     store.quizSetupModalOpen ||
+    store.katakanaSetupModalOpen ||
     store.vocabSetupModalOpen ||
     store.difficultyModalOpen ||
     store.showSaveProgressAfterQuiz ||
@@ -156,6 +164,7 @@ const isAnyModalOpen = computed(() =>
     store.customAlert ||
     store.confirmModal ||
     store.selectedKanaModal ||
+    store.selectedKatakanaModal ||
     store.selectedVocabModal ||
     (store.answerFeedback && (!store.answerFeedback.ok || store.quizType === 'vocab-kana-to-romaji'))
   )
@@ -379,7 +388,7 @@ onMounted(() => {
               <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
               <div class="flex flex-wrap gap-2 mb-4">
                 <button
-                  v-for="p in BASE_PRESETS"
+                  v-for="p in hiraganaPresets"
                   :key="p.id"
                   type="button"
                   :class="[
@@ -506,11 +515,156 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- ===== MODAL SELEZIONE KATAKANA ===== -->
+      <div
+        v-if="store.katakanaSetupModalOpen"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center overflow-hidden"
+        style="touch-action:none;"
+        @click.self="store.katakanaSetupModalOpen = false"
+      >
+        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh]">
+          <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+            <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
+          </div>
+          <div class="flex justify-between items-center px-6 pt-4 pb-3 shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">🎯</span>
+              <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest">Selezione Katakana</h3>
+            </div>
+            <button
+              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
+              @click="store.katakanaSetupModalOpen = false"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+
+          <div class="overflow-y-auto flex-1 px-6 space-y-5 pb-2">
+            <!-- Preset rapidi Katakana + selezioni veloci -->
+            <div>
+              <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
+              <div class="flex flex-wrap gap-2 mb-4">
+                <button
+                  v-for="p in katakanaPresets"
+                  :key="p.id"
+                  type="button"
+                  :class="[
+                    'px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    p.kanaIds.every(id => store.selectedKatakanaIds.includes(id))
+                      ? 'text-white'
+                      : 'bg-blue-50 text-blue-600 border-blue-100 active:bg-blue-100'
+                  ]"
+                  :style="p.kanaIds.every(id => store.selectedKatakanaIds.includes(id))
+                    ? 'background:#63a8eb; border-color:#63a8eb;'
+                    : ''"
+                  @click="() => {
+                    const ids = p.kanaIds
+                    const allIn = ids.every(id => store.selectedKatakanaIds.includes(id))
+                    if (allIn)
+                      store.selectedKatakanaIds = store.selectedKatakanaIds.filter(id => !ids.includes(id))
+                    else
+                      store.selectedKatakanaIds = [...new Set([...store.selectedKatakanaIds, ...ids])]
+                  }"
+                >{{ p.name }}</button>
+              </div>
+
+              <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-2">⚙️ Selezioni veloci</p>
+              <div class="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  placeholder="Nuovo preset..."
+                  :value="store.newKatakanaPresetName"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  inputmode="text"
+                  enterkeyhint="done"
+                  class="flex-1 border-2 border-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none bg-slate-50 min-w-0"
+                  style="outline-color: #63a8eb;"
+                  @input="store.newKatakanaPresetName = $event.target.value"
+                />
+                <!-- Seleziona tutto -->
+                <button
+                  type="button"
+                  title="Seleziona tutti"
+                  :class="[
+                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
+                    store.selectedKatakanaIds.length === store.katakanaData.length
+                      ? 'text-white'
+                      : 'bg-slate-50 text-slate-400 border-slate-200'
+                  ]"
+                  :style="store.selectedKatakanaIds.length === store.katakanaData.length
+                    ? 'background:#63a8eb; border-color:#63a8eb;'
+                    : ''"
+                  @click="store.selectedKatakanaIds = store.katakanaData.map(k => k.id)"
+                ><CheckCheck :size="20" :stroke-width="2.5" /></button>
+                <!-- Svuota -->
+                <button
+                  type="button"
+                  title="Svuota selezione"
+                  :class="[
+                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
+                    store.selectedKatakanaIds.length === 0
+                      ? 'text-white'
+                      : 'bg-slate-50 text-slate-400 border-slate-200'
+                  ]"
+                  :style="store.selectedKatakanaIds.length === 0
+                    ? 'background:#63a8eb; border-color:#63a8eb;'
+                    : ''"
+                  @click="store.selectedKatakanaIds = []"
+                ><Square :size="20" :stroke-width="2.5" /></button>
+              </div>
+            </div>
+
+            <!-- Griglia katakana selezionabili -->
+            <div class="grid grid-cols-5 gap-2 pb-2">
+              <button
+                v-for="k in store.katakanaData"
+                :key="k.id"
+                :class="[
+                  'aspect-square rounded-xl flex items-center justify-center text-lg font-black border-2 transition-all active:scale-90',
+                  store.selectedKatakanaIds.includes(k.id)
+                    ? 'text-white shadow-md'
+                    : 'bg-white border-slate-100 text-slate-300'
+                ]"
+                :style="store.selectedKatakanaIds.includes(k.id)
+                  ? 'background:#63a8eb; border-color:#63a8eb;'
+                  : ''"
+                @click="() => {
+                  if (store.selectedKatakanaIds.includes(k.id))
+                    store.selectedKatakanaIds = store.selectedKatakanaIds.filter(id => id !== k.id)
+                  else
+                    store.selectedKatakanaIds = [...store.selectedKatakanaIds, k.id]
+                }"
+              >{{ k.character }}</button>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-50 flex items-center gap-3">
+            <button
+              :disabled="store.selectedKatakanaIds.length < 4"
+              class="basis-[80%] text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
+              style="background:#63a8eb;"
+              @click="store.proceedFromKatakanaSetup()"
+            >Continua →</button>
+            <button
+              type="button"
+              class="basis-[20%] py-5 px-3 rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center"
+              title="Ripeti ultimo quiz katakana"
+              @click="store.restartLastKatakanaQuiz()"
+            >
+              ↻
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== QUIZ ATTIVO ===== -->
       <div
         v-if="store.quizActive"
-        class="fixed inset-0 bg-[#fff0f5] z-[300] flex flex-col"
-        style="height: 100dvh;"
+        class="fixed inset-0 z-[300] flex flex-col"
+        :style="`background: ${store.quizType === 'katakana' ? '#f0f6ff' : '#fff0f5'}; height: 100dvh;`"
       >
         <!-- Modale: Vuoi salvare i progressi? (alla fine del quiz) -->
         <div
@@ -543,7 +697,7 @@ onMounted(() => {
           <div class="flex-1 min-w-0 flex items-center gap-2">
             <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
               <div
-                :class="['h-full transition-all duration-300', isKanaQuiz ? 'bg-pink-400' : 'bg-emerald-500']"
+                :class="['h-full transition-all duration-300', store.quizType === 'katakana' ? 'bg-blue-400' : isKanaQuiz ? 'bg-pink-400' : 'bg-emerald-500']"
                 :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
               ></div>
             </div>
@@ -671,7 +825,7 @@ onMounted(() => {
             ref="quizCardRef"
             :class="[
               'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm shrink-0',
-              store.quizType === 'vocab-kana-to-romaji' ? 'bg-white border-emerald-100 px-5 py-4' : 'bg-white border-pink-100 px-6 py-5'
+              store.quizType === 'vocab-kana-to-romaji' ? 'bg-white border-emerald-100 px-5 py-4' : store.quizType === 'katakana' ? 'bg-white border-blue-100 px-6 py-5' : 'bg-white border-pink-100 px-6 py-5'
             ]"
           >
             <!-- Layout vocab-kana-to-romaji: kana → scrivi romaji -->
@@ -702,8 +856,11 @@ onMounted(() => {
             </template>
             <!-- Layout standard: kana / parola -->
             <template v-else>
-              <p class="text-[11px] font-black text-pink-300 uppercase tracking-[0.3em] mb-2">
-                {{ store.quizDirection === 'ja-to-romaji' ? (isKanaQuiz ? '👁 Kana' : '👁 Parola') : '👁 Lettura' }}
+              <p
+                class="text-[11px] font-black uppercase tracking-[0.3em] mb-2"
+                :class="store.quizType === 'katakana' ? 'text-blue-300' : 'text-pink-300'"
+              >
+                {{ store.quizDirection === 'ja-to-romaji' ? (store.quizType === 'katakana' ? '👁 Katakana' : isKanaQuiz ? '👁 Kana' : '👁 Parola') : '👁 Lettura' }}
               </p>
               <div
                 :class="[
@@ -712,7 +869,7 @@ onMounted(() => {
                 ]"
               >{{ questionText }}</div>
               <button
-                class="text-slate-200 active:text-pink-400 transition-all p-3 mt-1"
+                :class="['transition-all p-3 mt-1 text-slate-200', store.quizType === 'katakana' ? 'active:text-blue-400' : 'active:text-pink-400']"
                 @click="store.speakText(isKanaQuiz ? currentQuestion?.character : currentQuestion?.word)"
               ><Volume2 :size="28" /></button>
             </template>
@@ -884,16 +1041,18 @@ onMounted(() => {
             </button>
           </div>
 
-          <!-- Toggle direzione (solo per kana e vocab standard, non per vocab-kana-to-romaji) -->
-          <div v-if="(store.quizType === 'kana' || store.quizType === 'vocab')" class="px-8 pb-6">
+          <!-- Toggle direzione (solo per kana/katakana e vocab standard, non per vocab-kana-to-romaji) -->
+          <div v-if="(store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'vocab')" class="px-8 pb-6">
             <p class="text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Direzione</p>
             <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100">
               <button
-                :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'ja-to-romaji' ? 'bg-white text-pink-500 shadow-md' : 'text-slate-400']"
+                :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'ja-to-romaji' ? (store.quizType === 'katakana' ? 'bg-white shadow-md' : 'bg-white text-pink-500 shadow-md') : 'text-slate-400']"
+                :style="store.quizDirection === 'ja-to-romaji' && store.quizType === 'katakana' ? 'color:#63a8eb;' : ''"
                 @click="store.quizDirection = 'ja-to-romaji'"
               >🇯🇵 → 🇮🇹</button>
               <button
-                :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'romaji-to-ja' ? 'bg-white text-pink-500 shadow-md' : 'text-slate-400']"
+                :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'romaji-to-ja' ? (store.quizType === 'katakana' ? 'bg-white shadow-md' : 'bg-white text-pink-500 shadow-md') : 'text-slate-400']"
+                :style="store.quizDirection === 'romaji-to-ja' && store.quizType === 'katakana' ? 'color:#63a8eb;' : ''"
                 @click="store.quizDirection = 'romaji-to-ja'"
               >🇮🇹 → 🇯🇵</button>
             </div>
@@ -953,10 +1112,13 @@ onMounted(() => {
               class="w-full py-6 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
               :class="store.quizType === 'vocab-kana-to-romaji'
                 ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
-                : 'bg-emerald-500 active:bg-emerald-600'"
+                : store.quizType === 'katakana'
+                  ? 'text-white'
+                  : 'bg-emerald-500 active:bg-emerald-600'"
+              :style="store.quizType === 'katakana' ? 'background:#63a8eb;' : ''"
               @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
             >
-              あ Inizia Quiz →
+              {{ store.quizType === 'katakana' ? 'ア' : 'あ' }} Inizia Quiz →
             </button>
           </div>
         </div>
@@ -1014,6 +1176,65 @@ onMounted(() => {
             <button
               class="w-full bg-pink-400 active:bg-pink-500 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest"
               @click="store.speakText(selectedKanaModalLive.character)"
+            >
+              <Volume2 :size="26" /> Pronuncia
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MODAL DETTAGLIO KATAKANA ===== -->
+      <div
+        v-if="selectedKatakanaModalLive"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
+        @click.self="store.selectedKatakanaModal = null"
+      >
+        <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
+          <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+            <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
+          </div>
+          <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
+            <span class="text-[11px] font-black uppercase tracking-[0.3em]" style="color:#3a86cf;">💙 Dettaglio Katakana</span>
+            <button
+              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
+              @click="store.selectedKatakanaModal = null"
+            ><X :size="18" /></button>
+          </div>
+          <div class="flex flex-col items-center px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] gap-5 overflow-y-auto">
+            <div class="px-10 py-3 rounded-full" style="background:#e8f2fb;">
+              <h2 class="text-3xl font-black uppercase tracking-widest" style="color:#3a86cf;">{{ selectedKatakanaModalLive.romaji }}</h2>
+            </div>
+            <div class="rounded-3xl w-48 h-48 flex items-center justify-center p-6 shadow-inner bg-white" style="border: 4px solid #cfe4f7;">
+              <StrokeOrderSvg :character="selectedKatakanaModalLive.character" />
+            </div>
+            <!-- Barra progressi mastery -->
+            <div class="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              <div class="flex justify-between text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">
+                <span>Padronanza</span>
+                <span>{{ selectedKatakanaModalLive.score }}%</span>
+              </div>
+              <div class="h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  :class="[
+                    'h-full rounded-full transition-all duration-500',
+                    selectedKatakanaModalLive.score >= 80 ? 'bg-emerald-400' :
+                    selectedKatakanaModalLive.score >= 40 ? 'bg-amber-400' : 'bg-rose-400'
+                  ]"
+                  :style="{ width: selectedKatakanaModalLive.score + '%' }"
+                ></div>
+              </div>
+              <div class="flex items-center justify-between mt-1.5">
+                <p class="text-[10px] text-slate-300 font-semibold">{{ selectedKatakanaModalLive.attempts }} tentativi</p>
+                <button
+                  class="text-[10px] font-black text-rose-400 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-lg uppercase tracking-wide active:bg-rose-100 transition-all"
+                  @click="store.resetKatakanaScore(selectedKatakanaModalLive.id)"
+                >↺ Reset</button>
+              </div>
+            </div>
+            <button
+              class="w-full text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest"
+              style="background:#63a8eb;"
+              @click="store.speakText(selectedKatakanaModalLive.character)"
             >
               <Volume2 :size="26" /> Pronuncia
             </button>
@@ -1181,11 +1402,11 @@ onMounted(() => {
           <NavItem label="Hiragana" :active="isNavActive('/hiragana')" color="pink" @click="router.push('/hiragana')">
             <span class="text-xl font-black">あ</span>
           </NavItem>
+          <NavItem label="Katakana" :active="isNavActive('/katakana')" color="blue" @click="router.push('/katakana')">
+            <span class="text-xl font-black leading-none">ア</span>
+          </NavItem>
           <NavItem label="Vocaboli" :active="isNavActive('/vocab')" color="blue" @click="router.push('/vocab')">
             <BookOpen :size="22" />
-          </NavItem>
-          <NavItem label="Ripasso" :active="isNavActive('/review')" color="red" @click="router.push('/review')">
-            <Brain :size="22" />
           </NavItem>
           <!-- Cambia utente: avatar Andrea o Erica -->
           <button
