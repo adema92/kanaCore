@@ -242,7 +242,7 @@ const selectDay = (key) => {
     <!-- Card statistiche padronanza -->
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5">
-        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest">🌸 Kana Imparati</span>
+        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest">🌸 Kana</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.kanaData.filter(k => k.score >= 80).length }}
         </div>
@@ -252,10 +252,10 @@ const selectDay = (key) => {
             :style="{ width: store.kanaData.length ? `${(store.kanaData.filter(k => k.score >= 80).length / store.kanaData.length) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length }} totali</span>
+        <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length }} memorizzati</span>
       </div>
       <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5">
-        <span class="text-[11px] font-black text-violet-500 uppercase block tracking-widest">🌿 Vocaboli Imparati</span>
+        <span class="text-[11px] font-black text-violet-500 uppercase block tracking-widest">🌿 Vocaboli</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.vocabData.filter(v => v.score >= 80).length }}
         </div>
@@ -265,7 +265,7 @@ const selectDay = (key) => {
             :style="{ width: store.vocabData.length ? `${(store.vocabData.filter(v => v.score >= 80).length / store.vocabData.length) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totali</span>
+        <span class="text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} memorizzati</span>
       </div>
     </div>
 
@@ -273,15 +273,14 @@ const selectDay = (key) => {
     <div class="bg-white rounded-3xl shadow-sm border border-amber-50 p-5 flex flex-col justify-center">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <img :src="streakImage" alt="Streak giorni consecutivi" class="w-9 h-9 object-contain shrink-0" />
-          <h2 class="text-sm font-black text-slate-600 uppercase tracking-widest">Giorni consecutivi</h2>
+          <img :src="streakImage" alt="Streak giorni consecutivi" class="w-12 h-12 object-contain shrink-0" />
         </div>
+        <h2 class="text-sm font-black text-slate-600 uppercase tracking-widest text-center ">Giorni <br> consecutivi</h2>
         <div class="flex items-center gap-1">
           <span class="text-3xl font-black text-gradient-rise">{{ consecutiveDays }}</span>
           <span class="text-base font-bold text-violet-400 normal-case">gg</span>
         </div>
       </div>
-      <p class="text-[11px] text-slate-400 mt-1">Giorni di fila con almeno una risposta nel quiz</p>
     </div>
 
     <!-- Kana oggi: viola chiaro palette calda -->

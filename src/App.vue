@@ -18,6 +18,7 @@ const imagesPreloaded = ref(false)
 const PRELOAD_IMAGES = [
   '/hiragana-logo.png',
   '/katakana-logo.png',
+  '/vocaboli-logo.png',
   '/onigiri_sensei.png',
   '/avatar-andrea.png',
   '/avatar-erica.png',
@@ -294,6 +295,17 @@ watch(
   { flush: 'post' }
 )
 
+// Redirect / a /andrea o /erica quando c'è già un profilo e non si sta cambiando utente.
+watch(
+  () => [route.path, store.currentProfile, store.profileSelectOpen],
+  () => {
+    if (route.path === '/' && store.currentProfile && !store.profileSelectOpen) {
+      router.replace(store.currentProfile === 'erica' ? '/erica' : '/andrea')
+    }
+  },
+  { immediate: true }
+)
+
 // Scroll in cima alla view a ogni cambio route.
 watch(() => route.path, () => {
   scrollToTop()
@@ -337,46 +349,35 @@ onMounted(() => {
           <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none">あ</div>
           <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none">い</div>
 
-          <!-- Logo / titolo -->
-          <div class="text-center mb-10 z-10">
-            <div class="text-7xl mb-3">🎌</div>
-            <h1 class="text-3xl font-black text-slate-700 tracking-tight leading-tight">
-              Onigiri <span class="text-pink-400">Sensei</span>
-            </h1>
-            <p class="text-slate-400 text-sm font-semibold mt-1 tracking-widest uppercase">日本語 練習</p>
-            <div class="flex justify-center gap-1 mt-3 text-xl">
-              <span>🌸</span><span>🌸</span><span>🌸</span>
-            </div>
-          </div>
-
+   
           <!-- Card selezione: contenitore colorato per stacco, bottoni bianchi -->
           <div class="bg-pink-50/90 backdrop-blur-sm rounded-[2.5rem] shadow-2xl border border-pink-200/80 px-8 py-8 w-full max-w-xs z-10">
             <p class="text-center text-[11px] font-black text-pink-400 uppercase tracking-[0.3em] mb-6">
-              👤 Chi sei?
+              Seleziona il tuo profilo
             </p>
-
-            <!-- Bottone Andrea -->
-            <button
-              class="w-full mb-4 rounded-3xl border-4 border-indigo-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-indigo-200 group"
-              @click="store.selectProfile('andrea')"
-            >
-              <img src="/avatar-andrea.png" alt="Andrea" class="w-16 h-16 object-contain object-center bg-transparent group-active:scale-110 transition-transform" />
-              <span class="text-xl font-black text-indigo-600 tracking-wide">Andrea</span>
-              <span class="text-xs font-semibold text-indigo-300 uppercase tracking-widest">Il mio profilo</span>
-            </button>
 
             <!-- Bottone Erica -->
             <button
-              class="w-full rounded-3xl border-4 border-pink-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-pink-200 group"
-              @click="store.selectProfile('erica')"
+              class="w-full mb-4 rounded-3xl border-4 border-pink-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-pink-200 group"
+              @click="store.selectProfile('erica'); router.push('/erica')"
             >
               <img src="/avatar-erica.png" alt="Erica" class="w-16 h-16 object-contain object-center bg-transparent group-active:scale-110 transition-transform" />
               <span class="text-xl font-black text-pink-500 tracking-wide">Erica</span>
               <span class="text-xs font-semibold text-pink-300 uppercase tracking-widest">Il mio profilo</span>
             </button>
+
+            <!-- Bottone Andrea -->
+            <button
+              class="w-full rounded-3xl border-4 border-indigo-100 bg-white shadow-md px-6 py-6 flex flex-col items-center gap-2 active:scale-95 transition-all hover:shadow-lg hover:border-indigo-200 group"
+              @click="store.selectProfile('andrea'); router.push('/andrea')"
+            >
+              <img src="/avatar-andrea.png" alt="Andrea" class="w-16 h-16 object-contain object-center bg-transparent group-active:scale-110 transition-transform" />
+              <span class="text-xl font-black text-indigo-600 tracking-wide">Andrea</span>
+              <span class="text-xs font-semibold text-indigo-300 uppercase tracking-widest">Il mio profilo</span>
+            </button>
           </div>
 
-          <p class="text-slate-300 text-xs font-semibold mt-8 z-10">I progressi vengono salvati separatamente 🌟</p>
+          <p class="text-slate-400 text-xs font-semibold mt-8 z-10">I progressi vengono salvati separatamente 🌟</p>
         </div>
       </template>
 
@@ -1412,20 +1413,55 @@ onMounted(() => {
         class="w-full flex-1 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center"
         :class="[
           isAnyModalOpen ? 'overflow-hidden' : 'overflow-y-auto',
-          route.path === '/katakana' ? 'bg-white' : 'bg-[#fff0f5]'
+          route.path === '/hiragana'
+            ? 'bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 relative'
+            : route.path === '/katakana'
+              ? 'bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 relative'
+              : route.path === '/vocab'
+                ? 'bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 relative'
+                : route.path === '/' || route.path === '/andrea' || route.path === '/erica'
+                  ? 'bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50'
+                  : 'bg-[#fff0f5]'
         ]"
       >
-        <div class="w-full max-w-2xl mx-auto flex flex-col items-center">
+        <!-- Sfondo animato Hiragana (come selezione utente) -->
+        <div v-if="route.path === '/hiragana'" class="absolute inset-0 overflow-hidden pointer-events-none">
+          <div class="absolute top-8 left-6 text-6xl opacity-10 select-none animate-spin" style="animation-duration:18s">🌸</div>
+          <div class="absolute top-20 right-4 text-5xl opacity-10 select-none animate-spin" style="animation-duration:22s;animation-direction:reverse">✨</div>
+          <div class="absolute bottom-24 left-8 text-5xl opacity-10 select-none animate-bounce" style="animation-duration:3s">🌺</div>
+          <div class="absolute bottom-16 right-10 text-4xl opacity-10 select-none animate-bounce" style="animation-duration:4s">🎋</div>
+          <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none">あ</div>
+          <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none">い</div>
+        </div>
+        <!-- Sfondo animato Katakana (tema blu) -->
+        <div v-if="route.path === '/katakana'" class="absolute inset-0 overflow-hidden pointer-events-none">
+          <div class="absolute top-8 left-6 text-6xl opacity-10 select-none animate-spin text-blue-400" style="animation-duration:18s">❄️</div>
+          <div class="absolute top-20 right-4 text-5xl opacity-10 select-none animate-spin text-indigo-300" style="animation-duration:22s;animation-direction:reverse">✨</div>
+          <div class="absolute bottom-24 left-8 text-5xl opacity-10 select-none animate-bounce text-sky-400" style="animation-duration:3s">🌊</div>
+          <div class="absolute bottom-16 right-10 text-4xl opacity-10 select-none animate-bounce text-blue-300" style="animation-duration:4s">💠</div>
+          <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none text-blue-200">ア</div>
+          <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none text-indigo-200">イ</div>
+        </div>
+        <!-- Sfondo animato Vocaboli (tema giallo/ambra) -->
+        <div v-if="route.path === '/vocab'" class="absolute inset-0 overflow-hidden pointer-events-none">
+          <div class="absolute top-8 left-6 text-6xl opacity-10 select-none animate-spin text-amber-400" style="animation-duration:18s">📗</div>
+          <div class="absolute top-20 right-4 text-5xl opacity-10 select-none animate-spin text-yellow-400" style="animation-duration:22s;animation-direction:reverse">✨</div>
+          <div class="absolute bottom-24 left-8 text-5xl opacity-10 select-none animate-bounce text-orange-300" style="animation-duration:3s">📘</div>
+          <div class="absolute bottom-16 right-10 text-4xl opacity-10 select-none animate-bounce text-amber-300" style="animation-duration:4s">📙</div>
+          <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none text-amber-200">あ</div>
+          <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none text-orange-200">ん</div>
+        </div>
+        <div class="w-full max-w-2xl mx-auto flex flex-col items-center relative z-10">
           <RouterView />
         </div>
       </main>
 
       <!-- ===== BARRA NAVIGAZIONE BOTTOM ===== -->
-      <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-pink-50 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)]"
-        style="padding-bottom: max(env(safe-area-inset-bottom), 0px);"
+      <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)] pt-1 pb-1"
+        style="padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);"
       >
         <div class="w-full max-w-lg mx-auto flex justify-around px-2 h-16 items-center">
-          <NavItem label="Home" :active="isNavActive('/')" color="indigo" @click="router.push('/')">
+          <NavItem label="Home" :active="route.path === '/andrea' || route.path === '/erica'" color="indigo" @click="router.push(store.currentProfile === 'erica' ? '/erica' : '/andrea')">
             <BarChart2 :size="22" />
           </NavItem>
           <NavItem label="Hiragana" :active="isNavActive('/hiragana')" color="pink" @click="router.push('/hiragana')">
@@ -1441,7 +1477,7 @@ onMounted(() => {
           <button
             class="flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 text-slate-400 active:scale-95 group"
             title="Cambia utente"
-            @click="store.switchProfile()"
+            @click="store.switchProfile(); router.push('/')"
           >
             <img
               :src="store.currentProfile === 'erica' ? '/avatar-erica.png' : '/avatar-andrea.png'"

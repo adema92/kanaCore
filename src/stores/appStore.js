@@ -950,6 +950,13 @@ export const useAppStore = defineStore('app', () => {
     _loadProfileData()
   }
 
+  function setProfileFromRoute(name) {
+    const normalized = name.toLowerCase()
+    currentProfile.value = normalized
+    localStorage.setItem('hiragana_profile', normalized)
+    _loadProfileData()
+  }
+
   function switchProfile() {
     if (_unsubSnapshot) { _unsubSnapshot(); _unsubSnapshot = null }
     profileSelectOpen.value = true
@@ -1002,7 +1009,7 @@ export const useAppStore = defineStore('app', () => {
     handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetKatakanaScore, resetVocabScore,
-    selectProfile, switchProfile,
+    selectProfile, setProfileFromRoute, switchProfile,
     init,
   }
 })

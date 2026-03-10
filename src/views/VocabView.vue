@@ -47,7 +47,11 @@ function catStats(words) {
     <!-- Header Vocabolario -->
     <div class="vocab-header p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden">
       <div class="absolute -top-3 -right-3 opacity-10 text-[80px] leading-none">📗</div>
-      <div class="text-4xl mb-1">📗</div>
+      <img
+        src="/vocaboli-logo.png"
+        alt="Vocabolario"
+        class="mx-auto object-contain drop-shadow-sm w-[170px] h-[170px]"
+      />
       <h1 class="text-2xl font-black mb-0.5 uppercase tracking-tight">Vocabolario</h1>
       <p class="text-white/90 text-xs font-semibold mb-5 opacity-90 uppercase tracking-widest">
         {{ store.vocabData.length }} parole
@@ -137,7 +141,7 @@ function catStats(words) {
 
 <style scoped>
 .vocab-view {
-  background: var(--vocab-gradient-soft);
+  background: transparent;
   min-height: 100%;
 }
 
