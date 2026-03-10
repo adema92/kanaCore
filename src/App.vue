@@ -607,13 +607,13 @@ onMounted(() => {
             <!-- Preset rapidi: selezione cumulativa (toggle) -->
             <div>
               <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
-              <div class="flex flex-wrap gap-2 mb-4">
+              <div class="flex flex-wrap gap-2 mb-4 items-center justify-center">
                 <button
                   v-for="p in hiraganaPresets"
                   :key="p.id"
                   type="button"
                   :class="[
-                    'px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    'w-[4.25rem] min-w-[4.25rem] px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
                     p.kanaIds.every(id => store.selectedKanaIds.includes(id))
                       ? 'bg-pink-400 border-pink-400 text-white'
                       : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
@@ -627,75 +627,8 @@ onMounted(() => {
                       store.selectedKanaIds = [...new Set([...store.selectedKanaIds, ...ids])]
                   }"
                 >{{ p.name }}</button>
-                <div
-                  v-for="p in store.kanaPresets"
-                  :key="p.id"
-                  class="flex items-center bg-pink-50 border-2 border-pink-100 rounded-xl overflow-hidden"
-                >
-                  <button
-                    class="px-4 py-2.5 text-pink-600 font-black uppercase text-xs active:bg-pink-100"
-                    @click="store.selectedKanaIds = [...p.kanaIds]"
-                  >{{ p.name }}</button>
-                  <button
-                    class="px-3 text-pink-300 border-l-2 border-pink-100 h-full py-2.5"
-                    @click="() => {
-                      store.kanaPresets = store.kanaPresets.filter(x => x.id !== p.id)
-                      store.saveNow().catch(() => {})
-                    }"
-                  ><X :size="13" /></button>
-                </div>
               </div>
               <div class="border-b border-slate-200 my-5" aria-hidden="true"></div>
-              <!-- Nuovo preset: input + Salva + icona svuota + icona seleziona tutto -->
-              <div class="flex gap-1.5 items-center">
-                <input
-                  type="text"
-                  placeholder="Nuovo preset..."
-                  :value="store.newPresetName"
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  inputmode="text"
-                  enterkeyhint="done"
-                  class="flex-1 border-2 border-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-200 bg-slate-50 min-w-0"
-                  @input="store.newPresetName = $event.target.value"
-                />
-                <button
-                  :disabled="!store.newPresetName.trim()"
-                  class="bg-pink-400 text-white px-4 py-2.5 rounded-xl font-black uppercase text-xs tracking-widest active:scale-95 active:bg-pink-500 transition-all shrink-0 disabled:opacity-40 disabled:pointer-events-none"
-                  @click="() => {
-                    if (!store.newPresetName.trim() || store.selectedKanaIds.length === 0) return
-                    store.kanaPresets = [...store.kanaPresets, { id: 'p' + Date.now(), name: store.newPresetName, kanaIds: [...store.selectedKanaIds] }]
-                    store.saveNow().catch(() => {})
-                    store.newPresetName = ''
-                  }"
-                >Salva</button>
-                <!-- Seleziona tutto: rosa quando tutti sono selezionati -->
-                <button
-                  type="button"
-                  title="Seleziona tutti"
-                  :class="[
-                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
-                    store.selectedKanaIds.length === store.kanaData.length
-                      ? 'bg-pink-400 border-pink-400 text-white'
-                      : 'bg-pink-50 text-pink-500 border-pink-100 hover:bg-pink-100'
-                  ]"
-                  @click="store.selectedKanaIds = store.kanaData.map(k => k.id)"
-                ><CheckCheck :size="20" :stroke-width="2.5" /></button>
-                <!-- Svuota selezione: rosa quando nessuno è selezionato -->
-                <button
-                  type="button"
-                  title="Svuota selezione"
-                  :class="[
-                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
-                    store.selectedKanaIds.length === 0
-                      ? 'bg-pink-400 border-pink-400 text-white'
-                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
-                  ]"
-                  @click="store.selectedKanaIds = []"
-                ><Square :size="20" :stroke-width="2.5" /></button>
-              </div>
             </div>
 
             <!-- Griglia kana selezionabili (5 colonne = una riga per tipologia: vocali, ka, ga, sa, …) -->
@@ -722,17 +655,28 @@ onMounted(() => {
           <div class="px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-200 flex items-center gap-3 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
             <button
               :disabled="store.selectedKanaIds.length < 4"
-              class="basis-[80%] bg-pink-400 text-white font-black py-4 h-full rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
+              class="flex-1 bg-pink-400 text-white font-black py-4 h-14 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
               @click="store.proceedFromSetup()"
-            >Continua →</button>
+            >Continua</button>
             <button
               type="button"
-              class="basis-[20%] py-4 px-3  h-full rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center"
+              class="p-2.5 py-4 px-3 h-14 rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center shrink-0"
               title="Ripeti ultimo quiz kana"
               @click="store.restartLastKanaQuiz()"
             >
               <span class="text-2xl leading-none">↻</span>
             </button>
+            <button
+              type="button"
+              title="Seleziona tutti"
+              :class="[
+                'p-2.5 rounded-2xl border-2 active:scale-95 transition-all shrink-0 h-14',
+                store.selectedKanaIds.length === store.kanaData.length
+                  ? 'bg-pink-400 border-pink-400 text-white'
+                  : 'bg-pink-50 text-pink-500 border-pink-100 hover:bg-pink-100'
+              ]"
+              @click="store.selectedKanaIds.length === store.kanaData.length ? store.selectedKanaIds = [] : store.selectedKanaIds = store.kanaData.map(k => k.id)"
+            ><CheckCheck :size="22" :stroke-width="2.5" /></button>
           </div>
         </div>
       </div>
@@ -764,13 +708,13 @@ onMounted(() => {
             <!-- Preset rapidi Katakana + selezioni veloci -->
             <div>
               <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
-              <div class="flex flex-wrap gap-2 mb-4">
+              <div class="flex flex-wrap gap-2 mb-4 items-center justify-center">
                 <button
                   v-for="p in katakanaPresets"
                   :key="p.id"
                   type="button"
                   :class="[
-                    'px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    'w-[4.25rem] min-w-[4.25rem] px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
                     p.kanaIds.every(id => store.selectedKatakanaIds.includes(id))
                       ? 'text-white'
                       : 'bg-blue-50 text-blue-600 border-blue-100 active:bg-blue-100'
@@ -789,52 +733,6 @@ onMounted(() => {
                 >{{ p.name }}</button>
               </div>
               <div class="border-b border-slate-200 my-6" aria-hidden="true"></div>
-              <div class="flex gap-1.5 items-center">
-                <input
-                  type="text"
-                  placeholder="Nuovo preset..."
-                  :value="store.newKatakanaPresetName"
-                  autocomplete="off"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  spellcheck="false"
-                  inputmode="text"
-                  enterkeyhint="done"
-                  class="flex-1 border-2 border-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none bg-slate-50 min-w-0"
-                  style="outline-color: #63a8eb;"
-                  @input="store.newKatakanaPresetName = $event.target.value"
-                />
-                <!-- Seleziona tutto -->
-                <button
-                  type="button"
-                  title="Seleziona tutti"
-                  :class="[
-                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
-                    store.selectedKatakanaIds.length === store.katakanaData.length
-                      ? 'text-white'
-                      : 'bg-slate-50 text-slate-400 border-slate-200'
-                  ]"
-                  :style="store.selectedKatakanaIds.length === store.katakanaData.length
-                    ? 'background:#63a8eb; border-color:#63a8eb;'
-                    : ''"
-                  @click="store.selectedKatakanaIds = store.katakanaData.map(k => k.id)"
-                ><CheckCheck :size="20" :stroke-width="2.5" /></button>
-                <!-- Svuota -->
-                <button
-                  type="button"
-                  title="Svuota selezione"
-                  :class="[
-                    'p-2.5 rounded-xl border-2 active:scale-95 transition-all shrink-0',
-                    store.selectedKatakanaIds.length === 0
-                      ? 'text-white'
-                      : 'bg-slate-50 text-slate-400 border-slate-200'
-                  ]"
-                  :style="store.selectedKatakanaIds.length === 0
-                    ? 'background:#63a8eb; border-color:#63a8eb;'
-                    : ''"
-                  @click="store.selectedKatakanaIds = []"
-                ><Square :size="20" :stroke-width="2.5" /></button>
-              </div>
             </div>
 
             <!-- Griglia katakana selezionabili -->
@@ -864,18 +762,32 @@ onMounted(() => {
           <div class="px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-200 flex items-center gap-3 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
             <button
               :disabled="store.selectedKatakanaIds.length < 4"
-              class="basis-[80%] text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
+              class="flex-1 text-white font-black py-5 h-14 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed shrink-0 min-w-0"
               style="background:#63a8eb;"
               @click="store.proceedFromKatakanaSetup()"
-            >Continua →</button>
+            >Continua</button>
             <button
               type="button"
-              class="basis-[20%] py-5 px-3 rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center"
+              class="p-2.5 py-5 px-3 h-14 rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center shrink-0"
               title="Ripeti ultimo quiz katakana"
               @click="store.restartLastKatakanaQuiz()"
             >
               <span class="text-2xl leading-none">↻</span>
             </button>
+            <button
+              type="button"
+              title="Seleziona tutti"
+              :class="[
+                'p-2.5 rounded-2xl border-2 active:scale-95 transition-all shrink-0 h-14',
+                store.selectedKatakanaIds.length === store.katakanaData.length
+                  ? 'text-white'
+                  : 'bg-slate-50 text-slate-400 border-slate-200'
+              ]"
+              :style="store.selectedKatakanaIds.length === store.katakanaData.length
+                ? 'background:#63a8eb; border-color:#63a8eb;'
+                : ''"
+              @click="store.selectedKatakanaIds.length === store.katakanaData.length ? store.selectedKatakanaIds = [] : store.selectedKatakanaIds = store.katakanaData.map(k => k.id)"
+            ><CheckCheck :size="22" :stroke-width="2.5" /></button>
           </div>
         </div>
       </div>

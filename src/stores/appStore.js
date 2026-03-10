@@ -226,7 +226,6 @@ export const useAppStore = defineStore('app', () => {
       katakanaData: katakanaData.value.map(k => ({ ...k })),
       vocabData: vocabData.value.map(v => ({ ...v })),
       dailyStats: { ...dailyStats.value },
-      kanaPresets: kanaPresets.value.map(p => ({ ...p })),
       _savedAt: new Date().toISOString(),
       _profile: currentProfile.value,
     }
@@ -664,7 +663,6 @@ export const useAppStore = defineStore('app', () => {
         return
       }
       selectedKanaIds.value = []
-      newPresetName.value = ''
       quizSetupModalOpen.value = true
     } else if (type === 'katakana') {
       if (katakanaData.value.length < 4) {
@@ -672,7 +670,6 @@ export const useAppStore = defineStore('app', () => {
         return
       }
       selectedKatakanaIds.value = []
-      newKatakanaPresetName.value = ''
       katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
       const randomWords = vocabData.value.filter(v => v.category === 'Random')
@@ -858,7 +855,6 @@ export const useAppStore = defineStore('app', () => {
       }
       dailyStats.value = normalized
     }
-    if (Array.isArray(raw.kanaPresets)) kanaPresets.value = raw.kanaPresets.map(p => ({ ...p }))
   }
 
   async function _loadProfileData() {
@@ -926,7 +922,7 @@ export const useAppStore = defineStore('app', () => {
       const oldSnap = await getDoc(oldRef)
       if (oldSnap.exists()) {
         const d = oldSnap.data()
-        const payload = typeof d.data === 'string' ? JSON.parse(d.data) : { kanaData: d.kanaData, vocabData: d.vocabData, dailyStats: d.dailyStats, kanaPresets: d.kanaPresets }
+        const payload = typeof d.data === 'string' ? JSON.parse(d.data) : { kanaData: d.kanaData, vocabData: d.vocabData, dailyStats: d.dailyStats }
         _applyData(payload)
         await _saveViaRestApi(payload)
         console.log('✅ Migrazione completata →', currentProfile.value)
@@ -991,12 +987,12 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    kanaData, katakanaData, vocabData, dailyStats, kanaPresets, user, isCloudLoaded, forceLoadingScreen,
+    kanaData, katakanaData, vocabData, dailyStats, user, isCloudLoaded, forceLoadingScreen,
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
     quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
-    selectedKanaIds, selectedKatakanaIds, newPresetName, newKatakanaPresetName, quizPendingItems,
+    selectedKanaIds, selectedKatakanaIds, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,

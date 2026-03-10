@@ -13,5 +13,7 @@
   { "id": "v9a", "word": "おつかれさま", "romaji": "Otsukaresama", "meaning": "Arrivederci, hai fatto un buon lavoro", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "v9b", "word": "おつかれさまでした", "romaji": "Otsukaresama deshita", "meaning": "Arrivederci, hai fatto un buon lavoro", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "v10a", "word": "おさきに", "romaji": "Osakini", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "v10b", "word": "おさきにしつれいします", "romaji": "Osakini shitsurei shimasu", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "v10b", "word": "おさきにしつれいします", "romaji": "Osakini shitsurei shimasu", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v11", "word": "またあした", "romaji": "Mata ashita", "meaning": "A domani", "category": "Saluti", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v12", "word": "さようなら", "romaji": "Sayonara", "meaning": "Arrivederci", "category": "Saluti", "tone": "Neutro", "personalNote": "Non ci si vedrà per molto o non si sa quando ci si rivedrà", "score": 0, "attempts": 0 }
 ]

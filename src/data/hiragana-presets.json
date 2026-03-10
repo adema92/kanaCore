@@ -1,8 +1,15 @@
 [
-  { "id": "p1",  "name": "Vocali", "kanaIds": ["k1", "k2", "k3", "k4", "k5"] },
+  { "id": "p1",  "name": "A", "kanaIds": ["k1", "k2", "k3", "k4", "k5"] },
   { "id": "p2",  "name": "KA",     "kanaIds": ["k6", "k7", "k8", "k9", "k10"] },
   { "id": "p3",  "name": "GA",     "kanaIds": ["k11", "k12", "k13", "k14", "k15"] },
   { "id": "p4",  "name": "SA",     "kanaIds": ["k16", "k17", "k18", "k19", "k20"] },
-  { "id": "p5",  "name": "ZA",     "kanaIds": ["k21", "k22", "k23", "k24", "k25"] }
+  { "id": "p5",  "name": "ZA",     "kanaIds": ["k21", "k22", "k23", "k24", "k25"] },
+  { "id": "p6",  "name": "TA",     "kanaIds": ["k26", "k27", "k28", "k29", "k30"] },
+  { "id": "p7",  "name": "DA",     "kanaIds": ["k31", "k32", "k33", "k34", "k35"] },
+  { "id": "p8",  "name": "NA",     "kanaIds": ["k36", "k37", "k38", "k39", "k40"] },
+  { "id": "p9",  "name": "HA",     "kanaIds": ["k41", "k42", "k43", "k44", "k45"] },
+  { "id": "p10", "name": "BA",     "kanaIds": ["k46", "k47", "k48", "k49", "k50"] },
+  { "id": "p11", "name": "PA",     "kanaIds": ["k51", "k52", "k53", "k54", "k55"] },
+  { "id": "p12", "name": "MA",     "kanaIds": ["k56", "k57", "k58", "k59", "k60"] }
 ]
 

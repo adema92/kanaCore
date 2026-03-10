@@ -45,5 +45,22 @@
   { "id": "v55", "word": "かぞく", "romaji": "Kazoku", "meaning": "Famiglia", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "v56", "word": "じこ", "romaji": "Jiko", "meaning": "Incidente", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "v57", "word": "かず", "romaji": "Kazu", "meaning": "Numero", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "v58", "word": "しずか", "romaji": "Shizuka", "meaning": "Silenzioso", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "v58", "word": "しずか", "romaji": "Shizuka", "meaning": "Silenzioso", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v59", "word": "たこ", "romaji": "Tako", "meaning": "Polpo", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v60", "word": "うち", "romaji": "Uchi", "meaning": "Casa", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v61", "word": "つき", "romaji": "Tsuki", "meaning": "Luna", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v62", "word": "おと", "romaji": "Oto", "meaning": "Rumore", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v63", "word": "いと", "romaji": "Ito", "meaning": "Filo", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v64", "word": "ちかてつ", "romaji": "Chikatetsu", "meaning": "Metro", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v65", "word": "たいこ", "romaji": "Taiko", "meaning": "Tamburo", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v66", "word": "くち", "romaji": "Kuchi", "meaning": "Bocca", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v67", "word": "かたち", "romaji": "Katachi", "meaning": "Forma", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v68", "word": "つくえ", "romaji": "Tsukue", "meaning": "Scrivania", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v69", "word": "くつ", "romaji": "Kutsu", "meaning": "Scarpa", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v70", "word": "つづく", "romaji": "Tsuzuku", "meaning": "Prosegue", "category": "Random", "tone": "Neutro", "personalNote": "Negli anime", "score": 0, "attempts": 0 },
+  { "id": "v71", "word": "えだ", "romaji": "Eda", "meaning": "Ramo", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v72", "word": "おでこ", "romaji": "Odeko", "meaning": "Fronte", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v73", "word": "だいがく", "romaji": "Daigaku", "meaning": "Università", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v74", "word": "うで", "romaji": "Ude", "meaning": "Braccio", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "v75", "word": "どく", "romaji": "Doku", "meaning": "Veleno", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
 ]

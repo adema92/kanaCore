@@ -1,5 +1,15 @@
 [
-  { "id": "ktp1", "name": "Vocali", "kanaIds": ["kt1", "kt2", "kt3", "kt4", "kt5"] },
-  { "id": "ktp2", "name": "KA",     "kanaIds": ["kt6", "kt7", "kt8", "kt9", "kt10"] }
+  { "id": "ktp1", "name": "A", "kanaIds": ["kt1", "kt2", "kt3", "kt4", "kt5"] },
+  { "id": "ktp2", "name": "KA",     "kanaIds": ["kt6", "kt7", "kt8", "kt9", "kt10"] },
+  { "id": "ktp3", "name": "GA",     "kanaIds": ["kt11", "kt12", "kt13", "kt14", "kt15"] },
+  { "id": "ktp4", "name": "SA",     "kanaIds": ["kt16", "kt17", "kt18", "kt19", "kt20"] },
+  { "id": "ktp5", "name": "ZA",     "kanaIds": ["kt21", "kt22", "kt23", "kt24", "kt25"] },
+  { "id": "ktp6", "name": "TA",     "kanaIds": ["kt26", "kt27", "kt28", "kt29", "kt30"] },
+  { "id": "ktp7", "name": "DA",     "kanaIds": ["kt31", "kt32", "kt33", "kt34", "kt35"] },
+  { "id": "ktp8", "name": "NA",     "kanaIds": ["kt36", "kt37", "kt38", "kt39", "kt40"] },
+  { "id": "ktp9", "name": "HA",     "kanaIds": ["kt41", "kt42", "kt43", "kt44", "kt45"] },
+  { "id": "ktp10", "name": "BA",     "kanaIds": ["kt46", "kt47", "kt48", "kt49", "kt50"] },
+  { "id": "ktp11", "name": "PA",     "kanaIds": ["kt51", "kt52", "kt53", "kt54", "kt55"] },
+  { "id": "ktp12", "name": "MA",     "kanaIds": ["kt56", "kt57", "kt58", "kt59", "kt60"] }
 ]
 
