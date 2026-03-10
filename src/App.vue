@@ -105,7 +105,7 @@ const currentNavPath = computed(() =>
 
 function navVibrate() {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(8)
+    navigator.vibrate(14)
   }
 }
 
