@@ -99,6 +99,8 @@ export const useAppStore = defineStore('app', () => {
   const kanaPresets = ref([])
   const user = ref(null)
   const isCloudLoaded = ref(false)
+  // Test: set to true to show loading screen (e.g. in console: window.__store?.forceLoadingScreen = true)
+  const forceLoadingScreen = ref(false)
 
   const _rawProfile = localStorage.getItem('hiragana_profile')
   const currentProfile = ref(_rawProfile ? _rawProfile.toLowerCase() : null)
@@ -981,7 +983,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    kanaData, katakanaData, vocabData, dailyStats, kanaPresets, user, isCloudLoaded,
+    kanaData, katakanaData, vocabData, dailyStats, kanaPresets, user, isCloudLoaded, forceLoadingScreen,
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,

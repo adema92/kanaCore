@@ -11,7 +11,7 @@ const store = useAppStore()
     <!-- Header Hiragana -->
     <div
       class="p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden"
-      style="background: #fad4e8;"
+      style="background: rgb(235 188 213);"
     >
       <div class="absolute -top-2 -right-2 opacity-10 text-[80px] leading-none">🌸</div>
       <img

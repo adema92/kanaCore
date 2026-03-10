@@ -61,6 +61,20 @@
     animation: gradient-rise 2.5s linear infinite;
   }
 
+  /* Gradiente bianco-rosa da sinistra a destra per scritta caricamento. */
+  @keyframes gradient-shimmer {
+    0% { background-position: 200% 50%; }
+    100% { background-position: -200% 50%; }
+  }
+  .text-loading-gradient {
+    background: linear-gradient(90deg, #dc7a7a 0%, #e69ca8 25%, #cb5e7f7d 50%, #bb9999 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradient-shimmer 2s linear infinite;
+  }
+
   /* Palette sezione vocabolario (#ffc99e e gradienti). */
   :root {
     --vocab-base: #ffc99e;

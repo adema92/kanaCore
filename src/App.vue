@@ -13,6 +13,30 @@ const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
+const imagesPreloaded = ref(false)
+
+const PRELOAD_IMAGES = [
+  '/hiragana-logo.png',
+  '/katakana-logo.png',
+  '/onigiri_sensei.png',
+  '/avatar-andrea.png',
+  '/avatar-erica.png',
+  ...Array.from({ length: 23 }, (_, i) => `/${i + 1}.png`),
+]
+
+const preloadImages = () =>
+  Promise.all(
+    PRELOAD_IMAGES.map(
+      (src) =>
+        new Promise((resolve) => {
+          const img = new Image()
+          img.onload = resolve
+          img.onerror = resolve
+          img.src = src
+        })
+    )
+  )
+
 const isKanaQuiz = computed(() => store.quizType === 'kana' || store.quizType === 'katakana')
 
 const currentQuestion = computed(() =>
@@ -277,6 +301,9 @@ watch(() => route.path, () => {
 
 onMounted(() => {
   store.init()
+  preloadImages().then(() => {
+    imagesPreloaded.value = true
+  })
 })
 </script>
 
@@ -287,11 +314,11 @@ onMounted(() => {
     :class="{ 'overflow-y-hidden': isAnyModalOpen }"
   >
 
-    <!-- LOADING SCREEN -->
-    <template v-if="!store.isCloudLoaded">
-      <div class="min-h-screen bg-[#fff0f5] flex items-center justify-center flex-col gap-5 px-6">
-        <div class="text-6xl animate-bounce">🌸</div>
-        <p class="text-pink-400 font-black text-base uppercase tracking-widest">
+    <!-- LOADING SCREEN (cloud + immagini) -->
+    <template v-if="!store.isCloudLoaded || !imagesPreloaded || store.forceLoadingScreen">
+      <div class="min-h-screen bg-[#fff0f5] flex items-center justify-center flex-col gap-2 px-6">
+        <img src="/12.png" alt="" class="w-24 h-24 object-contain animate-bounce" />
+        <p class="text-loading-gradient font-black text-base uppercase tracking-widest text-center">
           Caricamento...
         </p>
       </div>
@@ -1382,8 +1409,11 @@ onMounted(() => {
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
       <main
         ref="mainScrollRef"
-        class="w-full flex-1 bg-[#fff0f5] pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center"
-        :class="isAnyModalOpen ? 'overflow-hidden' : 'overflow-y-auto'"
+        class="w-full flex-1 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center"
+        :class="[
+          isAnyModalOpen ? 'overflow-hidden' : 'overflow-y-auto',
+          route.path === '/katakana' ? 'bg-white' : 'bg-[#fff0f5]'
+        ]"
       >
         <div class="w-full max-w-2xl mx-auto flex flex-col items-center">
           <RouterView />
