@@ -1247,13 +1247,13 @@ onMounted(() => {
             <!-- Tastiera + Max domande (solo per Kana → Romaji) -->
             <div v-if="store.quizType === 'vocab-kana-to-romaji'" class="mb-8">
               <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
-              <label class="block text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Domanda</label>
+              <label class="block text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Lingua Domanda</label>
               <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-6">
                 <button
                   type="button"
                   :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.vocabKanaToRomajiInputLang === 'ja' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                   @click="store.vocabKanaToRomajiInputLang = 'ja'"
-                >ろまじ</button>
+                >ひらがな</button>
                 <button
                   type="button"
                   :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.vocabKanaToRomajiInputLang === 'it' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
