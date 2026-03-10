@@ -392,13 +392,24 @@ export const useAppStore = defineStore('app', () => {
 
   function endQuiz(askToSave = false) {
     if (askToSave) {
+      quizSavedToast.value = 'saving'
       _clearQuizState()
+      const minSavingMs = 600
+      const savingStart = Date.now()
       saveNow().then(() => {
-        quizSavedToast.value = 'success'
-        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        const elapsed = Date.now() - savingStart
+        const wait = Math.max(0, minSavingMs - elapsed)
+        setTimeout(() => {
+          quizSavedToast.value = 'success'
+          setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        }, wait)
       }).catch(() => {
-        quizSavedToast.value = 'error'
-        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        const elapsed = Date.now() - savingStart
+        const wait = Math.max(0, minSavingMs - elapsed)
+        setTimeout(() => {
+          quizSavedToast.value = 'error'
+          setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        }, wait)
       })
     } else {
       _clearQuizState()

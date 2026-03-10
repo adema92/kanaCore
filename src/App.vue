@@ -523,11 +523,22 @@ onMounted(() => {
 
     <!-- LOADING SCREEN (cloud + immagini) -->
     <template v-if="!store.isCloudLoaded || !imagesPreloaded || store.forceLoadingScreen">
-      <div class="min-h-screen bg-[#fff0f5] flex items-center justify-center flex-col gap-2 px-6">
-        <img src="/12.png" alt="" class="w-24 h-24 object-contain animate-bounce" />
-        <p class="text-loading-gradient font-black text-base uppercase tracking-widest text-center">
-          Caricamento...
-        </p>
+      <div class="h-[100dvh] min-h-screen bg-[#fff0f5] flex items-center justify-center px-6">
+        <div class="flex flex-col items-center gap-2 shrink-0" style="height: 130px;">
+          <div class="shrink-0 flex items-center justify-center" style="width: 96px; height: 96px;">
+            <img
+              src="/12.png"
+              alt=""
+              width="96"
+              height="96"
+              class="max-w-full max-h-full w-full h-full object-contain animate-bounce"
+              style="min-width: 96px; min-height: 96px; display: block;"
+            />
+          </div>
+          <p class="text-loading-gradient font-black text-base uppercase tracking-widest text-center w-full leading-6 shrink-0" style="height: 24px; line-height: 24px;">
+            Caricamento...
+          </p>
+        </div>
       </div>
     </template>
 
@@ -579,22 +590,28 @@ onMounted(() => {
       <!-- ===== APP PRINCIPALE ===== -->
       <template v-else>
 
-      <!-- Toast Salvato / Non salvato in alto a sinistra dopo fine quiz -->
+      <!-- Toast Salvato / Non salvato: durante save icona success ruota; a fine save si ferma, si ingrandisce una volta (o cambia in fail e si ingrandisce), poi fade out -->
       <Transition name="toast">
         <div
           v-if="store.quizSavedToast"
-          class="fixed top-5 right-5 z-[400] pt-[max(0.5rem,env(safe-area-inset-top))] pl-[max(0.5rem,env(safe-area-inset-left))] pointer-events-none "
+          class="fixed top-5 right-5 z-[400] pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pl-[max(0.5rem,env(safe-area-inset-left))] pointer-events-none"
         >
+          <!-- key forza re-mount quando passa saving -> success/error così l'animazione scale parte -->
           <div
-            :style="store.quizSavedToast === 'success' ? { borderColor: 'rgb(6 150 104)' } : { borderColor: 'rgb(244 63 94)' }"
-            class="flex items-center gap-2 bg-transparent px-3 py-2 rounded-xl shadow-lg text-sm font-black uppercase tracking-wide border-2"
+            :key="store.quizSavedToast"
+            :class="[
+              'flex items-center gap-2 bg-transparent px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wide min-w-[2.5rem] min-h-[2.5rem]',
+              (store.quizSavedToast === 'success' || store.quizSavedToast === 'error') && 'toast-result'
+            ]"
           >
-            <img
-              :src="store.quizSavedToast === 'success' ? '/onigiri-saved.png' : '/onigiri-unsaved.png'"
-              :alt="store.quizSavedToast === 'success' ? 'Salvato' : 'Non salvato'"
-              class="w-8 h-8 object-contain shrink-0"
-            />
-            <span v-if="store.quizSavedToast === 'error'">Non salvato</span>
+            <div :class="['w-8 h-8 flex items-center justify-center shrink-0', store.quizSavedToast === 'saving' && 'toast-spin']">
+              <img
+                :src="store.quizSavedToast === 'error' ? '/onigiri-unsaved.png' : '/onigiri-saved.png'"
+                :alt="store.quizSavedToast === 'saving' ? 'Salvataggio' : store.quizSavedToast === 'success' ? 'Salvato' : 'Non salvato'"
+                class="w-8 h-8 object-contain block"
+              />
+            </div>
+            <span v-if="store.quizSavedToast === 'error'" class="min-w-[4rem]">Non salvato</span>
           </div>
         </div>
       </Transition>
@@ -1500,17 +1517,6 @@ onMounted(() => {
         </svg>
       </button>
 
-      <!-- ===== OVERLAY SPINNER durante salvataggio ===== -->
-      <div
-        v-if="store.isSyncing"
-        class="fixed inset-0 z-[250] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center pointer-events-auto"
-      >
-        <svg class="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-        </svg>
-      </div>
-
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
       <main
         ref="mainScrollRef"
@@ -1794,5 +1800,23 @@ onMounted(() => {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
+}
+
+/* Rotazione icona durante salvataggio */
+@keyframes toast-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.toast-spin {
+  animation: toast-spin 0.8s linear infinite;
+}
+
+/* Ingrandimento una volta quando success/error (elemento ha :key quindi viene rimontato e l'animazione parte) */
+@keyframes toast-pop {
+  from { transform: scale(1); }
+  to { transform: scale(1.45); }
+}
+.toast-result {
+  animation: toast-pop 0.4s ease-out forwards;
 }
 </style>
