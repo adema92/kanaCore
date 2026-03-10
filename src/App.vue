@@ -256,7 +256,9 @@ const quizModeLabel = computed(() => {
 const questionText = computed(() => {
   if (!currentQuestion.value) return ''
   if (store.quizType === 'vocab-kana-read' || store.quizType === 'vocab-romaji-input') return currentQuestion.value.meaning
-  if (store.quizType === 'vocab-kana-to-romaji') return currentQuestion.value.word?.split('/')[0] ?? ''
+  if (store.quizType === 'vocab-kana-to-romaji') return store.vocabKanaToRomajiInputLang === 'it'
+    ? (currentQuestion.value.romaji?.split('/')[0] ?? '')
+    : (currentQuestion.value.word?.split('/')[0] ?? '')
   if (store.quizType === 'vocab-romaji') return currentQuestion.value.meaning
   if (store.quizDirection === 'ja-to-romaji')
     return isKanaQuiz.value ? currentQuestion.value.character : currentQuestion.value.word
@@ -294,8 +296,11 @@ const finalInputClass = computed(() => {
       : (q?.word?.split('/')[0]?.trim()?.toLowerCase() || '')
     correct = userText === correctText
   } else if (store.quizType === 'vocab-romaji' || store.quizType === 'vocab-kana-to-romaji') {
-    correctText = q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''
-    correct = userText === correctText
+    const isKanaInput = store.quizType === 'vocab-kana-to-romaji' && store.vocabKanaToRomajiInputLang === 'it'
+    correctText = isKanaInput
+      ? (q?.word?.split('/')[0]?.trim().replace(/\s/g, '') || '')
+      : (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || '')
+    correct = isKanaInput ? (userText.replace(/\s/g, '') === correctText) : (userText === correctText)
   } else {
     correctText = q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''
     correct = userText === correctText
@@ -976,15 +981,19 @@ onMounted(() => {
               store.quizType === 'vocab-kana-to-romaji' ? 'px-5 py-4' : 'px-6 py-5'
             ]"
           >
-            <!-- Layout vocab-kana-to-romaji: kana → scrivi romaji -->
+            <!-- Layout vocab-kana-to-romaji: domanda in kana→scrivi romaji, oppure domanda in romaji→scrivi kana -->
             <template v-if="store.quizType === 'vocab-kana-to-romaji'">
               <div
                 :class="[
                   'font-black text-slate-700 text-center leading-tight break-words w-full',
-                  (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-3xl' : 'text-[2.75rem]'
+                  store.vocabKanaToRomajiInputLang === 'it'
+                    ? (questionText.length > 20 ? 'text-lg' : questionText.length > 12 ? 'text-xl' : 'text-3xl')
+                    : (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-3xl' : 'text-[2.75rem]'
                 ]"
               >{{ questionText }}</div>
-              <p class="text-slate-400 text-xs font-semibold mt-1.5">Scrivi il romaji della parola sotto</p>
+              <p class="text-slate-400 text-xs font-semibold mt-1.5">
+                {{ store.vocabKanaToRomajiInputLang === 'it' ? 'Scrivi la parola in kana sotto' : 'Scrivi il romaji della parola sotto' }}
+              </p>
               <button
                 class="text-slate-200 active:text-emerald-400 transition-all p-2 mt-0.5"
                 @click="store.speakText(currentQuestion?.word)"
@@ -1041,8 +1050,9 @@ onMounted(() => {
               autocapitalize="off"
               spellcheck="false"
               enterkeyhint="done"
+              :lang="store.quizType === 'vocab-kana-to-romaji' ? 'ja' : undefined"
               :placeholder="store.quizType === 'vocab-kana-to-romaji'
-                ? 'es: sushi, ohayō...'
+                ? (store.vocabKanaToRomajiInputLang === 'it' ? 'Scrivi la parola in kana...' : 'es: sushi, ohayō...')
                 : store.quizType === 'kana'
                   ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
                   : store.quizType === 'vocab-romaji'
@@ -1234,9 +1244,22 @@ onMounted(() => {
           </div>
 
           <div v-else class="px-8 pb-8 pt-2">
-            <!-- Max domande (solo per Kana → Romaji) -->
+            <!-- Tastiera + Max domande (solo per Kana → Romaji) -->
             <div v-if="store.quizType === 'vocab-kana-to-romaji'" class="mb-8">
               <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
+              <label class="block text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Domanda</label>
+              <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-6">
+                <button
+                  type="button"
+                  :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.vocabKanaToRomajiInputLang === 'ja' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                  @click="store.vocabKanaToRomajiInputLang = 'ja'"
+                >ろまじ</button>
+                <button
+                  type="button"
+                  :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.vocabKanaToRomajiInputLang === 'it' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                  @click="store.vocabKanaToRomajiInputLang = 'it'"
+                >Romaji</button>
+              </div>
               <label class="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3">Numero massimo di domande</label>
               <div class="flex items-center gap-4">
                 <button
@@ -1258,7 +1281,7 @@ onMounted(() => {
               <p class="text-[10px] text-slate-400 mt-3 text-center">Usa − / + per cambiare (step 5)</p>
             </div>
             <button
-              class="w-full py-6 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
+              class="w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
               :class="store.quizType === 'vocab-kana-to-romaji'
                 ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
                 : store.quizType?.startsWith('vocab')
@@ -1269,7 +1292,7 @@ onMounted(() => {
               :style="store.quizType === 'katakana' ? 'background:#63a8eb;' : ''"
               @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
             >
-              {{ store.quizType === 'katakana' ? 'ア' : 'あ' }} Inizia Quiz →
+              Inizia Quiz
             </button>
           </div>
         </div>
