@@ -11,7 +11,6 @@ import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
 import katakanaPresetsJson from '../data/katakana-presets.json'
 
-// --- CONFIGURAZIONE FIREBASE ---
 /* global __firebase_config, __app_id */
 const firebaseConfig =
   typeof __firebase_config === 'string'
@@ -23,7 +22,6 @@ const db = getFirestore(firebaseApp)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'
 const projectId = firebaseConfig.projectId || appId
 
-// --- HELPERS ESPORTATI ---
 export const getMasteryColor = (score) => {
   if (score >= 80) return 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
   if (score >= 40) return 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'
@@ -36,7 +34,6 @@ export const getMasteryDot = (score) => {
   return 'bg-rose-400'
 }
 
-// --- DATASET INIZIALE ---
 export const KATAKANA_GRID = katakanaGrid
 
 const _kataGridCells = KATAKANA_GRID.flat().filter(Boolean)
@@ -51,7 +48,7 @@ export const INITIAL_KATAKANA = _kataGridCells.map((cell, i) => ({
 
 export const HIRAGANA_GRID = hiraganaGrid
 
-// Tutti i kana della griglia, abilitati con score 0 (rosso). I preset usano i primi (es. k1–k5 Vocali).
+// Griglia kana con score 0; i preset usano i primi id (es. k1–k5 Vocali).
 const _gridCells = HIRAGANA_GRID.flat().filter(Boolean)
 export const INITIAL_KANA = _gridCells.map((cell, i) => ({
   id: `k${i + 1}`,
@@ -68,20 +65,18 @@ export const katakanaPresets = katakanaPresetsJson
 
 export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab]
 
-// Mappa romaji → kana (lookup per il quiz romaji→kana)
+// Mappa romaji → kana per quiz lettura.
 export const ROMAJI_TO_KANA = Object.fromEntries(
   HIRAGANA_GRID.flat().filter(Boolean).map(x => [x.r.toLowerCase(), x.c])
 )
 
-// --- PINIA STORE ---
 export const useAppStore = defineStore('app', () => {
-  // Dati persistenti
   const kanaData = ref(INITIAL_KANA.map(k => ({ ...k })))
   const katakanaData = ref(INITIAL_KATAKANA.map(k => ({ ...k })))
   const vocabData = ref(INITIAL_VOCAB.map(v => ({ ...v })))
   const dailyStats = ref({})
 
-  /** Normalize a day entry to { total, correct, kana: { total, correct }, vocab: { total, correct } }. Legacy entries have only total/correct → treat as kana. */
+  /** Normalizza una giornata in { total, correct, kana, vocab }. I dati legacy hanno solo total/correct → trattati come kana. */
   function _normalizeDayStats(day) {
     if (!day || typeof day !== 'object') return { total: 0, correct: 0, kana: { total: 0, correct: 0 }, vocab: { total: 0, correct: 0 } }
     let total = day.total ?? 0
@@ -92,7 +87,7 @@ export const useAppStore = defineStore('app', () => {
     const vocab = day.vocab && typeof day.vocab === 'object'
       ? { total: day.vocab.total ?? 0, correct: day.vocab.correct ?? 0 }
       : { total: 0, correct: 0 }
-    // Coerce with graph logic: if no top-level total but kana+vocab have activity, derive total/correct
+    // Se total è 0 ma kana+vocab hanno attività, ricava total/correct per il grafico.
     const derivedTotal = kana.total + vocab.total
     const derivedCorrect = kana.correct + vocab.correct
     if (total === 0 && derivedTotal > 0) {
@@ -105,7 +100,6 @@ export const useAppStore = defineStore('app', () => {
   const user = ref(null)
   const isCloudLoaded = ref(false)
 
-  // --- Selezione profilo utente ---
   const _rawProfile = localStorage.getItem('hiragana_profile')
   const currentProfile = ref(_rawProfile ? _rawProfile.toLowerCase() : null)
   const profileSelectOpen = ref(!currentProfile.value)
@@ -113,7 +107,6 @@ export const useAppStore = defineStore('app', () => {
   const saveSuccess = ref(false)
   const saveErrorModal = ref(null)
 
-  // Stato UI
   const selectedKanaModal = ref(null)
   const selectedKatakanaModal = ref(null)
   const selectedVocabModal = ref(null)
@@ -123,7 +116,6 @@ export const useAppStore = defineStore('app', () => {
   const hideKatakanaGridRomaji = ref(true)
   const statsTimeRange = ref('settimana')
 
-  // Stato quiz
   const quizActive = ref(false)
   const showSaveProgressAfterQuiz = ref(false)
   const quizSetupModalOpen = ref(false)
@@ -138,7 +130,7 @@ export const useAppStore = defineStore('app', () => {
   const selectedVocabCategories = ref([])
   const quizDifficulty = ref('medio')
   const quizDirection = ref('ja-to-romaji')
-  /** Max number of questions for vocab-kana-to-romaji quiz; null = all Random words */
+  // Numero max domande quiz vocab-kana-to-romaji; null = tutte le parole Random.
   const vocabKanaToRomajiMaxQuestions = ref(null)
   const quizQueue = ref([])
   const currentQuestionIndex = ref(0)
@@ -151,22 +143,16 @@ export const useAppStore = defineStore('app', () => {
 
   const vocabWriteMistakes = ref(0)
 
-  // --- Nuovo: quiz vocab scrittura romaji→kana (vocab-romaji-input) ---
-  // Ogni blocco = { romaji: 'ka', kana: 'か', userInput: '', state: 'idle'|'ok'|'wrong' }
+  // Blocco quiz vocab: { romaji, kana, userInput, state: 'idle'|'ok'|'wrong' }
   const vocabRomajiBlocks = ref([])
   const vocabRomajiCurrentIdx = ref(0)
   const vocabRomajiBlockInput = ref('')
 
-  // --- Feedback risposta (modale inline post-risposta) ---
-  // null | { ok, userAnswer, correctAnswer, itemLabel }
+  // Feedback risposta: null | { ok, userAnswer, correctAnswer, itemLabel }
   const answerFeedback = ref(null)
-  // Ultimo set di kana usato per un quiz (per riavviare rapidamente)
   const lastKanaQuizSelection = ref([])
   const lastKatakanaQuizSelection = ref([])
 
-  // --- AZIONI ---
-
-  // Cache delle voci caricate
   let _jaVoice = null
 
   function _pickBestJapaneseVoice(voices) {
@@ -243,8 +229,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Persistence: BE only (no localStorage for kana/vocab/stats). All mutations sync directly to Firestore via REST.
-  // Sync automatico: debounce 300ms, usato solo durante quiz per non saturare il BE; azioni utente usano saveNow().
+  // Persistenza solo su BE; sync con debounce 300ms durante il quiz; saveNow() per salvataggio esplicito.
   function sync() {
     if (!currentProfile.value) return
     if (_syncTimer) clearTimeout(_syncTimer)
@@ -259,7 +244,7 @@ export const useAppStore = defineStore('app', () => {
     }, 300)
   }
 
-  // Caricamento via REST API (fallback quando onSnapshot non riceve dati, es. incognito)
+  // Caricamento via REST (fallback se onSnapshot non riceve dati, es. incognito).
   async function _loadViaRestApi() {
     const u = auth.currentUser
     if (!u) return null
@@ -280,7 +265,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Salvataggio via REST API (bypass SDK che si blocca su setDoc)
+  // Salvataggio via REST API (evita blocchi dell'SDK su setDoc).
   async function _saveViaRestApi(payload) {
     const u = auth.currentUser
     if (!u) throw new Error('no-auth')
@@ -304,7 +289,7 @@ export const useAppStore = defineStore('app', () => {
     })
     if (!res.ok) {
       if (res.status === 404) {
-        // Documento non esiste: crea con POST
+        // Documento non esiste: creazione con POST.
         const createUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/artifacts/${appId}/profiles/${currentProfile.value}/appState?documentId=main&alt=json`
         const createRes = await fetch(createUrl, {
           method: 'POST',
@@ -331,11 +316,11 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Garantisce che l'utente Firebase sia autenticato; riprova signIn se necessario
+  // Garantisce utente Firebase autenticato; riprova signIn se necessario.
   async function _ensureAuth() {
     if (auth.currentUser) return auth.currentUser
     return new Promise((resolve) => {
-      // Aspetta fino a 4s che onAuthStateChanged emetta l'utente
+      // Attesa max 4s per onAuthStateChanged prima di signInAnonymously.
       let done = false
       const unsub = onAuthStateChanged(auth, (u) => {
         if (done) return
@@ -354,11 +339,11 @@ export const useAppStore = defineStore('app', () => {
     })
   }
 
-  // Salvataggio manuale (bottone): usa REST API
+  // Salvataggio manuale (bottone): usa REST API.
   async function saveNow() {
     if (!currentProfile.value || isSyncing.value) return
     if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null }
-    // Capture payload immediately so onSnapshot / other async cannot overwrite state before we send
+    // Payload fissato subito per evitare sovrascritture da onSnapshot prima dell'invio.
     const payload = _buildPayload()
     const clean = JSON.parse(JSON.stringify(payload))
     isSyncing.value = true
@@ -444,8 +429,7 @@ export const useAppStore = defineStore('app', () => {
     isAnswered.value = false
   }
 
-  // Quiz vocab-kana-read: mostra ogni kana della parola, l'utente scrive il romaji
-  // Blocco = { kana: 'わ', romaji: 'wa', userInput: '', state: 'idle'|'ok'|'wrong' }
+  // Quiz vocab-kana-read: mostra i kana della parola, l'utente scrive il romaji per ogni blocco.
   function initVocabKanaRead(item) {
     const chars = Array.from(item.word.split('/')[0].trim().replace(/\s+/g, ''))
     const allKana = HIRAGANA_GRID.flat().filter(Boolean)
@@ -464,10 +448,10 @@ export const useAppStore = defineStore('app', () => {
     vocabWriteMistakes.value = 0
   }
 
-  // Compatibilità: alias vecchio nome
+  // Alias per compatibilità con nome precedente.
   function initVocabRomajiInput(item) { initVocabKanaRead(item) }
 
-  // Conferma blocco: l'utente ha letto il kana corrente e scritto il romaji
+  // Conferma blocco: utente ha scritto il romaji per il kana corrente.
   function confirmRomajiBlock() {
     const idx = vocabRomajiCurrentIdx.value
     const block = vocabRomajiBlocks.value[idx]
@@ -489,7 +473,7 @@ export const useAppStore = defineStore('app', () => {
         vocabRomajiCurrentIdx.value = idx + 1
       }, ok ? 300 : 700)
     } else {
-      // Fine parola
+      // Fine parola: invia processAnswer e resetta blocchi.
       const allOk = vocabWriteMistakes.value === 0
       const item = quizQueue.value[currentQuestionIndex.value]
       setTimeout(() => {
@@ -569,10 +553,8 @@ export const useAppStore = defineStore('app', () => {
       vocabData.value = upd(vocabData.value)
     }
 
-    // Unica chiamata sync che salva tutto
     sync()
 
-    // Determina le label per il feedback
     const isKana = quizType.value === 'kana'
     const isVocabKanaToRomaji = quizType.value === 'vocab-kana-to-romaji'
     let correctAnswer = ''
@@ -588,10 +570,8 @@ export const useAppStore = defineStore('app', () => {
 
     if (!skipFeedback) {
       if (ok && !isVocabKanaToRomaji) {
-        // Corretto: nessun overlay, avanza subito dopo breve pausa (tranne vocab-kana-to-romaji)
         setTimeout(() => { _advanceQuiz() }, 600)
       } else if (!ok || isVocabKanaToRomaji) {
-        // Sbagliato: modale con spiegazione; oppure vocab-kana-to-romaji: sempre modale (anche se corretto)
         answerFeedback.value = {
           ok,
           userAnswer: userAnswerText || '',
@@ -602,7 +582,6 @@ export const useAppStore = defineStore('app', () => {
         }
       }
     } else {
-      // Canvas quiz: avanza direttamente
       setTimeout(() => { _advanceQuiz() }, 400)
     }
   }
@@ -638,7 +617,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Normalize romaji for comparison (macrons → single vowel, lowercase)
+  // Normalizza romaji per confronto (macron → vocale singola, minuscolo).
   function normalizeRomajiForCompare(str) {
     return str
       .toLowerCase()
@@ -657,13 +636,11 @@ export const useAppStore = defineStore('app', () => {
       isAnswered.value = true
       const item = quizQueue.value[currentQuestionIndex.value]
       const ok = option.id === item.id
-      // La "risposta utente" è il testo dell'opzione scelta (se sbagliata)
       const userText = ok ? '' : getOptionLabel_internal(option)
       processAnswer(ok, item, userText)
     }
   }
 
-  // Utility interna per ricavare il label di un'opzione
   function getOptionLabel_internal(opt) {
     if (quizType.value === 'vocab-romaji') return opt.romaji.split('/')[0]
     if (quizDirection.value === 'ja-to-romaji')
@@ -704,9 +681,8 @@ export const useAppStore = defineStore('app', () => {
       vocabKanaToRomajiMaxQuestions.value = null
       difficultyModalOpen.value = true
     } else {
-      // Quiz vocabolario: apri la modal selezione categorie
       const allCats = [...new Set(vocabData.value.map(v => v.category))]
-      selectedVocabCategories.value = [...allCats] // tutte selezionate di default
+      selectedVocabCategories.value = [...allCats]
       vocabSetupModalOpen.value = true
     }
   }
@@ -749,7 +725,6 @@ export const useAppStore = defineStore('app', () => {
     difficultyModalOpen.value = true
   }
 
-  // Riavvia un quiz kana usando l'ultima selezione di kana usata
   function restartLastKanaQuiz() {
     if (!lastKanaQuizSelection.value || lastKanaQuizSelection.value.length < 4) {
       customAlert.value = 'Non c’è ancora un quiz kana precedente con almeno 4 caratteri.'
@@ -812,7 +787,7 @@ export const useAppStore = defineStore('app', () => {
     quizActive.value = true
   }
 
-  // Genera le opzioni per vocab-romaji (le opzioni sono i romaji delle parole)
+  // Opzioni per quiz vocab-romaji (romaji delle parole).
   function _genVocabRomajiOptions(cur) {
     if (quizDifficulty.value === 'difficile') {
       isAnswered.value = false
@@ -850,10 +825,7 @@ export const useAppStore = defineStore('app', () => {
 
   let _unsubSnapshot = null
 
-  // Merge: unisce i dati del cloud con l'array base locale
-  // - keepAllInit true (kana): tutti gli item di init restano, il cloud sovrascrive dove presente
-  // - keepAllInit false (vocab): solo gli item di init presenti nel cloud (le parole cancellate non riappaiono)
-  // - skipCloudOnly true (vocab): lista = solo INITIAL_VOCAB con merge per id, niente voci solo-cloud (lista canonica come “primo giorno”)
+  // Merge dati cloud con array base (keepAllInit per kana, skipCloudOnly per vocab).
   function _mergeFunc(initArr, cloud, keepAllInit = false, skipCloudOnly = false) {
     if (!cloud || !Array.isArray(cloud) || cloud.length === 0) return initArr.map(i => ({ ...i }))
     const cloudMap = new Map(cloud.map(i => [i.id, i]))
@@ -868,7 +840,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function _applyData(d) {
-    // Supporta formato compatto REST (data = json string) e formato legacy (campi in chiaro)
+    // Supporta payload REST (data = stringa JSON) e formato legacy (campi in chiaro).
     let raw = d
     if (typeof d?.data === 'string') {
       try { raw = JSON.parse(d.data) } catch (_) { raw = d }
@@ -893,8 +865,7 @@ export const useAppStore = defineStore('app', () => {
     const docRef = _profileDocRef()
     isCloudLoaded.value = false
 
-    // onSnapshot + fallback REST API ───────────────────────────────────────────
-    // In incognito onSnapshot può non ricevere dati; REST API GET funziona con fetch.
+    // onSnapshot + fallback REST: in incognito onSnapshot può non ricevere dati.
     let _firstSnapDone = false
     let _dataLoaded = false
 
@@ -932,7 +903,6 @@ export const useAppStore = defineStore('app', () => {
       if (!isCloudLoaded.value) isCloudLoaded.value = true
     })
 
-    // Fallback REST: carica via fetch (funziona in incognito dove onSnapshot fallisce)
     _loadViaRestApi().then((data) => {
       if (data) {
         _applyIfNeeded(data)
@@ -940,7 +910,6 @@ export const useAppStore = defineStore('app', () => {
       }
     })
 
-    // Timeout: dopo 5s sblocca comunque
     setTimeout(() => {
       if (!isCloudLoaded.value) isCloudLoaded.value = true
     }, 5000)
@@ -949,7 +918,6 @@ export const useAppStore = defineStore('app', () => {
   async function _tryMigrateFromCapital(docRef) {
     try {
       const profileCapital = (currentProfile.value || '').replace(/^\w/, c => c.toUpperCase())
-      // Percorso con maiuscola (es. Andrea) – _profileDocRef fa toLowerCase quindi usiamo doc() diretto
       const oldRef = doc(db, 'artifacts', appId, 'profiles', profileCapital, 'appState', 'main')
       console.log('🔄 Provo migrazione da vecchio doc:', oldRef.path)
       const oldSnap = await getDoc(oldRef)
@@ -972,7 +940,6 @@ export const useAppStore = defineStore('app', () => {
     currentProfile.value = normalized
     localStorage.setItem('hiragana_profile', normalized)
     profileSelectOpen.value = false
-    // Resetta ai valori iniziali (la cache locale verrà caricata subito dentro _loadProfileData)
     kanaData.value = INITIAL_KANA.map(k => ({ ...k }))
     katakanaData.value = INITIAL_KATAKANA.map(k => ({ ...k }))
     vocabData.value = INITIAL_VOCAB.map(v => ({ ...v }))
@@ -995,7 +962,6 @@ export const useAppStore = defineStore('app', () => {
       isCloudLoaded.value = true
     }
 
-    // Auth Firebase → poi carica/aggiorna da Firestore
     onAuthStateChanged(auth, (user) => {
       if (user) {
         if (currentProfile.value) {
@@ -1004,13 +970,11 @@ export const useAppStore = defineStore('app', () => {
       } else {
         signInAnonymously(auth).catch((err) => {
           console.error('❌ signInAnonymously failed:', err)
-          // Se auth fallisce e non c'è cache, sblocca comunque la UI
           if (!isCloudLoaded.value) isCloudLoaded.value = true
         })
       }
     })
 
-    // Timeout di sicurezza: dopo 6s sblocca comunque per evitare spinner infinito
     setTimeout(() => {
       if (!isCloudLoaded.value) isCloudLoaded.value = true
     }, 6000)

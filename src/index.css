@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* Font base ottimizzato per high-DPI (16px → leggibile su 450dpi) */
+  /* Font base per alta densità pixel (16px leggibile su ~450dpi). */
   html {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
@@ -11,26 +11,22 @@
   }
 
   body {
-    /* Previene highlight azzurro al tap su Android */
     -webkit-tap-highlight-color: transparent;
-    /* Scroll inerziale nativo iOS/Android */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
-    /* Safe areas per gesture bar e notch */
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Disabilita zoom doppio tap su tutti i bottoni */
+  /* Disabilita zoom da doppio tap su controlli interattivi. */
   button, a, input, textarea, select {
     touch-action: manipulation;
   }
 
-  /* Cursore pointer su tutti i bottoni mobile */
   button {
     cursor: pointer;
   }
 
-  /* Scrollbar invisibile ma funzionante */
+  /* Scrollbar nascosta ma scroll abilitato. */
   ::-webkit-scrollbar {
     width: 0;
     height: 0;
@@ -38,7 +34,6 @@
 }
 
 @layer utilities {
-  /* Safe area padding per navigation bar Android gesture */
   .pb-safe {
     padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
@@ -46,13 +41,13 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  /* Dimensione touch target minima 44px (Apple HIG / Google MD) */
+  /* Touch target minimo 44px (Apple HIG / Material). */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
   }
 
-  /* Numero giorni consecutivi: gradiente che sale dal basso all'alto, animazione perenne */
+  /* Gradiente animato per numero giorni consecutivi (sale dal basso). */
   @keyframes gradient-rise {
     0% { background-position: 0% 100%; }
     100% { background-position: 0% 0%; }
@@ -66,7 +61,7 @@
     animation: gradient-rise 2.5s linear infinite;
   }
 
-  /* Vocabolario palette: #ffc99e and gradients */
+  /* Palette sezione vocabolario (#ffc99e e gradienti). */
   :root {
     --vocab-base: #ffc99e;
     --vocab-light: #ffdfc4;

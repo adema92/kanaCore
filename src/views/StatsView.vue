@@ -47,7 +47,7 @@ const statsData = computed(() => {
 
 const maxVal = computed(() => Math.max(...statsData.value.map(d => d.total), 10))
 
-// Totals for the current period (for bar chart: week or month)
+// Totali del periodo (settimana o mese) per il grafico a barre.
 const periodCorrect = computed(() => statsData.value.reduce((a, d) => a + d.correct, 0))
 const periodTotal = computed(() => statsData.value.reduce((a, d) => a + d.total, 0))
 const periodWrong = computed(() => periodTotal.value - periodCorrect.value)
@@ -56,7 +56,7 @@ const periodKanaWrong = computed(() => statsData.value.reduce((a, d) => a + d.ka
 const periodVocabCorrect = computed(() => statsData.value.reduce((a, d) => a + d.vocabCorrect, 0))
 const periodVocabWrong = computed(() => statsData.value.reduce((a, d) => a + d.vocabWrong, 0))
 
-// Summary shown below chart: selected day or period totals
+// Riepilogo sotto il grafico: giorno selezionato o totali periodo.
 const displayedSummary = computed(() => {
   if (selectedDayKey.value) {
     const day = statsData.value.find((d) => d.key === selectedDayKey.value)
@@ -89,7 +89,7 @@ const displayedSummaryTitle = computed(() =>
     : `Periodo (${displayedSummary.value.label})`
 )
 
-// Daily-only totals for pie charts (today only), split Kana / Vocaboli
+// Totali solo per oggi (grafici a torta Kana/Vocaboli).
 const dayStats = computed(() => {
   const raw = store.dailyStats[localToday.value]
   const kana = raw?.kana && typeof raw.kana === 'object' ? { total: raw.kana.total ?? 0, correct: raw.kana.correct ?? 0 } : { total: raw?.total ?? 0, correct: raw?.correct ?? 0 }
@@ -121,7 +121,7 @@ const dayVocabWrongPct = computed(() =>
   dayStats.value.vocab.total > 0 ? Math.round((dayStats.value.vocab.wrong / dayStats.value.vocab.total) * 100) : 0
 )
 
-// Percentuale indovinati nel periodo (for bar summary)
+// Percentuale corrette/errate nel periodo (riepilogo barre).
 const periodCorrectPct = computed(() =>
   periodTotal.value > 0 ? Math.round((periodCorrect.value / periodTotal.value) * 100) : 0
 )
@@ -129,7 +129,7 @@ const periodWrongPct = computed(() =>
   periodTotal.value > 0 ? Math.round((periodWrong.value / periodTotal.value) * 100) : 0
 )
 
-// Consecutive study days (streak): skip days with no activity, then count backwards consecutive days with activity (aligned with graph)
+// Giorni consecutivi: salta giorni senza attività, poi conta indietro i giorni con attività (allineato al grafico).
 const consecutiveDays = computed(() => {
   const stats = store.dailyStats
   const d = new Date()
@@ -155,7 +155,7 @@ const consecutiveDays = computed(() => {
 const totalAnswers = computed(() => Object.values(store.dailyStats).reduce((a, d) => a + (d.total || 0), 0))
 const totalCorrect = computed(() => Object.values(store.dailyStats).reduce((a, d) => a + (d.correct || 0), 0))
 
-// Quando cambi periodo (settimana/mese), scroll al fondo così la barra "Oggi" è in vista
+// Al cambio periodo (7g/30g) scrolla a destra per portare in vista l'ultima barra.
 watch(
   () => store.statsTimeRange,
   () => {
@@ -221,15 +221,15 @@ const selectDay = (key) => {
 <template>
   <div class="w-full px-4 space-y-4 pb-6">
 
-    <!-- Header hero -->
-    <div class="bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-500 p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden">
-      <div class="absolute -top-2 -right-2 opacity-10 text-[80px] leading-none">📊</div>
-      <div class="text-4xl mb-1">🌸</div>
-      <h1 class="text-2xl font-black mb-0.5 uppercase tracking-tight">I tuoi progressi</h1>
-      <p class="text-indigo-100 text-xs font-semibold opacity-80 uppercase tracking-widest">
-        {{ totalAnswers }} risposte totali
-      </p>
+    <!-- Banner principale: Onigiri Sensei -->
+    <div class="w-full relative overflow-hidden bg-transparent max-w-sm mx-auto">
+      <img
+        src="/onighiri_sensei.png"
+        alt="Onigiri Sensei – La via del riso"
+        class="w-full h-auto object-contain object-center block max-h-56"
+      />
     </div>
+    <div class="border-b border-slate-200 w-full mt-2" aria-hidden="true"></div>
 
     <!-- Card statistiche padronanza -->
     <div class="grid grid-cols-2 gap-3">

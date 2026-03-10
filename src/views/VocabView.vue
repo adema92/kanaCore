@@ -12,7 +12,7 @@ const vocabByCategory = computed(() => {
   }, {})
 })
 
-// Accordion: tutte le categorie chiuse di default
+// Accordion: categorie chiuse di default.
 const openCategories = ref(new Set())
 
 function toggleCategory(cat) {
@@ -32,7 +32,7 @@ function getMasteryIcon(score) {
   return                  { color: 'text-rose-400',    title: 'Da studiare'}
 }
 
-// Conteggio per livello per categoria
+// Conteggio parole per livello (padronanza) e categoria.
 function catStats(words) {
   const padronanza = words.filter(w => w.score >= 80).length
   const inCorso    = words.filter(w => w.score >= 40 && w.score < 80).length

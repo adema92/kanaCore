@@ -43,7 +43,7 @@ const questionText = computed(() => {
   return isKanaQuiz.value ? currentQuestion.value.romaji.split('/')[0] : currentQuestion.value.romaji.split('/')[0]
 })
 
-// Per vocab-romaji: titolo fisso + sottotitolo con tono
+// Sottotitolo con tono per quiz vocab-romaji.
 const vocabRomajiSubtitle = computed(() => {
   if (store.quizType !== 'vocab-romaji' || !currentQuestion.value) return null
   return currentQuestion.value.tone
@@ -103,7 +103,7 @@ const selectedVocabModalLive = computed(() => {
   return live || store.selectedVocabModal
 })
 
-// Auto-play pronunciation when opening vocab detail modal
+// Riproduzione automatica pronuncia all'apertura del dettaglio vocabolo.
 watch(
   () => store.selectedVocabModal,
   (modal) => {
@@ -115,7 +115,7 @@ watch(
   }
 )
 
-// Tag tono/registro per il vocabolario
+// Configurazione badge tono/registro per il vocabolario.
 const toneConfig = {
   'Formale':   { emoji: '🎩', bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
   'Informale': { emoji: '😊', bg: 'bg-amber-50',  text: 'text-amber-600',  border: 'border-amber-100' },
@@ -152,7 +152,7 @@ function isNavActive(path) {
   return route.path === path
 }
 
-// Block background scroll when any overlay/modal is open
+// Blocca scroll della pagina quando una modale/overlay è aperta.
 const isAnyModalOpen = computed(() =>
   !!(
     store.quizSetupModalOpen ||
@@ -187,7 +187,7 @@ async function onInputFocus() {
 async function handleManualSubmitEvent(e) {
   e.preventDefault()
   store.handleManualSubmit()
-  // Refocus input after advance (when no feedback modal); for vocab-kana-to-romaji focus is set by watcher when modal closes
+  // Riporta focus su input dopo avanzamento (tranne vocab-kana-to-romaji, gestito da watcher).
   if (store.quizType !== 'vocab-kana-to-romaji') {
     setTimeout(async () => {
       await nextTick()
@@ -242,12 +242,12 @@ function scrollToTop() {
   })
 }
 
-// Scroll in cima quando il quiz finisce
+// Scroll in cima quando il quiz termina.
 watch(() => store.quizActive, (active) => {
   if (!active) scrollToTop()
 })
 
-// Focus sull'input tra una domanda e l'altra (e all'avvio quiz) così si può usare solo la tastiera
+// Focus sull'input tra una domanda e l'altra (e all'avvio quiz) per uso solo tastiera.
 watch(
   () => [
     store.quizActive,
@@ -259,7 +259,6 @@ watch(
     const manualMode = store.quizDifficulty === 'difficile' || store.quizType === 'vocab-kana-to-romaji'
     if (!store.quizActive || !manualMode) return
     if (store.answerFeedback != null) {
-      // Modal feedback aperta: focus sulla modale così Invio fa Avanti
       nextTick(() => feedbackModalRef.value?.focus())
       return
     }
@@ -271,7 +270,7 @@ watch(
   { flush: 'post' }
 )
 
-// Scroll in cima ad ogni cambio di pagina
+// Scroll in cima alla view a ogni cambio route.
 watch(() => route.path, () => {
   scrollToTop()
 })
