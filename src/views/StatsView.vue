@@ -89,7 +89,7 @@ const displayedSummaryTitle = computed(() =>
     : `Periodo (${displayedSummary.value.label})`
 )
 
-// Daily-only totals for pie charts (today only), split Kana / Parole
+// Daily-only totals for pie charts (today only), split Kana / Vocaboli
 const dayStats = computed(() => {
   const raw = store.dailyStats[localToday.value]
   const kana = raw?.kana && typeof raw.kana === 'object' ? { total: raw.kana.total ?? 0, correct: raw.kana.correct ?? 0 } : { total: raw?.total ?? 0, correct: raw?.correct ?? 0 }
@@ -129,17 +129,24 @@ const periodWrongPct = computed(() =>
   periodTotal.value > 0 ? Math.round((periodWrong.value / periodTotal.value) * 100) : 0
 )
 
-// Consecutive study days (streak): count days back from today with at least 1 answer
+// Consecutive study days (streak): skip days with no activity, then count backwards consecutive days with activity (aligned with graph)
 const consecutiveDays = computed(() => {
-  const today = localToday.value
   const stats = store.dailyStats
-  let count = 0
   const d = new Date()
+  let count = 0
+  let foundActive = false
   for (let i = 0; i < 365; i++) {
     const key = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
-    const total = stats[key]?.total || 0
-    if (total > 0) count++
-    else break
+    const raw = stats[key]
+    const kanaTotal = raw?.kana && typeof raw.kana === 'object' ? (raw.kana.total ?? 0) : (raw?.total ?? 0)
+    const vocabTotal = raw?.vocab && typeof raw.vocab === 'object' ? (raw.vocab.total ?? 0) : 0
+    const total = (kanaTotal + vocabTotal) || (raw?.total ?? 0)
+    if (total > 0) {
+      foundActive = true
+      count++
+    } else if (foundActive) {
+      break
+    }
     d.setDate(d.getDate() - 1)
   }
   return count
@@ -175,7 +182,7 @@ function resetKana() {
     onConfirm: () => {
       const reset = INITIAL_KANA.map(k => ({ ...k, score: 0, attempts: 0 }))
       store.kanaData = reset
-      store.sync({ kanaData: reset })
+      store.saveNow().catch(() => {})
       store.confirmModal = null
     },
   }
@@ -183,12 +190,24 @@ function resetKana() {
 
 function resetVocab() {
   store.confirmModal = {
-    title: 'Reset Parole',
-    text: 'Vuoi azzerare i progressi delle Parole?',
+    title: 'Reset Vocaboli',
+    text: 'Vuoi azzerare i progressi dei Vocaboli?',
     onConfirm: () => {
       const reset = INITIAL_VOCAB.map(v => ({ ...v, score: 0, attempts: 0 }))
       store.vocabData = reset
-      store.sync({ vocabData: reset })
+      store.saveNow().catch(() => {})
+      store.confirmModal = null
+    },
+  }
+}
+
+function resetHistory() {
+  store.confirmModal = {
+    title: 'Reset Storico',
+    text: 'Vuoi azzerare lo storico dei quiz (grafici e giorni consecutivi)?',
+    onConfirm: () => {
+      store.dailyStats = {}
+      store.saveNow().catch(() => {})
       store.confirmModal = null
     },
   }
@@ -215,7 +234,7 @@ const selectDay = (key) => {
     <!-- Card statistiche padronanza -->
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5">
-        <span class="text-[11px] font-black text-pink-400 uppercase block mb-1 tracking-widest">🌸 Kana</span>
+        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest">🌸 Kana Imparati</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.kanaData.filter(k => k.score >= 80).length }}
         </div>
@@ -228,7 +247,7 @@ const selectDay = (key) => {
         <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length }} totali</span>
       </div>
       <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5">
-        <span class="text-[11px] font-black text-violet-500 uppercase block mb-1 tracking-widest">🌿 Parole</span>
+        <span class="text-[11px] font-black text-violet-500 uppercase block tracking-widest">🌿 Vocaboli Imparati</span>
         <div class="text-4xl font-black text-slate-700">
           {{ store.vocabData.filter(v => v.score >= 80).length }}
         </div>
@@ -259,9 +278,19 @@ const selectDay = (key) => {
 
     <!-- Kana oggi: viola chiaro palette calda -->
     <div class="bg-white rounded-3xl shadow-sm border border-violet-50/80 p-4 sm:p-5">
-      <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-4">
-        <span>あ</span> Kana oggi
-      </h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span>あ</span> Kana oggi
+        </h2>
+        <button
+          type="button"
+          class="p-1.5 rounded-full border border-violet-100 text-violet-300 hover:bg-violet-50 active:scale-95 transition-all"
+          title="Reset progressi Kana"
+          @click="resetKana"
+        >
+          <RotateCcw :size="13" />
+        </button>
+      </div>
       <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         <div class="relative shrink-0">
           <div
@@ -296,11 +325,21 @@ const selectDay = (key) => {
       </div>
     </div>
 
-    <!-- Parole oggi: verde + rossi caldi per errate -->
+    <!-- Vocaboli oggi: verde + rossi caldi per errate -->
     <div class="bg-white rounded-3xl shadow-sm border border-emerald-50/80 p-4 sm:p-5">
-      <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-4">
-        <span>🌿</span> Parole oggi
-      </h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🌿</span> Vocaboli oggi
+        </h2>
+        <button
+          type="button"
+          class="p-1.5 rounded-full border border-emerald-100 text-emerald-300 hover:bg-emerald-50 active:scale-95 transition-all"
+          title="Reset progressi Vocaboli"
+          @click="resetVocab"
+        >
+          <RotateCcw :size="13" />
+        </button>
+      </div>
       <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
         <div class="relative shrink-0">
           <div
@@ -320,11 +359,11 @@ const selectDay = (key) => {
         </div>
         <div class="flex-1 space-y-2 min-w-0 w-full">
           <div class="flex items-center justify-between py-2 px-3 bg-emerald-50/80 rounded-lg border border-emerald-100/80">
-            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Parole corrette</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Vocaboli corretti</span>
             <span class="font-bold text-emerald-600 text-sm">{{ dayStats.vocab.correct }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-pink-50 rounded-lg border border-pink-200">
-            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Parole errate</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Vocaboli errati</span>
             <span class="font-bold text-pink-500 text-sm">{{ dayStats.vocab.wrong }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -338,9 +377,19 @@ const selectDay = (key) => {
     <!-- Storico: palette rosa calda; legenda 2x2 -->
     <div class="bg-white rounded-3xl shadow-sm border border-pink-100 p-4 sm:p-5">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span>📈</span> Storico (Kana + Parole)
-        </h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <span>📈</span> Storico (Kana + Vocaboli)
+          </h2>
+          <button
+            type="button"
+            class="p-1.5 rounded-full border border-pink-100 text-pink-300 hover:bg-pink-50 active:scale-95 transition-all"
+            title="Reset storico grafici"
+            @click="resetHistory"
+          >
+            <RotateCcw :size="13" />
+          </button>
+        </div>
         <div class="flex bg-pink-100/80 p-0.5 sm:p-1 rounded-lg sm:rounded-xl gap-0.5 shrink-0 min-w-0">
           <button
             v-for="tr in ['settimana', 'mese']"
@@ -374,30 +423,30 @@ const selectDay = (key) => {
             <div
               :class="[
                 'w-full relative overflow-hidden rounded-t-lg transition-all duration-700',
-                d.isToday && d.total === 0 ? 'border-2 border-dashed border-pink-300' :
-                d.total > 0 ? 'bg-pink-50 border border-pink-200/80' : 'border border-dashed border-slate-100'
+              d.isToday && d.total === 0 ? 'border-2 border-dashed border-[#542e71]' :
+              d.total > 0 ? 'bg-slate-50/50 border border-slate-200' : 'border border-dashed border-slate-100'
               ]"
               :style="{ height: d.total > 0 ? `${Math.max(10, (d.total / maxVal) * 100)}%` : d.isToday ? '14px' : '6px' }"
-              :title="`Kana: ${d.kanaCorrect} corretti, ${d.kanaWrong} errati · Parole: ${d.vocabCorrect} corrette, ${d.vocabWrong} errate`"
+              :title="`Kana: ${d.kanaCorrect} corretti, ${d.kanaWrong} errati · Vocaboli: ${d.vocabCorrect} corretti, ${d.vocabWrong} errati`"
             >
               <template v-if="d.total > 0">
                 <div
-                  class="absolute left-0 right-0 bg-pink-300 transition-all duration-700"
+                  class="absolute left-0 right-0 bg-[#b3cbb9] transition-all duration-700"
                   :style="{ height: `${(d.kanaCorrect / d.total) * 100}%`, bottom: 0 }"
                 />
                 <div
                   v-if="d.kanaWrong > 0"
-                  class="absolute left-0 right-0 bg-rose-400 transition-all duration-700"
+                  class="absolute left-0 right-0 bg-[#ddd8b8] transition-all duration-700"
                   :style="{ height: `${(d.kanaWrong / d.total) * 100}%`, bottom: `${(d.kanaCorrect / d.total) * 100}%` }"
                 />
                 <div
                   v-if="d.vocabCorrect > 0"
-                  class="absolute left-0 right-0 bg-pink-200 transition-all duration-700"
+                  class="absolute left-0 right-0 bg-[#84a9c0] transition-all duration-700"
                   :style="{ height: `${(d.vocabCorrect / d.total) * 100}%`, bottom: `${(d.kanaTotal / d.total) * 100}%` }"
                 />
                 <div
                   v-if="d.vocabWrong > 0"
-                  class="absolute left-0 right-0 bg-rose-500 transition-all duration-700"
+                  class="absolute left-0 right-0 bg-[#6a66a3] transition-all duration-700"
                   :style="{ height: `${(d.vocabWrong / d.total) * 100}%`, bottom: `${((d.kanaTotal + d.vocabCorrect) / d.total) * 100}%` }"
                 />
               </template>
@@ -426,9 +475,9 @@ const selectDay = (key) => {
           </div>
           <div class="w-px self-stretch bg-slate-200 min-h-[2.5rem]" aria-hidden="true"></div>
           <div class="flex flex-col items-center gap-1">
-            <span class="font-bold text-slate-400 uppercase tracking-wider">Parole</span>
+            <span class="font-bold text-slate-400 uppercase tracking-wider">Vocaboli</span>
             <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabCorrect }}</span> corrette</span>
-            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabWrong }}</span> errate</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabWrong }}</span> errati</span>
           </div>
         </div>
         <div class="flex items-center justify-center gap-2 py-2 px-3 text-[11px] sm:text-[12px]">
@@ -437,23 +486,23 @@ const selectDay = (key) => {
         <p v-if="selectedDayKey" class="text-[9px] text-slate-400 text-center">Tocca di nuovo la barra per tornare al riepilogo periodo</p>
       </div>
 
-      <!-- Legenda: 2 righe x 2 colonne, colori rosa caldi -->
+      <!-- Legenda: palette Coolors per storico -->
       <div class="grid grid-cols-2 gap-x-6 gap-y-2 mt-2 sm:mt-3 text-[9px] sm:text-[11px] font-semibold text-slate-500 uppercase tracking-wider max-w-xs mx-auto">
         <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-pink-300 shrink-0"></div>
+          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#b3cbb9] shrink-0"></div>
           <span>Kana corretti</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-rose-400 shrink-0"></div>
+          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#ddd8b8] shrink-0"></div>
           <span>Kana errati</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-pink-200 shrink-0"></div>
-          <span>Parole corrette</span>
+          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#84a9c0] shrink-0"></div>
+          <span>Vocaboli corretti</span>
         </div>
         <div class="flex items-center gap-1.5">
-          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-rose-500 shrink-0"></div>
-          <span>Parole errate</span>
+          <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm bg-[#6a66a3] shrink-0"></div>
+          <span>Vocaboli errati</span>
         </div>
       </div>
     </div>
@@ -470,7 +519,7 @@ const selectDay = (key) => {
         class="flex-1 bg-rose-50 text-rose-400 font-black py-4 rounded-2xl text-xs border border-rose-100 flex items-center justify-center gap-2 active:scale-95 transition-transform uppercase tracking-widest"
         @click="resetVocab"
       >
-        <RotateCcw :size="15" /> Reset Parole
+        <RotateCcw :size="15" /> Reset Vocaboli
       </button>
     </div>
 

@@ -65,4 +65,16 @@
     color: transparent;
     animation: gradient-rise 2.5s linear infinite;
   }
+
+  /* Vocabolario palette: #ffc99e and gradients */
+  :root {
+    --vocab-base: #ffc99e;
+    --vocab-light: #ffdfc4;
+    --vocab-lighter: #fff2e6;
+    --vocab-dark: #e8a55c;
+    --vocab-darker: #c98b45;
+    --vocab-bg: #fff8f2;
+    --vocab-gradient: linear-gradient(to bottom right, #ffd4b0 0%, #ffc99e 35%, #f0b078 100%);
+    --vocab-gradient-soft: linear-gradient(135deg, #fff5eb 0%, #ffead9 50%, #ffe0c7 100%);
+  }
 }

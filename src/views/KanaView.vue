@@ -9,16 +9,20 @@ const store = useAppStore()
   <div class="w-full px-4 space-y-4 pb-6">
 
     <!-- Header Hiragana -->
-    <div class="bg-gradient-to-br from-pink-400 via-rose-400 to-pink-500 p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden">
+    <div
+      class="p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden"
+      style="background: linear-gradient(to bottom right, #ffd4f5 0%, #ffbeeb 40%, #f0a8dc 100%);"
+    >
       <div class="absolute -top-2 -right-2 opacity-10 text-[80px] leading-none">🌸</div>
       <div class="text-4xl mb-1">あ</div>
       <h1 class="text-2xl font-black mb-0.5">Hiragana</h1>
-      <p class="text-pink-100 text-xs font-semibold mb-5 opacity-80 uppercase tracking-widest">{{ store.kanaData.length }} kana</p>
+      <p class="text-white/90 text-xs font-semibold mb-5 opacity-90 uppercase tracking-widest">{{ store.kanaData.length }} kana</p>
 
       <!-- Pulsanti quiz -->
       <div class="flex gap-3 mb-3">
         <button
-          class="w-full bg-white/95 text-pink-500 font-black py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all uppercase tracking-widest"
+          class="w-full bg-white/95 font-black py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all uppercase tracking-widest"
+          style="color: #c97bb8;"
           @click="store.handleStartQuizClick('kana')"
         >
           <BookOpen :size="17" /> Inizia Quiz

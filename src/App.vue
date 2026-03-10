@@ -96,6 +96,18 @@ const selectedVocabModalLive = computed(() => {
   return live || store.selectedVocabModal
 })
 
+// Auto-play pronunciation when opening vocab detail modal
+watch(
+  () => store.selectedVocabModal,
+  (modal) => {
+    if (modal?.word) {
+      nextTick(() => {
+        store.speakText(modal.word)
+      })
+    }
+  }
+)
+
 // Tag tono/registro per il vocabolario
 const toneConfig = {
   'Formale':   { emoji: '🎩', bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' },
@@ -293,7 +305,9 @@ onMounted(() => {
           <!-- Logo / titolo -->
           <div class="text-center mb-10 z-10">
             <div class="text-7xl mb-3">🎌</div>
-            <h1 class="text-3xl font-black text-slate-700 tracking-tight leading-tight">Hiragana<span class="text-pink-400">Study</span></h1>
+            <h1 class="text-3xl font-black text-slate-700 tracking-tight leading-tight">
+              Onigiri <span class="text-pink-400">Sensei</span>
+            </h1>
             <p class="text-slate-400 text-sm font-semibold mt-1 tracking-widest uppercase">日本語 練習</p>
             <div class="flex justify-center gap-1 mt-3 text-xl">
               <span>🌸</span><span>🌸</span><span>🌸</span>
@@ -360,15 +374,28 @@ onMounted(() => {
           </div>
 
           <div class="overflow-y-auto flex-1 px-6 space-y-5 pb-2">
-            <!-- Preset rapidi -->
+            <!-- Preset rapidi: selezione cumulativa (toggle) -->
             <div>
               <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
               <div class="flex flex-wrap gap-2 mb-4">
                 <button
                   v-for="p in BASE_PRESETS"
                   :key="p.id"
-                  class="px-5 py-2.5 bg-pink-50 text-pink-600 font-black rounded-xl uppercase text-xs border-2 border-pink-100 active:bg-pink-100 transition-all"
-                  @click="store.selectedKanaIds = [...p.kanaIds]"
+                  type="button"
+                  :class="[
+                    'px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    p.kanaIds.every(id => store.selectedKanaIds.includes(id))
+                      ? 'bg-pink-400 border-pink-400 text-white'
+                      : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
+                  ]"
+                  @click="() => {
+                    const ids = p.kanaIds
+                    const allIn = ids.every(id => store.selectedKanaIds.includes(id))
+                    if (allIn)
+                      store.selectedKanaIds = store.selectedKanaIds.filter(id => !ids.includes(id))
+                    else
+                      store.selectedKanaIds = [...new Set([...store.selectedKanaIds, ...ids])]
+                  }"
                 >{{ p.name }}</button>
                 <div
                   v-for="p in store.kanaPresets"
@@ -394,6 +421,12 @@ onMounted(() => {
                   type="text"
                   placeholder="Nuovo preset..."
                   :value="store.newPresetName"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  inputmode="text"
+                  enterkeyhint="done"
                   class="flex-1 border-2 border-slate-100 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-200 bg-slate-50 min-w-0"
                   @input="store.newPresetName = $event.target.value"
                 />
@@ -455,12 +488,20 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-50">
+          <div class="px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-50 flex items-center gap-3">
             <button
               :disabled="store.selectedKanaIds.length < 4"
-              class="w-full bg-pink-400 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
+              class="basis-[80%] bg-pink-400 text-white font-black py-5 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
               @click="store.proceedFromSetup()"
             >Continua →</button>
+            <button
+              type="button"
+              class="basis-[20%] py-5 px-3 rounded-2xl border-2 border-slate-100 text-slate-400 active:bg-slate-50 active:scale-95 transition-all text-sm font-black uppercase tracking-widest flex items-center justify-center"
+              title="Ripeti ultimo quiz kana"
+              @click="store.restartLastKanaQuiz()"
+            >
+              ↻
+            </button>
           </div>
         </div>
       </div>
@@ -768,14 +809,23 @@ onMounted(() => {
               :key="cat"
               class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-95 font-black text-sm uppercase tracking-wide"
               :class="store.selectedVocabCategories.includes(cat)
-                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                ? 'bg-amber-50 border-amber-300 text-amber-700'
                 : 'bg-slate-50 border-slate-100 text-slate-400'"
               @click="store.selectedVocabCategories.includes(cat)
                 ? store.selectedVocabCategories = store.selectedVocabCategories.filter(c => c !== cat)
                 : store.selectedVocabCategories = [...store.selectedVocabCategories, cat]"
             >
               <div class="flex items-center gap-3">
-                <span class="text-xl">{{ store.selectedVocabCategories.includes(cat) ? '✅' : '⬜' }}</span>
+                <span
+                  :class="[
+                    'w-6 h-6 rounded-lg border-2 flex items-center justify-center text-[10px] font-black',
+                    store.selectedVocabCategories.includes(cat)
+                      ? 'bg-[#ffc99e] border-[#f0b078] text-slate-900 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-300'
+                  ]"
+                >
+                  <span v-if="store.selectedVocabCategories.includes(cat)" class="leading-none">✔</span>
+                </span>
                 <div class="text-left">
                   <div>{{ cat }}</div>
                   <div class="text-[10px] font-semibold normal-case opacity-60">
@@ -793,7 +843,7 @@ onMounted(() => {
               @click="store.selectedVocabCategories = [...new Set(store.vocabData.map(v => v.category))]"
             >Tutte</button>
             <button
-              class="flex-1 py-3 rounded-2xl bg-blue-500 text-white font-black uppercase tracking-widest text-sm active:scale-95 active:bg-blue-600 transition-all shadow-md"
+              class="flex-1 py-3 rounded-2xl bg-[#ffc99e] text-slate-900 font-black uppercase tracking-widest text-sm active:scale-95 active:bg-[#f0b078] transition-all shadow-md"
               @click="store.proceedFromVocabSetup()"
             >Avanti →</button>
           </div>
@@ -901,7 +951,9 @@ onMounted(() => {
             </div>
             <button
               class="w-full py-6 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
-              :class="store.quizType === 'vocab-kana-to-romaji' ? 'bg-emerald-500 active:bg-emerald-600' : 'bg-emerald-500 active:bg-emerald-600'"
+              :class="store.quizType === 'vocab-kana-to-romaji'
+                ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
+                : 'bg-emerald-500 active:bg-emerald-600'"
               @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
             >
               あ Inizia Quiz →
@@ -981,7 +1033,7 @@ onMounted(() => {
           </div>
           <!-- Header con X -->
           <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-            <span class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em]">✨ Dettaglio Parola</span>
+            <span class="text-[11px] font-black text-[#c98b45] uppercase tracking-[0.3em]">✨ Dettaglio Parola</span>
             <button
               class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
               @click="store.selectedVocabModal = null"
@@ -996,7 +1048,7 @@ onMounted(() => {
 
             <!-- Romaji + Significato -->
             <div class="flex gap-2 flex-wrap justify-center shrink-0">
-              <div class="text-sm font-bold text-emerald-600 bg-emerald-50 px-5 py-2 rounded-2xl border border-emerald-100 tracking-[0.2em]">
+              <div class="text-sm font-bold text-[#c98b45] bg-[#fff8f2] px-5 py-2 rounded-2xl border border-[#ffc99e]/60 tracking-[0.2em]">
                 {{ selectedVocabModalLive.romaji }}
               </div>
               <div class="text-sm font-bold text-slate-500 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-100 italic">
@@ -1032,7 +1084,7 @@ onMounted(() => {
                 <div
                   :class="[
                     'h-full rounded-full transition-all duration-500',
-                    selectedVocabModalLive.score >= 80 ? 'bg-emerald-400' :
+                    selectedVocabModalLive.score >= 80 ? 'bg-[#e8a55c]' :
                     selectedVocabModalLive.score >= 40 ? 'bg-amber-400' : 'bg-rose-400'
                   ]"
                   :style="{ width: selectedVocabModalLive.score + '%' }"
@@ -1049,14 +1101,18 @@ onMounted(() => {
 
             <!-- Note: più spazio -->
             <textarea
-              class="w-full flex-1 min-h-[7rem] bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base outline-none resize-none focus:border-emerald-200 transition-all"
+              class="w-full flex-1 min-h-[7rem] bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-base outline-none resize-none focus:border-[#ffc99e] transition-all"
               rows="6"
               placeholder="Appunti personali..."
               :value="selectedVocabModalLive.personalNote"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
               @input="store.updateVocabNoteLocal(selectedVocabModalLive.id, $event.target.value)"
             />
             <button
-              class="w-full bg-emerald-500 active:bg-emerald-600 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest shrink-0"
+              class="w-full bg-[#ffc99e] active:bg-[#f0b078] text-slate-900 font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-lg transition-all active:scale-95 text-lg tracking-widest shrink-0"
               @click="store.speakText(selectedVocabModalLive.word)"
             >
               <Volume2 :size="26" /> Pronuncia

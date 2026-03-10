@@ -88,14 +88,21 @@ export const useAppStore = defineStore('app', () => {
   /** Normalize a day entry to { total, correct, kana: { total, correct }, vocab: { total, correct } }. Legacy entries have only total/correct → treat as kana. */
   function _normalizeDayStats(day) {
     if (!day || typeof day !== 'object') return { total: 0, correct: 0, kana: { total: 0, correct: 0 }, vocab: { total: 0, correct: 0 } }
-    const total = day.total ?? 0
-    const correct = day.correct ?? 0
+    let total = day.total ?? 0
+    let correct = day.correct ?? 0
     const kana = day.kana && typeof day.kana === 'object'
       ? { total: day.kana.total ?? 0, correct: day.kana.correct ?? 0 }
       : { total, correct }
     const vocab = day.vocab && typeof day.vocab === 'object'
       ? { total: day.vocab.total ?? 0, correct: day.vocab.correct ?? 0 }
       : { total: 0, correct: 0 }
+    // Coerce with graph logic: if no top-level total but kana+vocab have activity, derive total/correct
+    const derivedTotal = kana.total + vocab.total
+    const derivedCorrect = kana.correct + vocab.correct
+    if (total === 0 && derivedTotal > 0) {
+      total = derivedTotal
+      correct = derivedCorrect
+    }
     return { total, correct, kana, vocab }
   }
   const kanaPresets = ref([])
@@ -152,6 +159,8 @@ export const useAppStore = defineStore('app', () => {
   // --- Feedback risposta (modale inline post-risposta) ---
   // null | { ok, userAnswer, correctAnswer, itemLabel }
   const answerFeedback = ref(null)
+  // Ultimo set di kana usato per un quiz (per riavviare rapidamente)
+  const lastKanaQuizSelection = ref([])
 
   // --- AZIONI ---
 
@@ -709,6 +718,25 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     const selectedItems = kanaData.value.filter(k => selectedKanaIds.value.includes(k.id))
+    lastKanaQuizSelection.value = [...selectedKanaIds.value]
+    quizPendingItems.value = selectedItems
+    quizSetupModalOpen.value = false
+    difficultyModalOpen.value = true
+  }
+
+  // Riavvia un quiz kana usando l'ultima selezione di kana usata
+  function restartLastKanaQuiz() {
+    if (!lastKanaQuizSelection.value || lastKanaQuizSelection.value.length < 4) {
+      customAlert.value = 'Non c’è ancora un quiz kana precedente con almeno 4 caratteri.'
+      return
+    }
+    quizType.value = 'kana'
+    const selectedItems = kanaData.value.filter(k => lastKanaQuizSelection.value.includes(k.id))
+    if (selectedItems.length < 4) {
+      customAlert.value = 'Alcuni kana dell’ultimo quiz non esistono più. Seleziona di nuovo i kana.'
+      return
+    }
+    selectedKanaIds.value = [...lastKanaQuizSelection.value]
     quizPendingItems.value = selectedItems
     quizSetupModalOpen.value = false
     difficultyModalOpen.value = true
@@ -949,14 +977,14 @@ export const useAppStore = defineStore('app', () => {
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
-    vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput,
+    vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection,
     answerFeedback,
     speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, genOptions, initVocabKanaRead, initVocabRomajiInput,
     processAnswer,
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback,
-    handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal,
+    handleStartQuizClick, proceedFromSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetVocabScore,
     selectProfile, switchProfile,
