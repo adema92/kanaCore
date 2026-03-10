@@ -42,12 +42,15 @@ const profileEricaRef = ref(null)
 const profileAndreaRef = ref(null)
 let homeLongPressTimer = null
 const LONG_PRESS_MS = 400
+const homeLongPressStart = ref(null)
+const LONG_PRESS_MOVE_THRESHOLD = 18
 
 function clearHomeLongPress() {
   if (homeLongPressTimer) {
     clearTimeout(homeLongPressTimer)
     homeLongPressTimer = null
   }
+  homeLongPressStart.value = null
 }
 
 function getProfileAtPoint(clientX, clientY) {
@@ -126,8 +129,10 @@ function onNavPointerDown(e) {
   if (path === 'home') {
     profilePickerHover.value = null
     clearHomeLongPress()
+    homeLongPressStart.value = { x: e.clientX, y: e.clientY }
     homeLongPressTimer = setTimeout(() => {
       homeLongPressTimer = null
+      homeLongPressStart.value = null
       if (homeNavWrapRef.value) {
         const rect = homeNavWrapRef.value.getBoundingClientRect()
         const pickerWidth = 72
@@ -145,9 +150,16 @@ function onNavPointerDown(e) {
 }
 
 function onNavPointerMove(e) {
-  clearHomeLongPress()
   const path = getNavPathAtPoint(e.clientX, e.clientY)
   navDragOverPath.value = path
+  if (homeLongPressStart.value != null) {
+    const dx = e.clientX - homeLongPressStart.value.x
+    const dy = e.clientY - homeLongPressStart.value.y
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (path !== 'home' || dist > LONG_PRESS_MOVE_THRESHOLD) clearHomeLongPress()
+  } else {
+    clearHomeLongPress()
+  }
   if (path && path !== currentNavPath.value) {
     goToNav(path)
   }
