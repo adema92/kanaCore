@@ -579,6 +579,26 @@ onMounted(() => {
       <!-- ===== APP PRINCIPALE ===== -->
       <template v-else>
 
+      <!-- Toast Salvato / Non salvato in alto a sinistra dopo fine quiz -->
+      <Transition name="toast">
+        <div
+          v-if="store.quizSavedToast"
+          class="fixed top-5 right-5 z-[400] pt-[max(0.5rem,env(safe-area-inset-top))] pl-[max(0.5rem,env(safe-area-inset-left))] pointer-events-none "
+        >
+          <div
+            :style="store.quizSavedToast === 'success' ? { borderColor: 'rgb(6 150 104)' } : { borderColor: 'rgb(244 63 94)' }"
+            class="flex items-center gap-2 bg-transparent px-3 py-2 rounded-xl shadow-lg text-sm font-black uppercase tracking-wide border-2"
+          >
+            <img
+              :src="store.quizSavedToast === 'success' ? '/onigiri-saved.png' : '/onigiri-unsaved.png'"
+              :alt="store.quizSavedToast === 'success' ? 'Salvato' : 'Non salvato'"
+              class="w-8 h-8 object-contain shrink-0"
+            />
+            <span v-if="store.quizSavedToast === 'error'">Non salvato</span>
+          </div>
+        </div>
+      </Transition>
+
       <!-- ===== MODAL SELEZIONE KANA ===== -->
       <div
         v-if="store.quizSetupModalOpen"
@@ -798,28 +818,6 @@ onMounted(() => {
         class="fixed inset-0 z-[300] flex flex-col"
         :style="quizActiveBgStyle"
       >
-        <!-- Modale: Vuoi salvare i progressi? (alla fine del quiz) -->
-        <div
-          v-if="store.showSaveProgressAfterQuiz"
-          class="fixed inset-0 z-[310] bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
-        >
-          <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
-            <div class="text-5xl mb-4">💾</div>
-            <h3 class="font-black text-slate-700 text-xl mb-2">Salvare i progressi?</h3>
-            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Così non perdi le statistiche aggiornate del quiz.</p>
-            <div class="flex gap-3">
-              <button
-                class="flex-1 bg-slate-100 text-slate-500 font-black py-4 rounded-2xl uppercase tracking-widest transition-all active:bg-slate-200 text-sm"
-                @click="store.closeQuizAndOptionalSave(false)"
-              >No, grazie</button>
-              <button
-                class="flex-1 bg-emerald-500 active:bg-emerald-600 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest transition-all text-sm"
-                @click="store.closeQuizAndOptionalSave(true)"
-              >Salva</button>
-            </div>
-          </div>
-        </div>
-
         <!-- Header quiz: solo barra avanzamento -->
         <div :class="['shrink-0 flex items-center gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-white border-b', quizAccent.border]">
           <button
@@ -1487,7 +1485,7 @@ onMounted(() => {
           : store.saveSuccess
             ? 'bg-emerald-500 text-white'
             : 'bg-white/90 backdrop-blur text-slate-400 border border-slate-100 active:scale-95 active:bg-pink-50 active:text-pink-500'"
-        :title="store.isSyncing ? 'Salvataggio in corso...' : store.saveSuccess ? 'Salvato!' : 'Salva progressi'"
+        :title="store.isSyncing ? '' : store.saveSuccess ? 'Salvato!' : 'Salva progressi'"
         :disabled="store.isSyncing"
         @click="store.saveNow()"
       >
@@ -1507,13 +1505,10 @@ onMounted(() => {
         v-if="store.isSyncing"
         class="fixed inset-0 z-[250] bg-slate-900/20 backdrop-blur-[2px] flex items-center justify-center pointer-events-auto"
       >
-        <div class="bg-white/95 rounded-2xl px-6 py-4 flex items-center gap-3 shadow-xl">
-          <svg class="animate-spin h-6 w-6 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          <span class="text-slate-600 font-bold">Salvataggio...</span>
-        </div>
+        <svg class="animate-spin h-10 w-10 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
       </div>
 
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
@@ -1788,6 +1783,16 @@ onMounted(() => {
 .slide-up-enter-from,
 .slide-up-leave-to {
   transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Quiz saved toast: fade in/out */
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.25s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
   opacity: 0;
 }
 </style>

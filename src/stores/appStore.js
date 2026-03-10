@@ -121,6 +121,7 @@ export const useAppStore = defineStore('app', () => {
 
   const quizActive = ref(false)
   const showSaveProgressAfterQuiz = ref(false)
+  const quizSavedToast = ref(false)
   const quizSetupModalOpen = ref(false)
   const katakanaSetupModalOpen = ref(false)
   const vocabSetupModalOpen = ref(false)
@@ -391,7 +392,14 @@ export const useAppStore = defineStore('app', () => {
 
   function endQuiz(askToSave = false) {
     if (askToSave) {
-      showSaveProgressAfterQuiz.value = true
+      _clearQuizState()
+      saveNow().then(() => {
+        quizSavedToast.value = 'success'
+        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+      }).catch(() => {
+        quizSavedToast.value = 'error'
+        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+      })
     } else {
       _clearQuizState()
     }
@@ -541,7 +549,7 @@ export const useAppStore = defineStore('app', () => {
     const upd = (data) =>
       data.map((x) => {
         if (x.id === item.id) {
-          const ns = ok ? Math.min(100, x.score + 25) : Math.max(0, x.score - 20)
+          const ns = ok ? Math.min(100, x.score + 25) : 0
           return { ...x, score: ns, attempts: x.attempts + 1 }
         }
         return x
@@ -867,12 +875,14 @@ export const useAppStore = defineStore('app', () => {
     // onSnapshot + fallback REST: in incognito onSnapshot può non ricevere dati.
     let _firstSnapDone = false
     let _dataLoaded = false
+    let lastAppliedCloudSavedAt = null
 
     function _applyIfNeeded(d) {
       if (_dataLoaded) return
       _dataLoaded = true
       const payload = typeof d?.data === 'string' ? JSON.parse(d.data) : d
       _applyData(payload)
+      if (d?._savedAt) lastAppliedCloudSavedAt = d._savedAt
       if (!isCloudLoaded.value) isCloudLoaded.value = true
     }
 
@@ -894,7 +904,13 @@ export const useAppStore = defineStore('app', () => {
       }
       if (snap.exists()) {
         const d = snap.data()
-        _applyData(d)
+        const incomingSavedAt = d._savedAt || ''
+        if (lastAppliedCloudSavedAt && incomingSavedAt && incomingSavedAt <= lastAppliedCloudSavedAt) {
+          return
+        }
+        const payload = typeof d?.data === 'string' ? JSON.parse(d.data) : d
+        _applyData(payload)
+        if (incomingSavedAt) lastAppliedCloudSavedAt = incomingSavedAt
         console.log('🔄 onSnapshot: aggiornamento')
       }
     }, (err) => {
@@ -991,7 +1007,7 @@ export const useAppStore = defineStore('app', () => {
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
-    quizActive, showSaveProgressAfterQuiz, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
+    quizActive, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions,
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
