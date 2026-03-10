@@ -232,7 +232,7 @@ const selectDay = (key) => {
     <!-- Banner principale: Onigiri Sensei -->
     <div class="w-full relative overflow-hidden bg-transparent max-w-sm mx-auto">
       <img
-        src="/onighiri_sensei.png"
+        src="/onigiri_sensei.png"
         alt="Onigiri Sensei – La via del riso"
         class="w-full h-auto object-contain object-center block max-h-56"
       />

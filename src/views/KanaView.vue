@@ -1,5 +1,5 @@
 <script setup>
-import { BookOpen } from 'lucide-vue-next'
+import { BookOpen, Eye, EyeOff } from 'lucide-vue-next'
 import { useAppStore, HIRAGANA_GRID, getMasteryColor } from '../stores/appStore'
 
 const store = useAppStore()
@@ -11,10 +11,14 @@ const store = useAppStore()
     <!-- Header Hiragana -->
     <div
       class="p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden"
-      style="background: linear-gradient(to bottom right, #ffd4f5 0%, #ffbeeb 40%, #f0a8dc 100%);"
+      style="background: #fad4e8;"
     >
       <div class="absolute -top-2 -right-2 opacity-10 text-[80px] leading-none">🌸</div>
-      <div class="text-4xl mb-1">あ</div>
+      <img
+        src="/hiragana-logo.png"
+        alt="Hiragana"
+        class="mx-auto object-contain drop-shadow-sm w-[170px] h-[170px]"
+      />
       <h1 class="text-2xl font-black mb-0.5">Hiragana</h1>
       <p class="text-white/90 text-xs font-semibold mb-5 opacity-90 uppercase tracking-widest">{{ store.kanaData.length }} kana</p>
 
@@ -29,17 +33,10 @@ const store = useAppStore()
         </button>
       </div>
 
-      <!-- Toggle romaji -->
-      <button
-        class="w-full bg-white/20 border border-white/30 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-widest active:bg-white/30 transition-all"
-        @click="store.hideGridRomaji = !store.hideGridRomaji"
-      >
-        {{ store.hideGridRomaji ? '👁 Mostra Romaji' : '🙈 Nascondi Romaji' }}
-      </button>
     </div>
 
     <!-- Legenda colori -->
-    <div class="flex gap-2 px-1">
+    <div class="flex flex-wrap items-center gap-2 px-1">
       <div class="flex items-center gap-1.5">
         <div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
         <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Da studiare</span>
@@ -52,6 +49,15 @@ const store = useAppStore()
         <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
         <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Padronanza</span>
       </div>
+      <button
+        type="button"
+        class="ml-auto flex items-center justify-center w-9 h-9 rounded-xl border-2 border-pink-200 bg-white text-pink-600 hover:bg-pink-50 hover:border-pink-300 active:scale-90 transition-all"
+        :title="store.hideGridRomaji ? 'Mostra romaji' : 'Nascondi romaji'"
+        @click="store.hideGridRomaji = !store.hideGridRomaji"
+      >
+        <Eye v-if="store.hideGridRomaji" :size="18" />
+        <EyeOff v-else :size="18" />
+      </button>
     </div>
 
     <!-- Griglia hiragana -->
