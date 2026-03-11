@@ -99,7 +99,20 @@ export const useAppStore = defineStore('app', () => {
     }
     return { total, correct, kana, katakana, vocab }
   }
-  const kanaPresets = ref([])
+
+  /** Azzera le statistiche di oggi per un tipo (kana | katakana | vocab). Usato dai reset grafici. */
+  function resetTodayChart(type) {
+    const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
+      .toISOString().split('T')[0]
+    const cur = _normalizeDayStats(dailyStats.value[todayStr])
+    const next = { ...cur, [type]: { total: 0, correct: 0 } }
+    next.total = next.kana.total + next.katakana.total + next.vocab.total
+    next.correct = next.kana.correct + next.katakana.correct + next.vocab.correct
+    dailyStats.value = {
+      ...dailyStats.value,
+      [todayStr]: next,
+    }
+  }
   const user = ref(null)
   const isCloudLoaded = ref(false)
   // Test: set to true to show loading screen (e.g. in console: window.__store?.forceLoadingScreen = true)
@@ -1040,6 +1053,7 @@ export const useAppStore = defineStore('app', () => {
     answerFeedback,
     speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, genOptions, initVocabKanaRead, initVocabRomajiInput,
     processAnswer,
+    resetTodayChart,
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback,

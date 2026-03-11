@@ -198,8 +198,9 @@ onMounted(() => {
 function resetKana() {
   store.confirmModal = {
     title: 'Reset Kana',
-    text: 'Vuoi azzerare i progressi dei Kana?',
+    text: 'Vuoi azzerare i progressi dei Kana e il grafico Kana oggi?',
     onConfirm: () => {
+      store.resetTodayChart('kana')
       const reset = INITIAL_KANA.map(k => ({ ...k, score: 0, attempts: 0 }))
       store.kanaData = reset
       store.saveNow().catch(() => {})
@@ -211,8 +212,9 @@ function resetKana() {
 function resetVocab() {
   store.confirmModal = {
     title: 'Reset Vocaboli',
-    text: 'Vuoi azzerare i progressi dei Vocaboli?',
+    text: 'Vuoi azzerare i progressi dei Vocaboli e il grafico Vocaboli oggi?',
     onConfirm: () => {
+      store.resetTodayChart('vocab')
       const reset = INITIAL_VOCAB.map(v => ({ ...v, score: 0, attempts: 0 }))
       store.vocabData = reset
       store.saveNow().catch(() => {})
@@ -224,8 +226,9 @@ function resetVocab() {
 function resetKatakana() {
   store.confirmModal = {
     title: 'Reset Katakana',
-    text: 'Vuoi azzerare i progressi dei Katakana?',
+    text: 'Vuoi azzerare i progressi dei Katakana e il grafico Katakana oggi?',
     onConfirm: () => {
+      store.resetTodayChart('katakana')
       const reset = INITIAL_KATAKANA.map(k => ({ ...k, score: 0, attempts: 0 }))
       store.katakanaData = reset
       store.saveNow().catch(() => {})
@@ -266,8 +269,10 @@ const selectDay = (key) => {
 
     <!-- Card statistiche padronanza -->
     <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5">
-        <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest"><span class="text-base"></span> Kana</span>
+      <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5 flex flex-col">
+        <div class="min-h-[1.25rem] flex items-center">
+          <span class="text-[11px] font-black text-pink-400 uppercase tracking-widest">Kana</span>
+        </div>
         <div class="text-4xl font-black text-slate-700">
           {{ store.kanaData.filter(k => k.score >= 80).length + store.katakanaData.filter(k => k.score >= 80).length }}
         </div>
@@ -277,10 +282,12 @@ const selectDay = (key) => {
             :style="{ width: (store.kanaData.length + store.katakanaData.length) ? `${((store.kanaData.filter(k => k.score >= 80).length + store.katakanaData.filter(k => k.score >= 80).length) / (store.kanaData.length + store.katakanaData.length)) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length + store.katakanaData.length }} totale</span>
+        <span class="pt-2 text-[11px] text-slate-300 font-bold">{{ store.kanaData.length + store.katakanaData.length }} totale</span>
       </div>
-      <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5">
-        <span class="text-[11px] font-black text-green-600 uppercase block tracking-widest flex items-center gap-0.5">Vocaboli</span>
+      <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5 flex flex-col">
+        <div class="min-h-[1.25rem] flex items-center">
+          <span class="text-[11px] font-black text-green-600 uppercase tracking-widest">Vocaboli</span>
+        </div>
         <div class="text-4xl font-black text-slate-700">
           {{ store.vocabData.filter(v => v.score >= 80).length }}
         </div>
@@ -290,7 +297,7 @@ const selectDay = (key) => {
             :style="{ width: store.vocabData.length ? `${(store.vocabData.filter(v => v.score >= 80).length / store.vocabData.length) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
+        <span class="pt-2text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
       </div>
     </div>
 
