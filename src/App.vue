@@ -1310,7 +1310,7 @@ onMounted(() => {
           </div>
           <!-- Header con X -->
           <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-            <span class="text-[11px] font-black text-pink-300 uppercase tracking-[0.3em]">🌸 Dettaglio Kana</span>
+            <span class="text-[11px] font-black text-pink-300 uppercase tracking-[0.3em]">Dettaglio Kana</span>
             <button
               class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
               @click="store.selectedKanaModal = null"
@@ -1368,7 +1368,7 @@ onMounted(() => {
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
           <div class="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-            <span class="text-[11px] font-black uppercase tracking-[0.3em]" style="color:#3a86cf;">💙 Dettaglio Katakana</span>
+            <span class="text-[11px] font-black uppercase tracking-[0.3em]" style="color:#3a86cf;">Dettaglio Katakana</span>
             <button
               class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
               @click="store.selectedKatakanaModal = null"

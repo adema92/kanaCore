@@ -359,17 +359,18 @@ export const useAppStore = defineStore('app', () => {
     })
   }
 
-  // Salvataggio manuale (bottone): usa REST API.
+  // Salvataggio manuale (bottone): usa REST API. Mostra sempre il toast con icona che ruota e poi success/error.
   async function saveNow() {
     if (!currentProfile.value || isSyncing.value) return
     if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null }
-    // Payload fissato subito per evitare sovrascritture da onSnapshot prima dell'invio.
     const payload = _buildPayload()
     const clean = JSON.parse(JSON.stringify(payload))
     isSyncing.value = true
     saveSuccess.value = false
     saveErrorModal.value = null
-    const t0 = Date.now()
+    quizSavedToast.value = 'saving'
+    const savingStart = Date.now()
+    const minSavingMs = 600
     try {
       const u = await _ensureAuth()
       if (!u) throw new Error('no-auth')
@@ -378,6 +379,12 @@ export const useAppStore = defineStore('app', () => {
       await _saveViaRestApi(clean)
       saveSuccess.value = true
       setTimeout(() => { saveSuccess.value = false }, 2500)
+      const elapsed = Date.now() - savingStart
+      const wait = Math.max(0, minSavingMs - elapsed)
+      setTimeout(() => {
+        quizSavedToast.value = 'success'
+        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+      }, wait)
     } catch (err) {
       console.error('❌ saveNow:', err.message)
       const msg = err.message || String(err)
@@ -402,6 +409,12 @@ export const useAppStore = defineStore('app', () => {
           text: msg.length > 120 ? msg.slice(0, 120) + '…' : msg,
         }
       }
+      const elapsed = Date.now() - savingStart
+      const wait = Math.max(0, minSavingMs - elapsed)
+      setTimeout(() => {
+        quizSavedToast.value = 'error'
+        setTimeout(() => { quizSavedToast.value = '' }, 2200)
+      }, wait)
     } finally {
       isSyncing.value = false
     }
@@ -409,25 +422,8 @@ export const useAppStore = defineStore('app', () => {
 
   function endQuiz(askToSave = false) {
     if (askToSave) {
-      quizSavedToast.value = 'saving'
       _clearQuizState()
-      const minSavingMs = 600
-      const savingStart = Date.now()
-      saveNow().then(() => {
-        const elapsed = Date.now() - savingStart
-        const wait = Math.max(0, minSavingMs - elapsed)
-        setTimeout(() => {
-          quizSavedToast.value = 'success'
-          setTimeout(() => { quizSavedToast.value = '' }, 2200)
-        }, wait)
-      }).catch(() => {
-        const elapsed = Date.now() - savingStart
-        const wait = Math.max(0, minSavingMs - elapsed)
-        setTimeout(() => {
-          quizSavedToast.value = 'error'
-          setTimeout(() => { quizSavedToast.value = '' }, 2200)
-        }, wait)
-      })
+      saveNow().catch(() => {})
     } else {
       _clearQuizState()
     }
