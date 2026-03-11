@@ -77,25 +77,27 @@ export const useAppStore = defineStore('app', () => {
   const vocabData = ref(INITIAL_VOCAB.map(v => ({ ...v })))
   const dailyStats = ref({})
 
-  /** Normalizza una giornata in { total, correct, kana, vocab }. I dati legacy hanno solo total/correct → trattati come kana. */
+  /** Normalizza una giornata in { total, correct, kana, katakana, vocab }. I dati legacy hanno solo total/correct → trattati come kana. */
   function _normalizeDayStats(day) {
-    if (!day || typeof day !== 'object') return { total: 0, correct: 0, kana: { total: 0, correct: 0 }, vocab: { total: 0, correct: 0 } }
+    if (!day || typeof day !== 'object') return { total: 0, correct: 0, kana: { total: 0, correct: 0 }, katakana: { total: 0, correct: 0 }, vocab: { total: 0, correct: 0 } }
     let total = day.total ?? 0
     let correct = day.correct ?? 0
     const kana = day.kana && typeof day.kana === 'object'
       ? { total: day.kana.total ?? 0, correct: day.kana.correct ?? 0 }
       : { total, correct }
+    const katakana = day.katakana && typeof day.katakana === 'object'
+      ? { total: day.katakana.total ?? 0, correct: day.katakana.correct ?? 0 }
+      : { total: 0, correct: 0 }
     const vocab = day.vocab && typeof day.vocab === 'object'
       ? { total: day.vocab.total ?? 0, correct: day.vocab.correct ?? 0 }
       : { total: 0, correct: 0 }
-    // Se total è 0 ma kana+vocab hanno attività, ricava total/correct per il grafico.
-    const derivedTotal = kana.total + vocab.total
-    const derivedCorrect = kana.correct + vocab.correct
+    const derivedTotal = kana.total + katakana.total + vocab.total
+    const derivedCorrect = kana.correct + katakana.correct + vocab.correct
     if (total === 0 && derivedTotal > 0) {
       total = derivedTotal
       correct = derivedCorrect
     }
-    return { total, correct, kana, vocab }
+    return { total, correct, kana, katakana, vocab }
   }
   const kanaPresets = ref([])
   const user = ref(null)
@@ -547,9 +549,12 @@ export const useAppStore = defineStore('app', () => {
       ...cur,
       total: cur.total + 1,
       correct: cur.correct + (ok ? 1 : 0),
-      kana: isKanaQuiz
+      kana: quizType.value === 'kana'
         ? { total: cur.kana.total + 1, correct: cur.kana.correct + (ok ? 1 : 0) }
         : cur.kana,
+      katakana: quizType.value === 'katakana'
+        ? { total: cur.katakana.total + 1, correct: cur.katakana.correct + (ok ? 1 : 0) }
+        : cur.katakana,
       vocab: !isKanaQuiz
         ? { total: cur.vocab.total + 1, correct: cur.vocab.correct + (ok ? 1 : 0) }
         : cur.vocab,

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
 import { RotateCcw, BookOpen } from 'lucide-vue-next'
-import { useAppStore, INITIAL_KANA, INITIAL_VOCAB } from '../stores/appStore'
+import { useAppStore, INITIAL_KANA, INITIAL_KATAKANA, INITIAL_VOCAB } from '../stores/appStore'
 
 const store = useAppStore()
 const chartScrollRef = ref(null)
@@ -21,9 +21,10 @@ const statsData = computed(() => {
     const key = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
     const raw = store.dailyStats[key]
     const kana = raw?.kana && typeof raw.kana === 'object' ? { total: raw.kana.total ?? 0, correct: raw.kana.correct ?? 0 } : { total: raw?.total ?? 0, correct: raw?.correct ?? 0 }
+    const katakana = raw?.katakana && typeof raw.katakana === 'object' ? { total: raw.katakana.total ?? 0, correct: raw.katakana.correct ?? 0 } : { total: 0, correct: 0 }
     const vocab = raw?.vocab && typeof raw.vocab === 'object' ? { total: raw.vocab.total ?? 0, correct: raw.vocab.correct ?? 0 } : { total: 0, correct: 0 }
-    const total = (kana.total + vocab.total) || 0
-    const correct = (kana.correct + vocab.correct) || 0
+    const total = (kana.total + katakana.total + vocab.total) || 0
+    const correct = (kana.correct + katakana.correct + vocab.correct) || 0
     const isToday = key === today
     const label = range === 'mese'
       ? d.getDate().toString()
@@ -38,6 +39,9 @@ const statsData = computed(() => {
       kanaTotal: kana.total,
       kanaCorrect: kana.correct,
       kanaWrong: (kana.total - kana.correct) || 0,
+      katakanaTotal: katakana.total,
+      katakanaCorrect: katakana.correct,
+      katakanaWrong: (katakana.total - katakana.correct) || 0,
       vocabTotal: vocab.total,
       vocabCorrect: vocab.correct,
       vocabWrong: (vocab.total - vocab.correct) || 0,
@@ -89,16 +93,18 @@ const displayedSummaryTitle = computed(() =>
     : `Periodo (${displayedSummary.value.label})`
 )
 
-// Totali solo per oggi (grafici a torta Kana/Vocaboli).
+// Totali solo per oggi (grafici a torta Kana / Katakana / Vocaboli).
 const dayStats = computed(() => {
   const raw = store.dailyStats[localToday.value]
   const kana = raw?.kana && typeof raw.kana === 'object' ? { total: raw.kana.total ?? 0, correct: raw.kana.correct ?? 0 } : { total: raw?.total ?? 0, correct: raw?.correct ?? 0 }
+  const katakana = raw?.katakana && typeof raw.katakana === 'object' ? { total: raw.katakana.total ?? 0, correct: raw.katakana.correct ?? 0 } : { total: 0, correct: 0 }
   const vocab = raw?.vocab && typeof raw.vocab === 'object' ? { total: raw.vocab.total ?? 0, correct: raw.vocab.correct ?? 0 } : { total: 0, correct: 0 }
   return {
-    total: (kana.total + vocab.total) || 0,
-    correct: (kana.correct + vocab.correct) || 0,
-    wrong: ((kana.total - kana.correct) + (vocab.total - vocab.correct)) || 0,
+    total: (kana.total + katakana.total + vocab.total) || 0,
+    correct: (kana.correct + katakana.correct + vocab.correct) || 0,
+    wrong: ((kana.total - kana.correct) + (katakana.total - katakana.correct) + (vocab.total - vocab.correct)) || 0,
     kana: { total: kana.total, correct: kana.correct, wrong: (kana.total - kana.correct) || 0 },
+    katakana: { total: katakana.total, correct: katakana.correct, wrong: (katakana.total - katakana.correct) || 0 },
     vocab: { total: vocab.total, correct: vocab.correct, wrong: (vocab.total - vocab.correct) || 0 },
   }
 })
@@ -113,6 +119,12 @@ const dayKanaCorrectPct = computed(() =>
 )
 const dayKanaWrongPct = computed(() =>
   dayStats.value.kana.total > 0 ? Math.round((dayStats.value.kana.wrong / dayStats.value.kana.total) * 100) : 0
+)
+const dayKatakanaCorrectPct = computed(() =>
+  dayStats.value.katakana.total > 0 ? Math.round((dayStats.value.katakana.correct / dayStats.value.katakana.total) * 100) : 0
+)
+const dayKatakanaWrongPct = computed(() =>
+  dayStats.value.katakana.total > 0 ? Math.round((dayStats.value.katakana.wrong / dayStats.value.katakana.total) * 100) : 0
 )
 const dayVocabCorrectPct = computed(() =>
   dayStats.value.vocab.total > 0 ? Math.round((dayStats.value.vocab.correct / dayStats.value.vocab.total) * 100) : 0
@@ -209,6 +221,19 @@ function resetVocab() {
   }
 }
 
+function resetKatakana() {
+  store.confirmModal = {
+    title: 'Reset Katakana',
+    text: 'Vuoi azzerare i progressi dei Katakana?',
+    onConfirm: () => {
+      const reset = INITIAL_KATAKANA.map(k => ({ ...k, score: 0, attempts: 0 }))
+      store.katakanaData = reset
+      store.saveNow().catch(() => {})
+      store.confirmModal = null
+    },
+  }
+}
+
 function resetHistory() {
   store.confirmModal = {
     title: 'Reset Storico',
@@ -244,15 +269,15 @@ const selectDay = (key) => {
       <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5">
         <span class="text-[11px] font-black text-pink-400 uppercase block tracking-widest"><span class="text-base"></span> Kana</span>
         <div class="text-4xl font-black text-slate-700">
-          {{ store.kanaData.filter(k => k.score >= 80).length }}
+          {{ store.kanaData.filter(k => k.score >= 80).length + store.katakanaData.filter(k => k.score >= 80).length }}
         </div>
         <div class="mt-2 h-1.5 bg-pink-50 rounded-full overflow-hidden">
           <div
             class="h-full bg-pink-400 rounded-full transition-all duration-700"
-            :style="{ width: store.kanaData.length ? `${(store.kanaData.filter(k => k.score >= 80).length / store.kanaData.length) * 100}%` : '0%' }"
+            :style="{ width: (store.kanaData.length + store.katakanaData.length) ? `${((store.kanaData.filter(k => k.score >= 80).length + store.katakanaData.filter(k => k.score >= 80).length) / (store.kanaData.length + store.katakanaData.length)) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length }} memorizzati</span>
+        <span class="text-[11px] text-slate-300 font-bold">{{ store.kanaData.length + store.katakanaData.length }} totale</span>
       </div>
       <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5">
         <span class="text-[11px] font-black text-green-600 uppercase block tracking-widest flex items-center gap-0.5">Vocaboli</span>
@@ -265,7 +290,7 @@ const selectDay = (key) => {
             :style="{ width: store.vocabData.length ? `${(store.vocabData.filter(v => v.score >= 80).length / store.vocabData.length) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} memorizzati</span>
+        <span class="text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
       </div>
     </div>
 
@@ -326,6 +351,55 @@ const selectDay = (key) => {
           <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
             <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Totale</span>
             <span class="font-bold text-slate-600 text-sm">{{ dayStats.kana.total }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Katakana oggi: stile blu come sezione Katakana -->
+    <div class="bg-white rounded-3xl shadow-sm border border-blue-50/80 p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <span class="text-blue-500">ア</span> Katakana oggi
+        </h2>
+        <button
+          type="button"
+          class="p-1.5 rounded-full border border-blue-100 text-blue-400 hover:bg-blue-50 active:scale-95 transition-all"
+          title="Reset progressi Katakana"
+          @click="resetKatakana"
+        >
+          <RotateCcw :size="13" />
+        </button>
+      </div>
+      <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+        <div class="relative shrink-0">
+          <div
+            class="w-28 h-28 sm:w-32 sm:h-32 rounded-full transition-all duration-500"
+            :style="{
+              background: dayStats.katakana.total > 0
+                ? `conic-gradient(rgb(168 249 173) 0% ${dayKatakanaCorrectPct}%, #63a8eb ${dayKatakanaCorrectPct}% 100%)`
+                : 'conic-gradient(#e2e8f0 0%, #e2e8f0 100%)'
+            }"
+          />
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white shadow-inner flex items-center justify-center">
+              <span v-if="dayStats.katakana.total > 0" class="text-lg sm:text-xl font-black text-[#16a34a]">{{ dayKatakanaCorrectPct }}%</span>
+              <span v-else class="text-xs font-bold text-slate-300">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 space-y-2 min-w-0 w-full">
+          <div class="flex items-center justify-between py-2 px-3 bg-[rgb(168_249_173)]/80 rounded-lg border border-[#86efac]">
+            <span class="text-[10px] sm:text-[11px] font-bold text-[#16a34a] uppercase tracking-wider">Katakana corretti</span>
+            <span class="font-bold text-[#16a34a] text-sm">{{ dayStats.katakana.correct }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg border border-blue-200">
+            <span class="text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-wider">Katakana errati</span>
+            <span class="font-bold text-blue-600 text-sm">{{ dayStats.katakana.wrong }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
+            <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">Totale</span>
+            <span class="font-bold text-slate-600 text-sm">{{ dayStats.katakana.total }}</span>
           </div>
         </div>
       </div>
