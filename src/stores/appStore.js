@@ -576,7 +576,7 @@ export const useAppStore = defineStore('app', () => {
     const upd = (data) =>
       data.map((x) => {
         if (x.id === item.id) {
-          const ns = ok ? Math.min(100, x.score + 25) : 0
+          const ns = ok ? Math.min(100, x.score + 25) : (x.score >= 80 ? 40 : 0)
           return { ...x, score: ns, attempts: x.attempts + 1 }
         }
         return x
