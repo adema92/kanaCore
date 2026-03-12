@@ -6,7 +6,7 @@ import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
 
 import salutiVocab from '../data/saluti.json'
 import randomVocab from '../data/random.json'
-import preferitiVocab from '../data/preferiti.json'
+import presentazioneVocab from '../data/presentazione.json'
 import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
@@ -64,7 +64,7 @@ export const hiraganaPresets = hiraganaPresetsJson
 
 export const katakanaPresets = katakanaPresetsJson
 
-export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab, ...preferitiVocab]
+export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab, ...presentazioneVocab]
 
 // Mappa romaji → kana per quiz lettura.
 export const ROMAJI_TO_KANA = Object.fromEntries(
@@ -888,7 +888,16 @@ export const useAppStore = defineStore('app', () => {
     }
     kanaData.value = _mergeFunc(INITIAL_KANA, raw.kanaData, true)
     katakanaData.value = _mergeFunc(INITIAL_KATAKANA, raw.katakanaData, true)
-    vocabData.value = _mergeFunc(INITIAL_VOCAB, raw.vocabData, true, true)
+    const vocabCloudMap = new Map((raw.vocabData || []).map((i) => [i.id, i]))
+    vocabData.value = INITIAL_VOCAB.map((base) => {
+      const cloud = vocabCloudMap.get(base.id)
+      return {
+        ...base,
+        score: cloud?.score ?? base.score,
+        attempts: cloud?.attempts ?? base.attempts,
+        personalNote: cloud?.personalNote ?? base.personalNote,
+      }
+    })
     if (raw.dailyStats && typeof raw.dailyStats === 'object') {
       const normalized = {}
       for (const [date, day] of Object.entries(raw.dailyStats)) {
@@ -985,21 +994,20 @@ export const useAppStore = defineStore('app', () => {
 
   function selectProfile(name) {
     const normalized = name.toLowerCase()
+    isCloudLoaded.value = false
     currentProfile.value = normalized
     localStorage.setItem('hiragana_profile', normalized)
     profileSelectOpen.value = false
-    kanaData.value = INITIAL_KANA.map(k => ({ ...k }))
-    katakanaData.value = INITIAL_KATAKANA.map(k => ({ ...k }))
-    vocabData.value = INITIAL_VOCAB.map(v => ({ ...v }))
-    dailyStats.value = {}
-    kanaPresets.value = []
     _loadProfileData()
   }
 
   function setProfileFromRoute(name) {
     const normalized = name.toLowerCase()
+    if (currentProfile.value === normalized) return
+    isCloudLoaded.value = false
     currentProfile.value = normalized
     localStorage.setItem('hiragana_profile', normalized)
+    profileSelectOpen.value = false
     _loadProfileData()
   }
 
@@ -1031,7 +1039,7 @@ export const useAppStore = defineStore('app', () => {
     })
 
     setTimeout(() => {
-      if (!isCloudLoaded.value) isCloudLoaded.value = true
+      if (!isCloudLoaded.value && !currentProfile.value) isCloudLoaded.value = true
     }, 6000)
   }
 

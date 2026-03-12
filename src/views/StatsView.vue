@@ -297,7 +297,7 @@ const selectDay = (key) => {
             :style="{ width: store.vocabData.length ? `${(store.vocabData.filter(v => v.score >= 80).length / store.vocabData.length) * 100}%` : '0%' }"
           ></div>
         </div>
-        <span class="pt-2text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
+        <span class="pt-2 text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
       </div>
     </div>
 

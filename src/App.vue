@@ -197,11 +197,9 @@ function onProfilePickerPointerUp(e) {
   document.removeEventListener('pointerup', onProfilePickerPointerUp, true)
   document.removeEventListener('pointercancel', onProfilePickerPointerUp, true)
   if (profile === 'erica') {
-    store.selectProfile('erica')
     router.push('/erica')
     profilePickerJustSelected.value = true
   } else if (profile === 'andrea') {
-    store.selectProfile('andrea')
     router.push('/andrea')
     profilePickerJustSelected.value = true
   }
@@ -414,10 +412,10 @@ async function handleManualSubmitEvent(e) {
   store.handleManualSubmit()
   // Riporta focus su input dopo avanzamento (tranne vocab-kana-to-romaji, gestito da watcher).
   if (store.quizType !== 'vocab-kana-to-romaji') {
-    setTimeout(async () => {
-      await nextTick()
+  setTimeout(async () => {
+    await nextTick()
       if (manualInputRef.value) manualInputRef.value.focus()
-    }, 680)
+  }, 680)
   }
 }
 
@@ -541,8 +539,8 @@ onMounted(() => {
             />
           </div>
           <p class="text-loading-gradient font-black text-base uppercase tracking-widest text-center w-full leading-6 shrink-0" style="height: 24px; line-height: 24px;">
-            Caricamento...
-          </p>
+          Caricamento...
+        </p>
         </div>
       </div>
     </template>
@@ -660,7 +658,7 @@ onMounted(() => {
                       ? 'bg-pink-400 border-pink-400 text-white'
                       : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
                   ]"
-                  @click="() => {
+                    @click="() => {
                     const ids = p.kanaIds
                     const allIn = ids.every(id => store.selectedKanaIds.includes(id))
                     if (allIn)
@@ -669,13 +667,13 @@ onMounted(() => {
                       store.selectedKanaIds = [...new Set([...store.selectedKanaIds, ...ids])]
                   }"
                 >{{ p.name }}</button>
-              </div>
+                </div>
               <div class="border-b border-slate-200 my-5" aria-hidden="true"></div>
-            </div>
+              </div>
 
             <!-- Griglia kana selezionabili (5 colonne = una riga per tipologia: vocali, ka, ga, sa, …) -->
             <div class="grid grid-cols-5 gap-2 pb-2">
-              <button
+                <button
                 v-for="k in store.kanaData"
                 :key="k.id"
                 :class="[
@@ -684,7 +682,7 @@ onMounted(() => {
                     ? 'bg-pink-400 border-pink-400 text-white shadow-md'
                     : 'bg-white border-slate-100 text-slate-300'
                 ]"
-                @click="() => {
+                  @click="() => {
                   if (store.selectedKanaIds.includes(k.id))
                     store.selectedKanaIds = store.selectedKanaIds.filter(id => id !== k.id)
                   else
@@ -695,7 +693,7 @@ onMounted(() => {
           </div>
 
           <div class="px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-200 flex items-center gap-3 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-            <button
+                <button
               :disabled="store.selectedKanaIds.length < 4"
               class="flex-1 bg-pink-400 text-white font-black py-4 h-14 rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 active:bg-pink-500 transition-all text-base disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed"
               @click="store.proceedFromSetup()"
@@ -710,7 +708,7 @@ onMounted(() => {
             </button>
             <button
               type="button"
-              title="Seleziona tutti"
+                  title="Seleziona tutti"
               :class="[
                 'p-2.5 rounded-2xl border-2 active:scale-95 transition-all shrink-0 h-14',
                 store.selectedKanaIds.length === store.kanaData.length
@@ -738,13 +736,13 @@ onMounted(() => {
             <div class="flex items-center gap-2">
               <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest">Selezione Kana</h3>
             </div>
-            <button
+                <button
               class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
               @click="store.katakanaSetupModalOpen = false"
             >
               <X :size="18" />
             </button>
-          </div>
+              </div>
 
           <div class="overflow-y-auto flex-1 px-6 space-y-5 pb-2">
             <!-- Preset rapidi Katakana + selezioni veloci -->
@@ -850,12 +848,12 @@ onMounted(() => {
             <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
               <div
                 :class="['h-full transition-all duration-300', quizAccent.progress]"
-                :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
-              ></div>
-            </div>
+                  :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
+                ></div>
+              </div>
             <span class="text-[11px] font-black text-slate-400 shrink-0">
-              {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
-            </span>
+                {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
+              </span>
           </div>
         </div>
 
@@ -1054,10 +1052,10 @@ onMounted(() => {
               :placeholder="store.quizType === 'vocab-kana-to-romaji'
                 ? (store.vocabKanaToRomajiInputLang === 'it' ? 'Scrivi la parola in kana...' : 'es: sushi, ohayō...')
                 : store.quizType === 'kana'
-                  ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
-                  : store.quizType === 'vocab-romaji'
-                    ? 'es: ohayō, arigatō...'
-                    : (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')"
+                ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
+                : store.quizType === 'vocab-romaji'
+                  ? 'es: ohayō, arigatō...'
+                  : (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')"
               :class="finalInputClass"
               @input="store.manualInput = $event.target.value"
               @focus="onInputFocus"
@@ -1249,7 +1247,7 @@ onMounted(() => {
               <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
               <label class="block text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Lingua Domanda</label>
               <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-6">
-                <button
+            <button
                   type="button"
                   :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.vocabKanaToRomajiInputLang === 'ja' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                   @click="store.vocabKanaToRomajiInputLang = 'ja'"
@@ -1453,16 +1451,16 @@ onMounted(() => {
 
             <!-- Solo Tono (badge categoria rimosso) -->
             <div v-if="selectedVocabModalLive.tone" class="flex flex-wrap gap-2 justify-center w-full shrink-0">
-              <div
-                :class="[
-                  'flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest',
-                  getToneConfig(selectedVocabModalLive.tone).bg,
-                  getToneConfig(selectedVocabModalLive.tone).text,
-                  getToneConfig(selectedVocabModalLive.tone).border
-                ]"
-              >
-                <span>{{ getToneConfig(selectedVocabModalLive.tone).emoji }}</span>
-                <span>{{ selectedVocabModalLive.tone }}</span>
+                <div
+                  :class="[
+                    'flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest',
+                    getToneConfig(selectedVocabModalLive.tone).bg,
+                    getToneConfig(selectedVocabModalLive.tone).text,
+                    getToneConfig(selectedVocabModalLive.tone).border
+                  ]"
+                >
+                  <span>{{ getToneConfig(selectedVocabModalLive.tone).emoji }}</span>
+                  <span>{{ selectedVocabModalLive.tone }}</span>
               </div>
             </div>
 
@@ -1575,7 +1573,7 @@ onMounted(() => {
           <div class="absolute bottom-16 right-10 text-4xl opacity-10 select-none animate-bounce text-blue-300" style="animation-duration:4s">💠</div>
           <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none text-blue-200">ア</div>
           <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none text-indigo-200">イ</div>
-        </div>
+      </div>
         <!-- Sfondo animato Vocaboli (tema giallo/ambra) -->
         <div v-if="route.path === '/vocab'" class="absolute inset-0 overflow-hidden pointer-events-none">
           <div class="absolute top-8 left-6 text-6xl opacity-10 select-none animate-spin text-amber-400" style="animation-duration:18s">📗</div>
@@ -1611,13 +1609,13 @@ onMounted(() => {
             class="flex flex-col items-center justify-center"
           >
             <NavItem label="Home" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" color="dark">
-              <BarChart2 :size="22" />
-            </NavItem>
+            <BarChart2 :size="22" />
+          </NavItem>
           </div>
           <div ref="navSlotHiraganaRef" class="flex flex-col items-center justify-center">
             <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" color="pink" @click="goToNav('/hiragana')">
-              <span class="text-xl font-black">あ</span>
-            </NavItem>
+            <span class="text-xl font-black">あ</span>
+          </NavItem>
           </div>
           <div ref="navSlotKatakanaRef" class="flex flex-col items-center justify-center">
             <NavItem label="Katakana" :active="isNavActive('/katakana')" :highlight="navDragOverPath === '/katakana'" color="blue" @click="goToNav('/katakana')">
@@ -1626,8 +1624,8 @@ onMounted(() => {
           </div>
           <div ref="navSlotVocabRef" class="flex flex-col items-center justify-center">
             <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" color="amber" @click="goToNav('/vocab')">
-              <BookOpen :size="22" />
-            </NavItem>
+            <BookOpen :size="22" />
+          </NavItem>
           </div>
         </div>
       </nav>
