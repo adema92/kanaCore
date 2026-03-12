@@ -29,6 +29,9 @@ const statsData = computed(() => {
     const label = range === 'mese'
       ? d.getDate().toString()
       : d.toLocaleDateString('it-IT', { weekday: 'short' })
+    const kanaTotalCombined = kana.total + katakana.total
+    const kanaCorrectCombined = kana.correct + katakana.correct
+    const kanaWrongCombined = (kana.total - kana.correct) + (katakana.total - katakana.correct)
     return {
       key,
       label,
@@ -36,9 +39,9 @@ const statsData = computed(() => {
       total,
       correct,
       wrong: total - correct,
-      kanaTotal: kana.total,
-      kanaCorrect: kana.correct,
-      kanaWrong: (kana.total - kana.correct) || 0,
+      kanaTotal: kanaTotalCombined,
+      kanaCorrect: kanaCorrectCombined,
+      kanaWrong: kanaWrongCombined,
       katakanaTotal: katakana.total,
       katakanaCorrect: katakana.correct,
       katakanaWrong: (katakana.total - katakana.correct) || 0,
@@ -150,9 +153,10 @@ const consecutiveDays = computed(() => {
   for (let i = 0; i < 365; i++) {
     const key = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
     const raw = stats[key]
-    const kanaTotal = raw?.kana && typeof raw.kana === 'object' ? (raw.kana.total ?? 0) : (raw?.total ?? 0)
+    const kanaRaw = raw?.kana && typeof raw.kana === 'object' ? (raw.kana.total ?? 0) : (raw?.total ?? 0)
+    const katakanaRaw = raw?.katakana && typeof raw.katakana === 'object' ? (raw.katakana.total ?? 0) : 0
     const vocabTotal = raw?.vocab && typeof raw.vocab === 'object' ? (raw.vocab.total ?? 0) : 0
-    const total = (kanaTotal + vocabTotal) || (raw?.total ?? 0)
+    const total = (kanaRaw + katakanaRaw + vocabTotal) || (raw?.total ?? 0)
     if (total > 0) {
       foundActive = true
       count++
