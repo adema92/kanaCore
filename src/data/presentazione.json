@@ -3,6 +3,5 @@
   { "id": "pre_2", "word": "イタリアからきました", "romaji": "Itaria kara kimashita", "meaning": "Vengo dall'Italia", "category": "Presentazione", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "pre_3", "word": "イタリア人です", "romaji": "Itariajin desu", "meaning": "Sono italiano/a", "category": "Presentazione", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "pre_4", "word": "どうぞよろしく / よろしく", "romaji": "Dōzo yoroshiku / Yoroshiku", "meaning": "Piacere di conoscerla", "category": "Presentazione", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "pre_5", "word": "どうぞよろしくおねがいします", "romaji": "Dōzo yoroshiku onegai shimasu", "meaning": "Piacere di conoscerla", "category": "Presentazione", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "pre_6", "word": "がんばって", "romaji": "Ganbatte", "meaning": "Dai, ce la puoi fare / Fai del tuo meglio", "category": "Presentazione", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "pre_5", "word": "どうぞよろしくおねがいします", "romaji": "Dōzo yoroshiku onegai shimasu", "meaning": "Piacere di conoscerla", "category": "Presentazione", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 }
 ]
