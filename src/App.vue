@@ -609,7 +609,7 @@ onMounted(() => {
           >
             <div :class="['w-8 h-8 flex items-center justify-center shrink-0', store.quizSavedToast === 'saving' && 'toast-spin']">
               <img
-                :src="store.quizSavedToast === 'error' ? '/onigiri-unsaved.png' : '/onigiri-saved.png'"
+                :src="store.quizSavedToast === 'error' ? '/onigiri-unsaved.png' : store.quizSavedToast === 'success' ? '/12.png' : '/onigiri-saved.png'"
                 :alt="store.quizSavedToast === 'saving' ? 'Salvataggio' : store.quizSavedToast === 'success' ? 'Salvato' : 'Non salvato'"
                 class="w-8 h-8 object-contain block"
               />
