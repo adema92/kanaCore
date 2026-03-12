@@ -12,6 +12,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  plain: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 defineEmits(['click'])
@@ -31,7 +35,9 @@ const colorMap = {
 const buttonClass = computed(() => {
   const c = colorMap[props.color] || colorMap.indigo
   const isOn = props.active || props.highlight
-  const state = isOn ? c.on + (props.active ? ' scale-105' : ' ring-2 ring-offset-2 ring-slate-300') : c.off
+  const state = props.plain
+    ? (isOn ? 'scale-105 text-slate-800' : c.off)
+    : (isOn ? c.on + (props.active ? ' scale-105' : ' ring-2 ring-offset-2 ring-slate-300') : c.off)
   return `flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 ${state} active:scale-95 group`
 })
 </script>
@@ -41,6 +47,6 @@ const buttonClass = computed(() => {
     <div class="flex items-center justify-center h-6 group-hover:scale-110 transition-transform">
       <slot />
     </div>
-    <span class="text-[10px] font-black uppercase tracking-[0.08em] mt-0.5 leading-none">{{ label }}</span>
+    <span v-if="label" class="text-[10px] font-black uppercase tracking-[0.08em] mt-0.5 leading-none">{{ label }}</span>
   </button>
 </template>

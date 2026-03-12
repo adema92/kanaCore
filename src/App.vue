@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  BarChart2, BookOpen, X, Volume2,
+  BookOpen, X, Volume2,
   Info, AlertTriangle, CheckCheck, Square, Save,
 } from 'lucide-vue-next'
 import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
@@ -1604,14 +1604,6 @@ onMounted(() => {
           @pointermove="onNavPointerMove"
           @pointerup="onNavPointerUp"
         >
-          <div
-            ref="homeNavWrapRef"
-            class="flex flex-col items-center justify-center"
-          >
-            <NavItem label="Home" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" color="dark">
-            <BarChart2 :size="22" />
-          </NavItem>
-          </div>
           <div ref="navSlotHiraganaRef" class="flex flex-col items-center justify-center">
             <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" color="pink" @click="goToNav('/hiragana')">
             <span class="text-xl font-black">あ</span>
@@ -1626,6 +1618,21 @@ onMounted(() => {
             <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" color="amber" @click="goToNav('/vocab')">
             <BookOpen :size="22" />
           </NavItem>
+          </div>
+          <div
+            ref="homeNavWrapRef"
+            class="flex flex-col items-center justify-center"
+          >
+            <NavItem :label="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" color="dark" plain @click="goToNav('home')">
+              <img
+                :src="store.currentProfile === 'erica' ? '/avatar-erica.png' : '/avatar-andrea.png'"
+                :alt="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'"
+                class="w-6 h-6 object-contain select-none mb-1"
+                style="-webkit-touch-callout: none;"
+                draggable="false"
+                @contextmenu.prevent
+              />
+            </NavItem>
           </div>
         </div>
       </nav>
