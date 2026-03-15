@@ -135,6 +135,8 @@ export const useAppStore = defineStore('app', () => {
   const statsTimeRange = ref('settimana')
 
   const quizActive = ref(false)
+  /** 'saving' | 'success' | 'error' | 'chart' – phase of the full-screen quiz-end modal (loader → result → chart + CTAs). */
+  const quizEndModalPhase = ref('')
   const showSaveProgressAfterQuiz = ref(false)
   const quizSavedToast = ref(false)
   const quizSetupModalOpen = ref(false)
@@ -171,6 +173,8 @@ export const useAppStore = defineStore('app', () => {
 
   // Feedback risposta: null | { ok, userAnswer, correctAnswer, itemLabel }
   const answerFeedback = ref(null)
+  /** Snapshot to undo last answer (typo etc.): restored by undoLastAnswer(). */
+  const lastAnswerSnapshot = ref(null)
   const lastKanaQuizSelection = ref([])
   const lastKatakanaQuizSelection = ref([])
 
@@ -360,7 +364,9 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // Salvataggio manuale (bottone): usa REST API. Mostra sempre il toast con icona che ruota e poi success/error.
-  async function saveNow() {
+  // Quando fromQuizEnd: true, non mostrare toast né saveErrorModal (la modale fine-quiz mostra esito e grafico).
+  async function saveNow(opts = {}) {
+    const fromQuizEnd = !!opts.fromQuizEnd
     if (!currentProfile.value || isSyncing.value) return
     if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null }
     const payload = _buildPayload()
@@ -368,9 +374,9 @@ export const useAppStore = defineStore('app', () => {
     isSyncing.value = true
     saveSuccess.value = false
     saveErrorModal.value = null
-    quizSavedToast.value = 'saving'
+    if (!fromQuizEnd) quizSavedToast.value = 'saving'
     const savingStart = Date.now()
-    const minSavingMs = 600
+    const minSavingMs = 1000
     try {
       const u = await _ensureAuth()
       if (!u) throw new Error('no-auth')
@@ -381,40 +387,44 @@ export const useAppStore = defineStore('app', () => {
       setTimeout(() => { saveSuccess.value = false }, 2500)
       const elapsed = Date.now() - savingStart
       const wait = Math.max(0, minSavingMs - elapsed)
-      setTimeout(() => {
-        quizSavedToast.value = 'success'
-        setTimeout(() => { quizSavedToast.value = '' }, 2200)
-      }, wait)
+      if (!fromQuizEnd) {
+        setTimeout(() => {
+          quizSavedToast.value = 'success'
+          setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        }, wait)
+      }
     } catch (err) {
       console.error('❌ saveNow:', err.message)
       const msg = err.message || String(err)
-      if (msg === 'no-auth') {
-        saveErrorModal.value = {
-          title: 'Autenticazione non disponibile',
-          text: 'Non è stato possibile verificare l\'identità. Riprova o ricarica la pagina.',
+      if (!fromQuizEnd) {
+        if (msg === 'no-auth') {
+          saveErrorModal.value = {
+            title: 'Autenticazione non disponibile',
+            text: 'Non è stato possibile verificare l\'identità. Riprova o ricarica la pagina.',
+          }
+        } else if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
+          saveErrorModal.value = {
+            title: 'Permesso negato',
+            text: 'Le regole di Firestore non permettono il salvataggio. Controlla la configurazione del progetto Firebase.',
+          }
+        } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
+          saveErrorModal.value = {
+            title: 'Documento non trovato',
+            text: 'Il percorso del documento potrebbe essere errato. Riprova.',
+          }
+        } else {
+          saveErrorModal.value = {
+            title: 'Salvataggio fallito',
+            text: msg.length > 120 ? msg.slice(0, 120) + '…' : msg,
+          }
         }
-      } else if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
-        saveErrorModal.value = {
-          title: 'Permesso negato',
-          text: 'Le regole di Firestore non permettono il salvataggio. Controlla la configurazione del progetto Firebase.',
-        }
-      } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
-        saveErrorModal.value = {
-          title: 'Documento non trovato',
-          text: 'Il percorso del documento potrebbe essere errato. Riprova.',
-        }
-      } else {
-        saveErrorModal.value = {
-          title: 'Salvataggio fallito',
-          text: msg.length > 120 ? msg.slice(0, 120) + '…' : msg,
-        }
+        const elapsedErr = Date.now() - savingStart
+        const waitErr = Math.max(0, minSavingMs - elapsedErr)
+        setTimeout(() => {
+          quizSavedToast.value = 'error'
+          setTimeout(() => { quizSavedToast.value = '' }, 2200)
+        }, waitErr)
       }
-      const elapsed = Date.now() - savingStart
-      const wait = Math.max(0, minSavingMs - elapsed)
-      setTimeout(() => {
-        quizSavedToast.value = 'error'
-        setTimeout(() => { quizSavedToast.value = '' }, 2200)
-      }, wait)
     } finally {
       isSyncing.value = false
     }
@@ -422,8 +432,7 @@ export const useAppStore = defineStore('app', () => {
 
   function endQuiz(askToSave = false) {
     if (askToSave) {
-      _clearQuizState()
-      saveNow().catch(() => {})
+      openQuizEndModalAndSave()
     } else {
       _clearQuizState()
     }
@@ -438,6 +447,42 @@ export const useAppStore = defineStore('app', () => {
     vocabWriteMistakes.value = 0
     answerFeedback.value = null
     showSaveProgressAfterQuiz.value = false
+    quizResults.value = { correct: 0, total: 0 }
+  }
+
+  function openQuizEndModalAndSave() {
+    quizActive.value = false
+    quizEndModalPhase.value = 'saving'
+    const savingStart = Date.now()
+    const minSavingMs = 1000
+    saveNow({ fromQuizEnd: true })
+      .then(() => {
+        const elapsed = Date.now() - savingStart
+        const wait = Math.max(0, minSavingMs - elapsed)
+        setTimeout(() => {
+          quizEndModalPhase.value = 'success'
+          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 1500)
+        }, wait)
+      })
+      .catch(() => {
+        const elapsed = Date.now() - savingStart
+        const wait = Math.max(0, minSavingMs - elapsed)
+        setTimeout(() => {
+          quizEndModalPhase.value = 'error'
+          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 1500)
+        }, wait)
+      })
+  }
+
+  function closeQuizEndModal() {
+    quizEndModalPhase.value = ''
+    _clearQuizState()
+  }
+
+  function restartQuizFromEndModal() {
+    quizEndModalPhase.value = ''
+    // Restart with same config: same type, same items, same difficulty (no modals).
+    startQuizFinal(quizDifficulty.value)
   }
 
   async function closeQuizAndOptionalSave(save) {
@@ -521,6 +566,7 @@ export const useAppStore = defineStore('app', () => {
 
   function _advanceQuiz() {
     answerFeedback.value = null
+    lastAnswerSnapshot.value = null
     if (currentQuestionIndex.value + 1 < quizQueue.value.length) {
       currentQuestionIndex.value++
       const next = quizQueue.value[currentQuestionIndex.value]
@@ -543,6 +589,21 @@ export const useAppStore = defineStore('app', () => {
 
   function processAnswer(ok, item, userAnswerText, skipFeedback = false) {
     _lastSyncAt = Date.now()
+    const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
+      .toISOString().split('T')[0]
+    const curDay = _normalizeDayStats(dailyStats.value[todayStr])
+    const getItemState = (arr) => arr.find((x) => x.id === item.id)
+    const k = quizType.value === 'kana' ? getItemState(kanaData.value)
+      : quizType.value === 'katakana' ? getItemState(katakanaData.value)
+      : getItemState(vocabData.value)
+    lastAnswerSnapshot.value = {
+      quizResults: { ...quizResults.value },
+      todayStr,
+      dayStatsBefore: { ...curDay },
+      itemId: item.id,
+      scoreBefore: k ? k.score : 0,
+      attemptsBefore: k ? k.attempts : 0,
+    }
     if (ok) quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
     speakText(
       quizType.value === 'kana' || quizType.value === 'katakana'
@@ -550,23 +611,20 @@ export const useAppStore = defineStore('app', () => {
         : item.word
     )
 
-    const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
-      .toISOString().split('T')[0]
-    const cur = _normalizeDayStats(dailyStats.value[todayStr])
     const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
     const nextDay = {
-      ...cur,
-      total: cur.total + 1,
-      correct: cur.correct + (ok ? 1 : 0),
+      ...curDay,
+      total: curDay.total + 1,
+      correct: curDay.correct + (ok ? 1 : 0),
       kana: quizType.value === 'kana'
-        ? { total: cur.kana.total + 1, correct: cur.kana.correct + (ok ? 1 : 0) }
-        : cur.kana,
+        ? { total: curDay.kana.total + 1, correct: curDay.kana.correct + (ok ? 1 : 0) }
+        : curDay.kana,
       katakana: quizType.value === 'katakana'
-        ? { total: cur.katakana.total + 1, correct: cur.katakana.correct + (ok ? 1 : 0) }
-        : cur.katakana,
+        ? { total: curDay.katakana.total + 1, correct: curDay.katakana.correct + (ok ? 1 : 0) }
+        : curDay.katakana,
       vocab: !isKanaQuiz
-        ? { total: cur.vocab.total + 1, correct: cur.vocab.correct + (ok ? 1 : 0) }
-        : cur.vocab,
+        ? { total: curDay.vocab.total + 1, correct: curDay.vocab.correct + (ok ? 1 : 0) }
+        : curDay.vocab,
     }
     dailyStats.value = {
       ...dailyStats.value,
@@ -627,6 +685,46 @@ export const useAppStore = defineStore('app', () => {
 
   function advanceAfterFeedback() {
     _advanceQuiz()
+  }
+
+  function undoLastAnswer() {
+    const s = lastAnswerSnapshot.value
+    if (!s) return
+    quizResults.value = { ...s.quizResults }
+    dailyStats.value = {
+      ...dailyStats.value,
+      [s.todayStr]: { ...s.dayStatsBefore },
+    }
+    const revert = (data) =>
+      data.map((x) =>
+        x.id === s.itemId ? { ...x, score: s.scoreBefore, attempts: s.attemptsBefore } : x
+      )
+    if (quizType.value === 'kana') {
+      kanaData.value = revert(kanaData.value)
+    } else if (quizType.value === 'katakana') {
+      katakanaData.value = revert(katakanaData.value)
+    } else {
+      vocabData.value = revert(vocabData.value)
+    }
+    answerFeedback.value = null
+    lastAnswerSnapshot.value = null
+    const item = quizQueue.value[currentQuestionIndex.value]
+    if (!item) return
+    if (quizType.value === 'vocab-kana-read' || quizType.value === 'vocab-romaji-input') {
+      initVocabKanaRead(item)
+    } else if (quizType.value === 'vocab-romaji') {
+      _genVocabRomajiOptions(item)
+      manualInput.value = ''
+    } else if (quizType.value === 'vocab-kana-to-romaji') {
+      manualInput.value = ''
+      isAnswered.value = false
+    } else {
+      genOptions(item)
+      manualInput.value = ''
+    }
+    selectedOption.value = null
+    isAnswered.value = false
+    sync()
   }
 
   function handleManualSubmit() {
@@ -1048,19 +1146,19 @@ export const useAppStore = defineStore('app', () => {
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
-    quizActive, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
+    quizActive, quizEndModalPhase, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
     selectedVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
-    answerFeedback,
-    speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, genOptions, initVocabKanaRead, initVocabRomajiInput,
+    answerFeedback, lastAnswerSnapshot,
+    speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, openQuizEndModalAndSave, closeQuizEndModal, restartQuizFromEndModal, genOptions, initVocabKanaRead, initVocabRomajiInput,
     processAnswer,
     resetTodayChart,
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
-    advanceAfterFeedback,
+    advanceAfterFeedback, undoLastAnswer,
     handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetKatakanaScore, resetVocabScore,

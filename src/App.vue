@@ -28,6 +28,33 @@ const quizAccent = computed(() => {
   return { border: 'border-pink-50', progress: 'bg-pink-400', cardBorder: 'border-pink-100', text: 'text-pink-300', textActive: 'active:text-pink-400', cta: 'bg-pink-400 active:bg-pink-500', ctaText: 'text-pink-500', focusBorder: 'focus:border-pink-300' }
 })
 
+// Quiz-end modal: pie chart data and colors (same as StatsView: kana violet/pink, katakana green/blue, vocab green/pink).
+const quizEndChartData = computed(() => {
+  const r = store.quizResults
+  const total = r.total || 0
+  const correct = r.correct || 0
+  const wrong = total - correct
+  const correctPct = total > 0 ? Math.round((correct / total) * 100) : 0
+  const wrongPct = total > 0 ? 100 - correctPct : 0
+  const t = store.quizType
+  let correctColor = '#c4b5fd'
+  let wrongColor = '#f9a8d4'
+  if (t === 'katakana') {
+    correctColor = 'rgb(168 249 173)'
+    wrongColor = '#63a8eb'
+  } else if (t?.startsWith('vocab')) {
+    correctColor = '#34d399'
+    wrongColor = '#f9a8d4'
+  }
+  return { total, correct, wrong, correctPct, wrongPct, correctColor, wrongColor }
+})
+
+const quizEndChartBackground = computed(() => {
+  const d = quizEndChartData.value
+  if (d.total === 0) return 'conic-gradient(#e2e8f0 0%, #e2e8f0 100%)'
+  return `conic-gradient(${d.correctColor} 0% ${d.correctPct}%, ${d.wrongColor} ${d.correctPct}% 100%)`
+})
+
 const homeNavWrapRef = ref(null)
 const navInnerRef = ref(null)
 const navSlotHiraganaRef = ref(null)
@@ -378,6 +405,7 @@ function isNavActive(path) {
 // Blocca scroll della pagina quando una modale/overlay è aperta.
 const isAnyModalOpen = computed(() =>
   !!(
+    store.quizEndModalPhase ||
     store.quizSetupModalOpen ||
     store.katakanaSetupModalOpen ||
     store.vocabSetupModalOpen ||
@@ -618,6 +646,78 @@ onMounted(() => {
           </div>
         </div>
       </Transition>
+
+      <!-- ===== MODAL FINE QUIZ: loader → success/error → grafico + Ripeti / Continua ===== -->
+      <div
+        v-if="store.quizEndModalPhase"
+        class="fixed inset-0 z-[350] flex flex-col items-center justify-center bg-slate-800/75 backdrop-blur-sm overflow-hidden touch-none"
+      >
+        <!-- Phase: saving – full-screen loader (same icon as toast, spinning) -->
+        <div
+          v-if="store.quizEndModalPhase === 'saving'"
+          class="flex flex-col items-center justify-center w-full h-full"
+        >
+          <div class="w-16 h-16 flex items-center justify-center toast-spin">
+            <img src="/onigiri-saved.png" alt="Salvataggio" class="w-16 h-16 object-contain block" />
+          </div>
+          <p class="mt-4 text-white font-bold uppercase tracking-widest text-sm">Salvataggio...</p>
+        </div>
+        <!-- Phase: success – full-screen success icon -->
+        <div
+          v-else-if="store.quizEndModalPhase === 'success'"
+          class="flex flex-col items-center justify-center w-full h-full"
+        >
+          <div class="w-24 h-24 flex items-center justify-center toast-result">
+            <img src="/12.png" alt="Salvato" class="w-24 h-24 object-contain block" />
+          </div>
+        </div>
+        <!-- Phase: error – full-screen error icon -->
+        <div
+          v-else-if="store.quizEndModalPhase === 'error'"
+          class="flex flex-col items-center justify-center w-full h-full"
+        >
+          <div class="w-24 h-24 flex items-center justify-center toast-result">
+            <img src="/onigiri-unsaved.png" alt="Non salvato" class="w-24 h-24 object-contain block" />
+          </div>
+          <p class="mt-4 text-white font-bold uppercase tracking-widest text-sm">Non salvato</p>
+        </div>
+        <!-- Phase: chart – pie chart + Ripeti test / Continua -->
+        <div
+          v-else-if="store.quizEndModalPhase === 'chart'"
+          class="flex flex-col items-center justify-center w-full max-w-sm px-6 py-8"
+        >
+          <h2 class="text-lg font-black text-white uppercase tracking-widest mb-1">Risultati quiz</h2>
+          <p class="text-slate-300 text-lg mb-6">Totale: <strong class="text-white">{{ quizEndChartData.total }}</strong></p>
+          <div class="relative shrink-0 mb-6">
+            <div
+              class="w-40 h-40 rounded-full transition-all duration-500"
+              :style="{ background: quizEndChartBackground }"
+            />
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-28 h-28 rounded-full bg-white/85 shadow-inner flex items-center justify-center">
+                <span v-if="quizEndChartData.total > 0" class="text-xl font-semibold text-slate-500">{{ quizEndChartData.correctPct }}%</span>
+                <span v-else class="text-sm font-medium text-slate-400">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap justify-center gap-4 mb-2 text-sm">
+            <span class="text-slate-300">Corrette: <strong :style="{ color: quizEndChartData.correctColor }">{{ quizEndChartData.correct }}</strong></span>
+            <span class="text-slate-300">Errate: <strong :style="{ color: quizEndChartData.wrongColor }">{{ quizEndChartData.wrong }}</strong></span>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 w-full mt-6">
+            <button
+              type="button"
+              class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-white transition-all active:scale-95 border-2 border-white/40 bg-white/10 hover:bg-white/20"
+              @click="store.restartQuizFromEndModal()"
+            >Ripeti test</button>
+            <button
+              type="button"
+              class="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest bg-white text-slate-800 transition-all active:scale-95"
+              @click="store.closeQuizEndModal()"
+            >Continua</button>
+          </div>
+        </div>
+      </div>
 
       <!-- ===== MODAL SELEZIONE KANA ===== -->
       <div
@@ -1604,21 +1704,6 @@ onMounted(() => {
           @pointermove="onNavPointerMove"
           @pointerup="onNavPointerUp"
         >
-          <div ref="navSlotHiraganaRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" color="pink" @click="goToNav('/hiragana')">
-            <span class="text-xl font-black">あ</span>
-          </NavItem>
-          </div>
-          <div ref="navSlotKatakanaRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Katakana" :active="isNavActive('/katakana')" :highlight="navDragOverPath === '/katakana'" color="blue" @click="goToNav('/katakana')">
-              <span class="text-xl font-black leading-none">ア</span>
-            </NavItem>
-          </div>
-          <div ref="navSlotVocabRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" color="amber" @click="goToNav('/vocab')">
-            <BookOpen :size="22" />
-          </NavItem>
-          </div>
           <div
             ref="homeNavWrapRef"
             class="flex flex-col items-center justify-center"
@@ -1633,6 +1718,21 @@ onMounted(() => {
                 @contextmenu.prevent
               />
             </NavItem>
+          </div>
+          <div ref="navSlotHiraganaRef" class="flex flex-col items-center justify-center">
+            <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" color="pink" @click="goToNav('/hiragana')">
+            <span class="text-xl font-black">あ</span>
+          </NavItem>
+          </div>
+          <div ref="navSlotKatakanaRef" class="flex flex-col items-center justify-center">
+            <NavItem label="Katakana" :active="isNavActive('/katakana')" :highlight="navDragOverPath === '/katakana'" color="blue" @click="goToNav('/katakana')">
+              <span class="text-xl font-black leading-none">ア</span>
+            </NavItem>
+          </div>
+          <div ref="navSlotVocabRef" class="flex flex-col items-center justify-center">
+            <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" color="amber" @click="goToNav('/vocab')">
+            <BookOpen :size="22" />
+          </NavItem>
           </div>
         </div>
       </nav>
@@ -1783,11 +1883,23 @@ onMounted(() => {
                 >{{ store.answerFeedback.meaning }}</p>
               </div>
 
-              <!-- Avanti -->
-              <button
-                class="w-full bg-slate-800 text-white font-black py-5 rounded-2xl uppercase tracking-widest shadow-xl active:scale-95 active:bg-slate-900 text-base transition-all"
-                @click="store.advanceAfterFeedback()"
-              >Avanti →</button>
+              <!-- Spiegazione + Ripristina + Avanti (stessa distanza tra tutti) -->
+              <div class="flex flex-col gap-3">
+                <p
+                  v-if="store.lastAnswerSnapshot"
+                  class="text-slate-400 text-xs font-medium text-center"
+                >Se hai sbagliato per errore di battitura puoi tornare indietro e riprovare senza che venga segnata come sbagliata.</p>
+                <button
+                  v-if="store.lastAnswerSnapshot"
+                  type="button"
+                  class="w-full border-2 border-slate-400 text-slate-600 font-black py-4 rounded-2xl uppercase tracking-widest active:scale-95 active:bg-slate-100 text-sm transition-all"
+                  @click="store.undoLastAnswer()"
+                >Ripristina</button>
+                <button
+                  class="w-full bg-slate-800 text-white font-black py-5 rounded-2xl uppercase tracking-widest shadow-xl active:scale-95 active:bg-slate-900 text-base transition-all"
+                  @click="store.advanceAfterFeedback()"
+                >Avanti →</button>
+              </div>
             </div>
           </div>
         </div>
