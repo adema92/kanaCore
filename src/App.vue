@@ -1853,7 +1853,7 @@ onMounted(() => {
                     {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Sbagliato' }}
                   </p>
                   <p class="text-slate-400 text-sm font-semibold">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Ritenta o vai avanti' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Verifica la risposta corretta' }}
                   </p>
                 </div>
               </div>
@@ -1898,7 +1898,7 @@ onMounted(() => {
                 <p
                   v-if="store.lastAnswerSnapshot"
                   class="text-slate-400 text-xs font-medium text-center"
-                >Se hai sbagliato per errore di battitura puoi tornare indietro e riprovare senza che venga segnata come sbagliata.</p>
+                >In caso di errore di battitura puoi tornare indietro e riprovare, in questo caso non verrà salvata la risposta errata.</p>
                 <button
                   v-if="store.lastAnswerSnapshot"
                   type="button"
