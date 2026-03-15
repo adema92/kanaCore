@@ -51,7 +51,7 @@ function catStats(words) {
       <img
         src="/vocaboli-logo.png"
         alt="Vocabolario"
-        class="mx-auto object-contain drop-shadow-sm w-[170px] h-[170px]"
+        class="mx-auto object-contain drop-shadow-sm w-[190px] h-[190px]"
       />
       <h1 class="text-2xl font-black mb-0.5 uppercase tracking-tight">Vocabolario</h1>
       <p class="text-white/90 text-xs font-semibold mb-5 opacity-90 uppercase tracking-widest">
