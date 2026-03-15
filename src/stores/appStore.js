@@ -376,7 +376,7 @@ export const useAppStore = defineStore('app', () => {
     saveErrorModal.value = null
     if (!fromQuizEnd) quizSavedToast.value = 'saving'
     const savingStart = Date.now()
-    const minSavingMs = 1000
+    const minSavingMs = 700
     try {
       const u = await _ensureAuth()
       if (!u) throw new Error('no-auth')
@@ -454,14 +454,14 @@ export const useAppStore = defineStore('app', () => {
     quizActive.value = false
     quizEndModalPhase.value = 'saving'
     const savingStart = Date.now()
-    const minSavingMs = 1000
+    const minSavingMs = 700
     saveNow({ fromQuizEnd: true })
       .then(() => {
         const elapsed = Date.now() - savingStart
         const wait = Math.max(0, minSavingMs - elapsed)
         setTimeout(() => {
           quizEndModalPhase.value = 'success'
-          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 1500)
+          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 800)
         }, wait)
       })
       .catch(() => {
@@ -469,7 +469,7 @@ export const useAppStore = defineStore('app', () => {
         const wait = Math.max(0, minSavingMs - elapsed)
         setTimeout(() => {
           quizEndModalPhase.value = 'error'
-          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 1500)
+          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 800)
         }, wait)
       })
   }
@@ -604,12 +604,14 @@ export const useAppStore = defineStore('app', () => {
       scoreBefore: k ? k.score : 0,
       attemptsBefore: k ? k.attempts : 0,
     }
-    if (ok) quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
-    speakText(
-      quizType.value === 'kana' || quizType.value === 'katakana'
-        ? item.character
-        : item.word
-    )
+    if (ok) {
+      quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
+      speakText(
+        quizType.value === 'kana' || quizType.value === 'katakana'
+          ? item.character
+          : item.word
+      )
+    }
 
     const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
     const nextDay = {

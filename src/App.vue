@@ -3,7 +3,7 @@ import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BookOpen, X, Volume2,
-  Info, AlertTriangle, CheckCheck, Square, Save,
+  Info, AlertTriangle, CheckCheck, Square, Save, Eye,
 } from 'lucide-vue-next'
 import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
@@ -425,6 +425,11 @@ const quizScrollRef = ref(null)
 const quizCardRef = ref(null)
 const manualInputRef = ref(null)
 const feedbackModalRef = ref(null)
+const showCorrectAnswerInFeedback = ref(false)
+
+watch(() => store.answerFeedback, () => {
+  showCorrectAnswerInFeedback.value = false
+})
 
 async function onInputFocus() {
   await nextTick()
@@ -1843,13 +1848,12 @@ onMounted(() => {
             <div class="px-6 pt-2 pb-5 flex flex-col gap-5">
               <!-- Titolo -->
               <div class="flex items-center gap-3">
-                <div class="text-4xl">{{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? '🎉' : '😅' }}</div>
                 <div>
                   <p :class="['font-black text-xl uppercase tracking-widest', store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'text-emerald-500' : 'text-rose-500']">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Quasi!' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Sbagliato' }}
                   </p>
                   <p class="text-slate-400 text-sm font-semibold">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Ripassala e vai avanti' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Ritenta o vai avanti' }}
                   </p>
                 </div>
               </div>
@@ -1862,21 +1866,27 @@ onMounted(() => {
                     {{ store.answerFeedback.userAnswer || '—' }}
                   </p>
                 </div>
-                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 text-center">
-                  <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Risposta corretta</p>
-                  <p class="font-black text-emerald-600 text-lg leading-tight break-words">
-                    {{ store.answerFeedback.correctAnswer }}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  class="bg-emerald-200/80 border-2 border-emerald-400 rounded-2xl p-4 text-center w-full transition-all active:scale-[0.98]"
+                  @click="showCorrectAnswerInFeedback = true"
+                >
+                  <template v-if="!showCorrectAnswerInFeedback">
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Vedi risposta</p>
+                    <Eye :size="18" class="mx-auto text-emerald-600" />
+                  </template>
+                  <template v-else>
+                    <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Corretta</p>
+                    <p class="font-black text-emerald-600 text-lg leading-tight break-words">
+                      {{ store.answerFeedback.correctAnswer }}
+                    </p>
+                  </template>
+                </button>
               </div>
 
-              <!-- Info parola: kana + romaji + significato (sempre, per Quiz Kana→Romaji anche quando corretto) -->
+              <!-- Info parola: kana + significato (romaji solo nella card "Vedi risposta" quando sbagliato) -->
               <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
                 <p class="text-3xl font-black text-slate-700 mb-1">{{ store.answerFeedback.questionLabel }}</p>
-                <p
-                  v-if="store.answerFeedback.romaji && store.answerFeedback.romaji !== store.answerFeedback.questionLabel"
-                  class="text-sm font-bold text-emerald-500 uppercase tracking-widest"
-                >{{ store.answerFeedback.romaji }}</p>
                 <p
                   v-if="store.answerFeedback.meaning"
                   class="text-sm text-slate-400 italic mt-0.5"
