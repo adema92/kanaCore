@@ -699,7 +699,7 @@ onMounted(() => {
               :style="{ background: quizEndChartBackground }"
             />
             <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-28 h-28 rounded-full bg-white/85 shadow-inner flex items-center justify-center">
+              <div class="w-28 h-28 rounded-full bg-white shadow-inner flex items-center justify-center">
                 <span v-if="quizEndChartData.total > 0" class="text-xl font-semibold text-slate-500">{{ quizEndChartData.correctPct }}%</span>
                 <span v-else class="text-sm font-medium text-slate-400">—</span>
               </div>
@@ -1853,7 +1853,7 @@ onMounted(() => {
                     {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Sbagliato' }}
                   </p>
                   <p class="text-slate-400 text-sm font-semibold">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Significato e pronuncia sotto' : 'Verifica la risposta corretta' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Memorizza la traduzione e la pronuncia' : 'Verifica la risposta corretta' }}
                   </p>
                 </div>
               </div>
@@ -1884,23 +1884,26 @@ onMounted(() => {
                 </button>
               </div>
 
-              <!-- Info parola: kana + significato (romaji solo nella card "Vedi risposta" quando sbagliato) -->
-              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+              <!-- Blocco centrale: nascosto se sbagliato in quiz parole (vocab) o kana/katakana romaji→kana (evita spoiler) -->
+              <div
+                v-if="store.answerFeedback.ok || (!store.quizType.startsWith('vocab') && (!['kana','katakana'].includes(store.quizType) || store.quizDirection !== 'romaji-to-ja'))"
+                class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center"
+              >
                 <p class="text-3xl font-black text-slate-700 mb-1">{{ store.answerFeedback.questionLabel }}</p>
                 <p
-                  v-if="store.answerFeedback.meaning"
+                  v-if="store.answerFeedback.meaning && (store.answerFeedback.ok || !store.quizType.startsWith('vocab'))"
                   class="text-sm text-slate-400 italic mt-0.5"
                 >{{ store.answerFeedback.meaning }}</p>
               </div>
 
-              <!-- Spiegazione + Ripristina + Avanti (stessa distanza tra tutti) -->
+              <!-- Spiegazione + Ripristina + Avanti: Ripristina e testo solo se risposta sbagliata -->
               <div class="flex flex-col gap-3">
                 <p
-                  v-if="store.lastAnswerSnapshot"
+                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok"
                   class="text-slate-400 text-xs font-medium text-center"
                 >In caso di errore di battitura puoi tornare indietro e riprovare, in questo caso non verrà salvata la risposta errata.</p>
                 <button
-                  v-if="store.lastAnswerSnapshot"
+                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok"
                   type="button"
                   class="w-full border-2 border-slate-400 text-slate-600 font-black py-4 rounded-2xl uppercase tracking-widest active:scale-95 active:bg-slate-100 text-sm transition-all"
                   @click="store.undoLastAnswer()"
