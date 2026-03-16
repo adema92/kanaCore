@@ -3,7 +3,7 @@ import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BookOpen, X, Volume2,
-  Info, AlertTriangle, CheckCheck, Square, Save, Eye,
+  Info, AlertTriangle, CheckCheck, Square, Save, Eye, ListOrdered,
 } from 'lucide-vue-next'
 import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
@@ -1322,28 +1322,33 @@ onMounted(() => {
 
           <!-- Difficoltà (nascosta per vocab-kana-read, vocab-romaji-input, vocab-kana-to-romaji) -->
           <div v-if="store.quizType !== 'vocab-kana-read' && store.quizType !== 'vocab-romaji-input' && store.quizType !== 'vocab-kana-to-romaji'" class="px-8 space-y-4 pb-8">
-          
-            <button
-              class="w-full py-4 rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
-              @click="store.startQuizFinal('facile')"
-            >
-              <span>🌱 Facile</span>
-              <span class="text-xs font-semibold normal-case opacity-70">3 opzioni</span>
-            </button>
-            <button
-              class="w-full py-4 rounded-2xl border-2 border-amber-100 bg-amber-50 text-amber-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
-              @click="store.startQuizFinal('medio')"
-            >
-              <span>🌟 Medio</span>
-              <span class="text-xs font-semibold normal-case opacity-70">4 opzioni</span>
-            </button>
-            <button
-              class="w-full py-4 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-500 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
-              @click="store.startQuizFinal('difficile')"
-            >
-              <span>🔥 Difficile</span>
-              <span class="text-xs font-semibold normal-case opacity-70">Input libero</span>
-            </button>
+            <div class="flex items-stretch gap-3">
+              <div class="flex-1 space-y-4">
+                <button
+                  class="w-full py-4 rounded-2xl border-2 border-emerald-100 bg-emerald-50 text-emerald-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
+                  @click="store.startQuizFinal('facile')"
+                >
+                  <span>🌱 Facile</span>
+                  <span class="text-xs font-semibold normal-case opacity-70">3 opzioni</span>
+                </button>
+                <button
+                  class="w-full py-4 rounded-2xl border-2 border-amber-100 bg-amber-50 text-amber-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
+                  @click="store.startQuizFinal('medio')"
+                >
+                  <span>🌟 Medio</span>
+                  <span class="text-xs font-semibold normal-case opacity-70">4 opzioni</span>
+                </button>
+                <div class="flex gap-3 items-stretch">
+                  <button
+                    class="flex-1 py-4 rounded-2xl border-2 border-rose-100 bg-rose-50 text-rose-500 font-black uppercase tracking-widest text-sm active:scale-95 transition-all flex items-center justify-between px-5"
+                    @click="store.startQuizFinal('difficile')"
+                  >
+                    <span>🔥 Difficile</span>
+                    <span class="text-xs font-semibold normal-case opacity-70">Input libero</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-else class="px-8 pb-8 pt-2">
@@ -1383,20 +1388,30 @@ onMounted(() => {
               </div>
               <p class="text-[10px] text-slate-400 mt-3 text-center">Usa − / + per cambiare (step 5)</p>
             </div>
-            <button
-              class="w-full py-4 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
-              :class="store.quizType === 'vocab-kana-to-romaji'
-                ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
-                : store.quizType?.startsWith('vocab')
-                  ? 'bg-amber-400 active:bg-amber-500'
-                  : store.quizType === 'katakana'
-                    ? ''
-                    : 'bg-pink-400 active:bg-pink-500'"
-              :style="store.quizType === 'katakana' ? 'background:#63a8eb;' : ''"
-              @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
-            >
-              Inizia Quiz
-            </button>
+            <div class="flex items-stretch gap-3">
+              <button
+                class="flex-1 py-4 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
+                :class="store.quizType === 'vocab-kana-to-romaji'
+                  ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
+                  : store.quizType?.startsWith('vocab')
+                    ? 'bg-amber-400 active:bg-amber-500'
+                    : store.quizType === 'katakana'
+                      ? ''
+                      : 'bg-pink-400 active:bg-pink-500'"
+                :style="store.quizType === 'katakana' ? 'background:#63a8eb;' : ''"
+                @click="store.startQuizFinal(store.quizType === 'vocab-kana-to-romaji' ? 'difficile' : 'medio')"
+              >
+                Inizia Quiz
+              </button>
+              <button
+                v-if="store.quizType === 'vocab-kana-to-romaji'"
+                type="button"
+                class="shrink-0 flex items-center justify-center gap-1.5 px-4 rounded-2xl border-2 border-amber-200 bg-amber-50 text-amber-600 font-bold text-xs active:scale-95 transition-all"
+                @click="store.startQuizFinal('difficile', true)"
+              >
+                <span>ULTIME 20</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -791,6 +791,12 @@ export const useAppStore = defineStore('app', () => {
     return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.character : opt.word.split('/')[0]
   }
 
+  function getLast20RandomWords() {
+    const randomWords = vocabData.value.filter(v => v.category === 'Random')
+    const byIdNum = (item) => parseInt(String(item.id).replace('rnd_', ''), 10) || 0
+    return [...randomWords].sort((a, b) => byIdNum(a) - byIdNum(b)).slice(-20)
+  }
+
   function handleStartQuizClick(type, forced = null) {
     quizType.value = type
     if (forced) {
@@ -900,10 +906,15 @@ export const useAppStore = defineStore('app', () => {
     difficultyModalOpen.value = true
   }
 
-  function startQuizFinal(diff) {
+  function startQuizFinal(diff, forceLast20 = false) {
     quizDifficulty.value = diff
     difficultyModalOpen.value = false
-    let shuffled = [...quizPendingItems.value].sort(() => 0.5 - Math.random())
+    let pool = quizPendingItems.value
+    if ((quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') && forceLast20) {
+      const last20 = getLast20RandomWords()
+      pool = last20.length > 0 ? last20 : pool
+    }
+    let shuffled = [...pool].sort(() => 0.5 - Math.random())
     if (quizType.value === 'vocab-kana-to-romaji') {
       const max = vocabKanaToRomajiMaxQuestions.value
       const num = typeof max === 'number' && !Number.isNaN(max) && max > 0 ? max : null

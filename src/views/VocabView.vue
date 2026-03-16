@@ -62,17 +62,15 @@ function catStats(words) {
           class="flex-1 bg-white/25 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
           @click="store.handleStartQuizClick('vocab-kana-to-romaji')"
         >
-         
-
-           <BookOpen :size="22" class="shrink-0 text-white mb-1" />
+          <BookOpen :size="22" class="shrink-0 text-white mb-1" />
           <span>Quiz Parole</span>
         </button>
         <button
           class="flex-1 bg-white/25 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
           @click="store.handleStartQuizClick('vocab-romaji')"
         >
-        <span class="text-xl font-black">あ</span>
-        <span>Traduci</span>
+          <span class="text-xl font-black">あ</span>
+          <span>Traduci</span>
         </button>
       </div>
     </div>
