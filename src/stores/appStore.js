@@ -898,17 +898,25 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  // Normalizza romaji per confronto (macron → vocale singola, minuscolo).
+  /**
+   * Normalize romaji for equality checks: macrons → double vowels, then Hepburn "ou" → "oo"
+   * so Okāsan / Okaasan / (same form) and Otōsan / Otousan / Otoosan all match.
+   * Sensē / Sensei and Gakusē / Gakusei via sei→see after macrons.
+   */
   function normalizeRomajiForCompare(str) {
-    return str
+    let s = str
       .toLowerCase()
-      .replace(/ō/g, 'o')
-      .replace(/ū/g, 'u')
-      .replace(/ē/g, 'e')
-      .replace(/ā/g, 'a')
-      .replace(/ī/g, 'i')
+      .replace(/ā/g, 'aa')
+      .replace(/ī/g, 'ii')
+      .replace(/ū/g, 'uu')
+      .replace(/ē/g, 'ee')
+      .replace(/ō/g, 'oo')
       .replace(/\s+/g, ' ')
       .trim()
+    s = s.replace(/ou/g, 'oo')
+    // せい as Hepburn "sei" (Sensē / Gakusē vs Sensei / Gakusei)
+    s = s.replace(/sei/g, 'see')
+    return s
   }
 
   function handleAnswer(option) {
