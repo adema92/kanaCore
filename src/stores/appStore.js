@@ -71,6 +71,139 @@ export const ROMAJI_TO_KANA = Object.fromEntries(
   HIRAGANA_GRID.flat().filter(Boolean).map(x => [x.r.toLowerCase(), x.c])
 )
 
+// --- Vocab quiz: dedupe, gojūon row spacing, tenten separation, diversified distractors ---
+
+const _GOJUON_CHAR_TO_ROW = new Map()
+HIRAGANA_GRID.forEach((row, ri) => {
+  row.forEach((cell) => {
+    if (cell?.c) _GOJUON_CHAR_TO_ROW.set(cell.c, ri)
+  })
+})
+
+/** ka–ga, sa–za, ta–da, ha–ba–pa pairs (grid row indices). */
+const _TENTEN_ADJACENT_ROW_PAIRS = [
+  [1, 2],
+  [3, 4],
+  [5, 6],
+  [8, 9],
+  [8, 10],
+  [9, 10],
+]
+
+function _shuffleArray(arr) {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const t = a[i]
+    a[i] = a[j]
+    a[j] = t
+  }
+  return a
+}
+
+function _katakanaToHiraganaFirst(ch) {
+  if (!ch) return ''
+  const c = ch.codePointAt(0)
+  if (c >= 0x30a1 && c <= 0x30f6) return String.fromCodePoint(c - 0x60)
+  return ch
+}
+
+function _vocabFirstKanaChar(item) {
+  const w = (item.word || '').split('/')[0].replace(/\s+/g, '')
+  if (!w) return ''
+  return _katakanaToHiraganaFirst(w[0])
+}
+
+function _getVocabGojuonRow(item) {
+  const ch = _vocabFirstKanaChar(item)
+  return _GOJUON_CHAR_TO_ROW.has(ch) ? _GOJUON_CHAR_TO_ROW.get(ch) : -1
+}
+
+function _tentenAdjacentRows(rowA, rowB) {
+  if (rowA < 0 || rowB < 0) return false
+  return _TENTEN_ADJACENT_ROW_PAIRS.some(
+    ([x, y]) => (rowA === x && rowB === y) || (rowA === y && rowB === x)
+  )
+}
+
+function _dedupeVocabById(items) {
+  const seen = new Set()
+  return items.filter((it) => {
+    const id = it?.id != null ? String(it.id) : ''
+    if (!id || seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+}
+
+/**
+ * Order vocab items so consecutive questions avoid same gojūon row (e.g. か then き)
+ * and avoid tenten pairs back-to-back (e.g. か then が).
+ */
+function _orderVocabQuizQueue(items) {
+  if (items.length <= 1) return [...items]
+  const remaining = _shuffleArray(items)
+  const ordered = []
+  while (remaining.length) {
+    const lastRow =
+      ordered.length > 0 ? _getVocabGojuonRow(ordered[ordered.length - 1]) : null
+    const pickFrom = (pred) => {
+      const idx = remaining.findIndex(pred)
+      return idx >= 0 ? remaining.splice(idx, 1)[0] : null
+    }
+    let next = null
+    if (lastRow == null) {
+      next = remaining.shift()
+    } else {
+      next = pickFrom((it) => {
+        const r = _getVocabGojuonRow(it)
+        return r !== lastRow && !_tentenAdjacentRows(lastRow, r)
+      })
+      if (!next) next = pickFrom((it) => _getVocabGojuonRow(it) !== lastRow)
+      if (!next) next = remaining.shift()
+    }
+    ordered.push(next)
+  }
+  return ordered
+}
+
+function _pickVocabDistractors(cur, pool, numWrong) {
+  const curRow = _getVocabGojuonRow(cur)
+  const chosen = []
+  const takenIds = new Set([String(cur.id)])
+  const addTier = (filterFn) => {
+    if (chosen.length >= numWrong) return
+    const rest = pool.filter(
+      (i) => !takenIds.has(String(i.id)) && String(i.id) !== String(cur.id) && filterFn(i)
+    )
+    for (const c of _shuffleArray(rest)) {
+      if (chosen.length >= numWrong) break
+      chosen.push(c)
+      takenIds.add(String(c.id))
+    }
+  }
+  if (curRow >= 0) {
+    addTier((i) => {
+      const r = _getVocabGojuonRow(i)
+      return r !== curRow && !_tentenAdjacentRows(curRow, r)
+    })
+    addTier((i) => _getVocabGojuonRow(i) !== curRow)
+  }
+  addTier(() => true)
+  return chosen.slice(0, numWrong)
+}
+
+function _shuffleOptionsUnique(opts) {
+  const seen = new Set()
+  const unique = opts.filter((o) => {
+    const id = String(o.id)
+    if (seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+  return _shuffleArray(unique)
+}
+
 export const useAppStore = defineStore('app', () => {
   const kanaData = ref(INITIAL_KANA.map(k => ({ ...k })))
   const katakanaData = ref(INITIAL_KATAKANA.map(k => ({ ...k })))
@@ -496,14 +629,12 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     const num = quizDifficulty.value === 'facile' ? 3 : 4
-    const pool = quizType.value === 'vocab'
-      ? quizPendingItems.value
-      : quizPendingItems.value
-    const wr = pool
-      .filter(i => i.id !== cur.id)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, num - 1)
-    options.value = [cur, ...wr].sort(() => 0.5 - Math.random())
+    const pool = quizPendingItems.value
+    const wr =
+      quizType.value === 'vocab'
+        ? _pickVocabDistractors(cur, pool, num - 1)
+        : _shuffleArray(pool.filter(i => String(i.id) !== String(cur.id))).slice(0, num - 1)
+    options.value = _shuffleOptionsUnique([cur, ...wr])
     selectedOption.value = null
     isAnswered.value = false
   }
@@ -914,7 +1045,15 @@ export const useAppStore = defineStore('app', () => {
       const last20 = getLast20RandomWords()
       pool = last20.length > 0 ? last20 : pool
     }
-    let shuffled = [...pool].sort(() => 0.5 - Math.random())
+    const isVocabQuiz =
+      quizType.value === 'vocab' ||
+      quizType.value === 'vocab-romaji' ||
+      quizType.value === 'vocab-kana-to-romaji' ||
+      quizType.value === 'vocab-kana-read' ||
+      quizType.value === 'vocab-romaji-input'
+    let shuffled = isVocabQuiz
+      ? _orderVocabQuizQueue(_dedupeVocabById(pool))
+      : _shuffleArray([...pool])
     if (quizType.value === 'vocab-kana-to-romaji') {
       const max = vocabKanaToRomajiMaxQuestions.value
       const num = typeof max === 'number' && !Number.isNaN(max) && max > 0 ? max : null
@@ -946,11 +1085,8 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     const num = quizDifficulty.value === 'facile' ? 3 : 4
-    const wrong = quizPendingItems.value
-      .filter(i => i.id !== cur.id)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, num - 1)
-    options.value = [cur, ...wrong].sort(() => 0.5 - Math.random())
+    const wrong = _pickVocabDistractors(cur, quizPendingItems.value, num - 1)
+    options.value = _shuffleOptionsUnique([cur, ...wrong])
     selectedOption.value = null
     isAnswered.value = false
   }

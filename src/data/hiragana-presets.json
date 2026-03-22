@@ -13,7 +13,7 @@
   { "id": "hp12", "name": "MA",     "kanaIds": ["k56", "k57", "k58", "k59", "k60"] },
   { "id": "hp13", "name": "YA",     "kanaIds": ["k61", "k62", "k63"] },
   { "id": "hp14", "name": "RA",     "kanaIds": ["k64", "k65", "k66", "k67", "k68"] },
-  { "id": "hp15", "name": "WA",     "kanaIds": ["k69", "k70", "k71", "k72"] },
-  { "id": "hp16", "name": "N",      "kanaIds": ["k73"] }
+  { "id": "hp15", "name": "WA",     "kanaIds": ["k69", "k70"] },
+  { "id": "hp16", "name": "N",      "kanaIds": ["k71"] }
 ]
 
