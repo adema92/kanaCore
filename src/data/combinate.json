@@ -1,0 +1,18 @@
+[
+  { "id": "combo_1", "word": "きゃべつ", "romaji": "Kyabetsu", "meaning": "Cavolo", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_2", "word": "ぎゃく", "romaji": "Gyaku", "meaning": "Contrario", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_3", "word": "きゃく", "romaji": "Kyaku", "meaning": "Ospite", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_4", "word": "にんぎょ", "romaji": "Ningyo", "meaning": "Sirena", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_5", "word": "きょねん", "romaji": "Kyonen", "meaning": "L’anno scorso", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_6", "word": "じてんしゃ", "romaji": "Jitensha", "meaning": "Bicicletta", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_7", "word": "かしゅ", "romaji": "Kashu", "meaning": "Cantante", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_8", "word": "じしょ", "romaji": "Jisho", "meaning": "Dizionario", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_9", "word": "じんじゃ", "romaji": "Jinja", "meaning": "Tempio shintoista", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_10", "word": "しゃしん", "romaji": "Shashin", "meaning": "Foto", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_11", "word": "うんてんしゅ", "romaji": "Untenshu", "meaning": "Autista", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_12", "word": "かぼちゃ", "romaji": "Kabocha", "meaning": "Zucca", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_13", "word": "おちゃ", "romaji": "Ocha", "meaning": "Tè", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_14", "word": "ひゃく", "romaji": "Hyaku", "meaning": "100", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_15", "word": "さんびゃく", "romaji": "Sanbyaku", "meaning": "300", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "combo_16", "word": "はっぴゃく", "romaji": "Happyaku", "meaning": "800", "category": "COMBINATE", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
+]
