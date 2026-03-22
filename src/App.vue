@@ -2,10 +2,10 @@
 import { computed, onMounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  BookOpen, X, Volume2,
+  BookOpen, X, Volume2, ChevronLeft,
   Info, AlertTriangle, CheckCheck, Square, Save, Eye, ListOrdered,
 } from 'lucide-vue-next'
-import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB } from './stores/appStore'
+import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB, VOCAB_LAST_BATCH_MAX } from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
 import StrokeOrderSvg from './components/features/StrokeOrderSvg.vue'
 
@@ -14,6 +14,11 @@ const route = useRoute()
 const router = useRouter()
 
 const canProceedVocabSetup = computed(() => store.selectedVocabCategories.length > 0)
+
+const orderedVocabCategoriesList = computed(() => {
+  const uniq = [...new Set(store.vocabData.map(v => v.category))]
+  return store.orderVocabCategories(uniq)
+})
 
 const quizActiveBgStyle = computed(() => {
   const t = store.quizType
@@ -1207,7 +1212,7 @@ onMounted(() => {
         v-if="store.vocabSetupModalOpen"
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center overflow-hidden"
         style="touch-action:none;"
-        @click.self="store.vocabSetupModalOpen = false"
+        @click.self="store.closeVocabSetupModal()"
       >
         <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[80dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
@@ -1219,18 +1224,25 @@ onMounted(() => {
             </div>
             <button
               class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all"
-              @click="store.vocabSetupModalOpen = false"
+              @click="store.closeVocabSetupModal()"
             ><X :size="18" /></button>
           </div>
 
           <!-- Lista categorie -->
           <div class="flex-1 overflow-y-auto px-6 pb-4 space-y-2">
-            <p class="text-xs font-semibold text-slate-400">Seleziona le <b>categorie</b> da includere nel quiz, il test influenzerà le <b>statistiche</b></p>
+            <p class="text-xs font-semibold text-slate-400">
+              <template v-if="store.quizType === 'vocab-kana-to-romaji'">
+                Scegli una o più <b>categorie</b> per il quiz parole (Kana → romaji). Puoi includere tutte le parole disponibili.
+              </template>
+              <template v-else>
+                Seleziona le <b>categorie</b> da includere nel quiz, il test influenzerà le <b>statistiche</b>
+              </template>
+            </p>
             <div class="shrink-0 mt-4 pb-4" aria-hidden="true">
               <div class="border-t border-slate-200"></div>
             </div>
             <button
-              v-for="cat in [...new Set(store.vocabData.map(v => v.category))]"
+              v-for="cat in orderedVocabCategoriesList"
               :key="cat"
               class="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-95 font-black text-sm uppercase tracking-wide"
               :class="store.selectedVocabCategories.includes(cat)
@@ -1276,31 +1288,50 @@ onMounted(() => {
       <div
         v-if="store.difficultyModalOpen"
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-4"
-        @click.self="store.difficultyModalOpen = false"
+        @click.self="store.closeDifficultyModal()"
       >
         <div class="bg-white w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
           <div class="flex justify-center pt-4 pb-2 sm:hidden">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
-          <!-- Header con X -->
-          <div class="flex items-start justify-between px-8 pt-6 pb-4">
-            <div>
-              <h3 class="text-2xl font-black text-slate-800 uppercase flex items-center gap-2">Setup Quiz</h3>
-              <p class="text-slate-400 font-semibold mt-1 text-sm leading-relaxed">
-                <template v-if="store.quizType === 'kana' && store.quizDirection === 'ja-to-romaji'">Vedi il <b>kana</b> → indovina la <b>lettura</b></template>
-                <template v-else-if="store.quizType === 'kana' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina il <b>kana</b></template>
-                <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'ja-to-romaji'">Vedi la <b>parola</b> → indovina il <b>significato</b></template>
-                <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina la <b>parola</b></template>
-                <template v-else-if="store.quizType === 'vocab-romaji'">Parola in <b>italiano</b> con il tono → traduci in <b>romaji</b></template>
-                <template v-else> <p class="text-slate-400 font-semibold mt-1 text-xs leading-relaxed">Parole estratte da categoria <b>Random</b>.</p></template>
+          <!-- Riga 1: Categorie + X sullo stesso asse; sotto titolo e corpo -->
+          <div
+            class="px-8 pt-6"
+            :class="store.quizType === 'vocab-kana-to-romaji' ? 'pb-0' : 'pb-8'"
+          >
+            <div class="flex w-full items-center justify-between gap-3">
+              <div class="min-w-0 flex flex-1 items-center">
+                <button
+                  v-if="store.enteredDifficultyFromVocabCategories"
+                  type="button"
+                  class="flex items-center gap-1.5 text-sm font-black uppercase tracking-widest text-amber-600 active:scale-[0.98] transition-all -ml-0.5"
+                  @click="store.backFromDifficultyToVocabSetup()"
+                >
+                  <ChevronLeft :size="20" stroke-width="2.5" class="shrink-0" />
+                  Categorie
+                </button>
+              </div>
+              <button
+                type="button"
+                class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
+                aria-label="Chiudi"
+                @click="store.closeDifficultyModal()"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+            <div class="mt-8">
+              <h3 class="min-w-0 text-2xl font-black text-slate-800 uppercase tracking-widest leading-tight">SETUP QUIZ</h3>
+              <p class="text-slate-400 font-semibold mt-2 text-sm leading-relaxed">
+              <template v-if="store.quizType === 'kana' && store.quizDirection === 'ja-to-romaji'">Vedi il <b>kana</b> → indovina la <b>lettura</b></template>
+              <template v-else-if="store.quizType === 'kana' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina il <b>kana</b></template>
+              <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'ja-to-romaji'">Vedi la <b>parola</b> → indovina il <b>significato</b></template>
+              <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina la <b>parola</b></template>
+              <template v-else-if="store.quizType === 'vocab-romaji'">Parola in <b>italiano</b> con il tono → traduci in <b>romaji</b></template>
+              <template v-else-if="store.quizType === 'vocab-kana-to-romaji'">Parole dalle <b>categorie</b> scelte. Kana → scrivi romaji (o inverso).</template>
+              <template v-else> <span class="text-slate-400 font-semibold text-xs leading-relaxed">Parole estratte da categoria <b>Random</b>.</span></template>
               </p>
             </div>
-            <button
-              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all shrink-0 ml-4 mt-0.5"
-              @click="store.difficultyModalOpen = false"
-            >
-              <X :size="18" />
-            </button>
           </div>
 
           <!-- Toggle direzione (solo per kana/katakana e vocab standard, non per vocab-kana-to-romaji) -->
@@ -1353,10 +1384,12 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-else class="px-8 pb-8 pt-2">
+          <div v-else class="px-8 pb-8 pt-0">
             <!-- Tastiera + Max domande (solo per Kana → Romaji) -->
             <div v-if="store.quizType === 'vocab-kana-to-romaji'" class="mb-8">
-              <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
+              <div class="py-6" aria-hidden="true">
+                <div class="border-t border-slate-200"></div>
+              </div>
               <label class="block text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Lingua Domanda</label>
               <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-6">
             <button
@@ -1409,9 +1442,10 @@ onMounted(() => {
                 v-if="store.quizType === 'vocab-kana-to-romaji'"
                 type="button"
                 class="shrink-0 flex items-center justify-center gap-1.5 px-4 rounded-2xl border-2 border-amber-200 bg-amber-50 text-amber-600 font-bold text-xs active:scale-95 transition-all"
+                :aria-label="`Ultime ${vocabLastBatchCount} parole del pool`"
                 @click="store.startQuizFinal('difficile', true)"
               >
-                <span>ULTIME 20</span>
+                <span>ULTIME {{ vocabLastBatchCount }}</span>
               </button>
             </div>
           </div>

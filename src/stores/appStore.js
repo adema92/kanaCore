@@ -25,6 +25,9 @@ const db = getFirestore(firebaseApp)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'
 const projectId = firebaseConfig.projectId || appId
 
+/** Max words for "last batch" quiz CTA (label uses min(this, pool length)). */
+export const VOCAB_LAST_BATCH_MAX = 20
+
 export const getMasteryColor = (score) => {
   if (score >= 80) return 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
   if (score >= 40) return 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'
@@ -284,6 +287,8 @@ export const useAppStore = defineStore('app', () => {
   const newKatakanaPresetName = ref('')
   const quizPendingItems = ref([])
   const selectedVocabCategories = ref([])
+  /** True after proceedFromVocabSetup; used to show "back to categories" in difficulty modal. */
+  const enteredDifficultyFromVocabCategories = ref(false)
   const quizDifficulty = ref('medio')
   const quizDirection = ref('ja-to-romaji')
   // Numero max domande quiz vocab-kana-to-romaji; null = tutte le parole Random.
@@ -924,15 +929,36 @@ export const useAppStore = defineStore('app', () => {
     return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.character : opt.word.split('/')[0]
   }
 
-  function getLast20RandomWords() {
-    const randomWords = vocabData.value.filter(v => v.category === 'Random')
-    const byIdNum = (item) => parseInt(String(item.id).replace('rnd_', ''), 10) || 0
-    return [...randomWords].sort((a, b) => byIdNum(a) - byIdNum(b)).slice(-20)
+  /** Last up to VOCAB_LAST_BATCH_MAX items by id order within the current vocab pool. */
+  function getLast20FromVocabPool(items) {
+    if (!items || items.length === 0) return []
+    const sorted = [...items].sort((a, b) =>
+      String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+    )
+    const take = Math.min(VOCAB_LAST_BATCH_MAX, sorted.length)
+    return sorted.slice(-take)
+  }
+
+  /** UI order: Random → COMBINATE → ALLUNGAMENTI → others (A–Z, it). */
+  const VOCAB_CATEGORY_ORDER_PREFIX = ['Random', 'COMBINATE', 'ALLUNGAMENTI']
+
+  function orderVocabCategories(categories) {
+    const set = new Set(categories)
+    const head = VOCAB_CATEGORY_ORDER_PREFIX.filter(c => set.has(c))
+    const tail = [...categories]
+      .filter(c => !VOCAB_CATEGORY_ORDER_PREFIX.includes(c))
+      .sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
+    return [...head, ...tail]
+  }
+
+  function defaultSelectedVocabCategories(allCategoryNames) {
+    return allCategoryNames.includes('Random') ? ['Random'] : []
   }
 
   function handleStartQuizClick(type, forced = null) {
     quizType.value = type
     if (forced) {
+      enteredDifficultyFromVocabCategories.value = false
       quizPendingItems.value = forced
       difficultyModalOpen.value = true
       return
@@ -952,17 +978,18 @@ export const useAppStore = defineStore('app', () => {
       selectedKatakanaIds.value = []
       katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
-      const randomWords = vocabData.value.filter(v => v.category === 'Random')
-      if (randomWords.length < 1) {
-        customAlert.value = '🌸 Aggiungi almeno una parola nella categoria Random!'
+      const allCats = [...new Set(vocabData.value.map(v => v.category))]
+      if (allCats.length < 1) {
+        customAlert.value = '🌸 Nessuna categoria vocabolario disponibile!'
         return
       }
-      quizPendingItems.value = randomWords
+      enteredDifficultyFromVocabCategories.value = false
+      selectedVocabCategories.value = defaultSelectedVocabCategories(allCats)
       vocabKanaToRomajiMaxQuestions.value = null
-      difficultyModalOpen.value = true
+      vocabSetupModalOpen.value = true
     } else {
-      const allCats = [...new Set(vocabData.value.map(v => v.category))]
-      selectedVocabCategories.value = [...allCats]
+      enteredDifficultyFromVocabCategories.value = false
+      selectedVocabCategories.value = defaultSelectedVocabCategories([...new Set(vocabData.value.map(v => v.category))])
       vocabSetupModalOpen.value = true
     }
   }
@@ -977,8 +1004,25 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     quizPendingItems.value = filtered
+    enteredDifficultyFromVocabCategories.value = true
     vocabSetupModalOpen.value = false
     difficultyModalOpen.value = true
+  }
+
+  function backFromDifficultyToVocabSetup() {
+    if (!enteredDifficultyFromVocabCategories.value) return
+    difficultyModalOpen.value = false
+    vocabSetupModalOpen.value = true
+  }
+
+  function closeDifficultyModal() {
+    difficultyModalOpen.value = false
+    enteredDifficultyFromVocabCategories.value = false
+  }
+
+  function closeVocabSetupModal() {
+    vocabSetupModalOpen.value = false
+    enteredDifficultyFromVocabCategories.value = false
   }
 
   function proceedFromSetup() {
@@ -1041,10 +1085,11 @@ export const useAppStore = defineStore('app', () => {
 
   function startQuizFinal(diff, forceLast20 = false) {
     quizDifficulty.value = diff
+    enteredDifficultyFromVocabCategories.value = false
     difficultyModalOpen.value = false
     let pool = quizPendingItems.value
     if ((quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') && forceLast20) {
-      const last20 = getLast20RandomWords()
+      const last20 = getLast20FromVocabPool(pool)
       pool = last20.length > 0 ? last20 : pool
     }
     const isVocabQuiz =
@@ -1299,7 +1344,7 @@ export const useAppStore = defineStore('app', () => {
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
     quizActive, quizEndModalPhase, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
-    selectedVocabCategories,
+    selectedVocabCategories, enteredDifficultyFromVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
@@ -1310,7 +1355,8 @@ export const useAppStore = defineStore('app', () => {
     confirmRomajiBlock,
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback, undoLastAnswer,
-    handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
+    orderVocabCategories,
+    handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, backFromDifficultyToVocabSetup, closeDifficultyModal, closeVocabSetupModal, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetKatakanaScore, resetVocabScore,
     selectProfile, setProfileFromRoute, switchProfile,
