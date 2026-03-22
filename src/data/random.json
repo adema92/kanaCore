@@ -121,5 +121,6 @@
   { "id": "rnd_120", "word": "みんな", "romaji": "Minna", "meaning": "Tutti", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rnd_121", "word": "ほんね", "romaji": "Honne", "meaning": "Concetto di essere se stessi", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rnd_122", "word": "せんまん", "romaji": "Senman", "meaning": "10 milioni", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "rnd_123", "word": "せんもん", "romaji": "Senmon", "meaning": "Specializzazione", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "rnd_123", "word": "せんもん", "romaji": "Senmon", "meaning": "Specializzazione", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rnd_124", "word": "かいものをする", "romaji": "Kaimono wo suru", "meaning": "Fare la spesa / fare acquisti", "category": "Random", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
 ]
