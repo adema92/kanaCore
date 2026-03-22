@@ -752,13 +752,14 @@ onMounted(() => {
             <!-- Preset rapidi: selezione cumulativa (toggle) -->
             <div>
               <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
-              <div class="flex flex-wrap gap-2 mb-4 items-center justify-center">
+              <div class="flex flex-wrap gap-2 mb-4 items-stretch justify-center">
                 <button
                   v-for="p in hiraganaPresets"
                   :key="p.id"
                   type="button"
                   :class="[
-                    'w-[4.25rem] min-w-[4.25rem] px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    'inline-flex items-center justify-center w-[4.25rem] min-w-[4.25rem] min-h-11 px-3 font-black rounded-xl uppercase border-2 transition-all',
+                    p.compactLabel ? 'text-[10px] leading-tight tracking-wide' : 'text-xs',
                     p.kanaIds.every(id => store.selectedKanaIds.includes(id))
                       ? 'bg-pink-400 border-pink-400 text-white'
                       : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
@@ -782,7 +783,8 @@ onMounted(() => {
                 v-for="k in store.kanaData"
                 :key="k.id"
                 :class="[
-                  'aspect-square rounded-xl flex items-center justify-center text-lg font-black border-2 transition-all active:scale-90',
+                  'aspect-square rounded-xl flex items-center justify-center font-black border-2 transition-all active:scale-90',
+                  k.character.length > 1 ? 'text-sm sm:text-base tracking-tight' : 'text-lg',
                   store.selectedKanaIds.includes(k.id)
                     ? 'bg-pink-400 border-pink-400 text-white shadow-md'
                     : 'bg-white border-slate-100 text-slate-300'

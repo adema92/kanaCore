@@ -1,16 +1,30 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { HIRAGANA_STROKE_OVERRIDES } from '../../data/hiragana-stroke-overrides.js'
 
 const props = defineProps({
   character: String,
 })
+
 const svgData = ref(null)
+
+function injectStrokeStyles(svgMarkup) {
+  const style =
+    '<style>g[id^="kvg:StrokePaths"] path { stroke-width: 6px !important; stroke: #334155 !important; stroke-linecap: round !important; stroke-linejoin: round !important; } g[id^="kvg:StrokeNumbers"] text { font-size: 14px !important; fill: #ef4444 !important; font-weight: bold !important; }</style>'
+  if (svgMarkup.includes('</svg>')) return svgMarkup.replace('</svg>', `${style}</svg>`)
+  return svgMarkup
+}
 
 watch(
   () => props.character,
   (character) => {
     if (!character) {
       svgData.value = null
+      return
+    }
+    const local = HIRAGANA_STROKE_OVERRIDES[character]
+    if (local) {
+      svgData.value = injectStrokeStyles(local)
       return
     }
     const code = character.charCodeAt(0).toString(16).toLowerCase()
@@ -22,10 +36,11 @@ watch(
           .replace(/<!DOCTYPE[\s\S]*?\[[\s\S]*?\]>\n?/g, '')
           .replace(/<!DOCTYPE[\s\S]*?>\n?/g, '')
           .replace(/\]>\n?/g, '')
-        const style = `<style>g[id^="kvg:StrokePaths"] path { stroke-width: 6px !important; stroke: #334155 !important; stroke-linecap: round !important; stroke-linejoin: round !important; } g[id^="kvg:StrokeNumbers"] text { font-size: 14px !important; fill: #ef4444 !important; font-weight: bold !important; }</style></style>`
-        svgData.value = cleaned.replace('</svg>', style)
+        svgData.value = injectStrokeStyles(cleaned)
       })
-      .catch(() => { svgData.value = '' })
+      .catch(() => {
+        svgData.value = ''
+      })
   },
   { immediate: true }
 )

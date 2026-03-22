@@ -80,7 +80,12 @@ const store = useAppStore()
               store.speakText(item.c)
             }"
           >
-            <span class="text-xl font-black leading-none">{{ item.c }}</span>
+            <span
+              :class="[
+                'font-black leading-none',
+                item.c.length > 1 ? 'text-base sm:text-lg' : 'text-xl',
+              ]"
+            >{{ item.c }}</span>
             <span
               v-if="!store.hideGridRomaji"
               class="text-[9px] font-bold uppercase opacity-50 mt-0.5 tracking-wide leading-none"
