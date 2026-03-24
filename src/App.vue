@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, nextTick, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BookOpen, X, Volume2, ChevronLeft,
@@ -66,6 +66,7 @@ const navSlotHiraganaRef = ref(null)
 const navSlotKatakanaRef = ref(null)
 const navSlotVocabRef = ref(null)
 const navDragOverPath = ref(null)
+const hideBottomNavForKeyboard = ref(false)
 const profilePickerOpen = ref(false)
 const profilePickerHover = ref(null)
 const profilePickerJustSelected = ref(false)
@@ -404,6 +405,7 @@ function getOptionClass(opt) {
 }
 
 function isNavActive(path) {
+  if (path === '/hiragana') return route.path === '/hiragana' || route.path.startsWith('/hiragana/')
   return route.path === path
 }
 
@@ -547,11 +549,31 @@ watch(() => route.path, () => {
   scrollToTop()
 })
 
+function syncBottomNavForKeyboard() {
+  requestAnimationFrame(() => {
+    const el = document.activeElement
+    const tag = el?.tagName
+    const isField =
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      (el && el.getAttribute?.('contenteditable') === 'true')
+    hideBottomNavForKeyboard.value = !!isField
+  })
+}
+
 onMounted(() => {
   store.init()
   preloadImages().then(() => {
     imagesPreloaded.value = true
   })
+  document.addEventListener('focusin', syncBottomNavForKeyboard)
+  document.addEventListener('focusout', syncBottomNavForKeyboard)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('focusin', syncBottomNavForKeyboard)
+  document.removeEventListener('focusout', syncBottomNavForKeyboard)
 })
 </script>
 
@@ -1697,10 +1719,13 @@ onMounted(() => {
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
       <main
         ref="mainScrollRef"
-        class="w-full flex-1 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col items-center"
+        class="w-full flex-1 pt-4 flex flex-col items-center transition-[padding-bottom] duration-200"
         :class="[
+          hideBottomNavForKeyboard
+            ? 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'
+            : 'pb-[calc(5rem+env(safe-area-inset-bottom))]',
           isAnyModalOpen ? 'overflow-hidden' : 'overflow-y-auto',
-          route.path === '/hiragana'
+          route.path === '/hiragana' || route.path.startsWith('/hiragana/')
             ? 'bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 relative'
             : route.path === '/katakana'
               ? 'bg-gradient-to-br from-sky-50 via-blue-50 to-indigo-50 relative'
@@ -1712,7 +1737,7 @@ onMounted(() => {
         ]"
       >
         <!-- Sfondo animato Hiragana (come selezione utente) -->
-        <div v-if="route.path === '/hiragana'" class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div v-if="route.path === '/hiragana' || route.path.startsWith('/hiragana/')" class="absolute inset-0 overflow-hidden pointer-events-none">
           <div class="absolute top-8 left-6 text-6xl opacity-10 select-none animate-spin" style="animation-duration:18s">🌸</div>
           <div class="absolute top-20 right-4 text-5xl opacity-10 select-none animate-spin" style="animation-duration:22s;animation-direction:reverse">✨</div>
           <div class="absolute bottom-24 left-8 text-5xl opacity-10 select-none animate-bounce" style="animation-duration:3s">🌺</div>
@@ -1749,7 +1774,14 @@ onMounted(() => {
       </main>
 
       <!-- ===== BARRA NAVIGAZIONE BOTTOM ===== -->
-      <nav class="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)] pt-0.5 pb-0.5"
+      <nav
+        class="fixed bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)] pt-0.5 pb-0.5 transition-[transform,opacity] duration-200 ease-out"
+        :class="
+          hideBottomNavForKeyboard
+            ? 'translate-y-full opacity-0 pointer-events-none'
+            : 'translate-y-0 opacity-100'
+        "
+        :aria-hidden="hideBottomNavForKeyboard"
         style="padding-bottom: max(env(safe-area-inset-bottom), 0.25rem);"
       >
         <div

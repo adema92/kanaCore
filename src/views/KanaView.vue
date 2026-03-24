@@ -1,8 +1,10 @@
 <script setup>
-import { BookOpen, Eye, EyeOff } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { BookOpen, Eye, EyeOff, Languages } from 'lucide-vue-next'
 import { useAppStore, HIRAGANA_GRID, getMasteryColor } from '../stores/appStore'
 
 const store = useAppStore()
+const router = useRouter()
 </script>
 
 <template>
@@ -25,11 +27,23 @@ const store = useAppStore()
       <!-- Pulsanti quiz -->
       <div class="flex gap-3 mb-3">
         <button
-          class="w-full bg-white/95 font-black py-4 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all uppercase tracking-widest"
+          class="flex-1 bg-white/95 font-black py-4 rounded-2xl text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 shadow-md active:scale-95 transition-all uppercase tracking-widest"
           style="color: #c97bb8;"
           @click="store.handleStartQuizClick('kana')"
         >
-          <BookOpen :size="17" /> Inizia Quiz
+          <BookOpen :size="17" class="shrink-0" />
+          <span>Inizia Quiz</span>
+        </button>
+        <button
+          class="flex-1 bg-white/25 backdrop-blur text-white font-black py-4 rounded-2xl text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50"
+          type="button"
+          @click="router.push('/hiragana/testi')"
+        >
+          <Languages
+            :size="18"
+            class="lucide lucide-languages-icon shrink-0 text-white drop-shadow-sm"
+          />
+          <span class="font-bold">Analisi testi</span>
         </button>
       </div>
 

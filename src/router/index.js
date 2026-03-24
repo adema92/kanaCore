@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAppStore } from '../stores/appStore'
 import StatsView from '../views/StatsView.vue'
 import KanaView from '../views/KanaView.vue'
+import HiraganaReadingTextsView from '../views/HiraganaReadingTextsView.vue'
 import KatakanaView from '../views/KatakanaView.vue'
 import VocabView from '../views/VocabView.vue'
 
@@ -12,6 +13,8 @@ const router = createRouter({
     { path: '/andrea', component: StatsView },
     { path: '/erica', component: StatsView },
     { path: '/hiragana', component: KanaView },
+    { path: '/hiragana/testi', component: HiraganaReadingTextsView },
+    { path: '/hiragana/testi/:id', component: HiraganaReadingTextsView },
     { path: '/katakana', component: KatakanaView },
     { path: '/vocab', component: VocabView },
   ],

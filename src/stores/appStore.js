@@ -214,6 +214,8 @@ export const useAppStore = defineStore('app', () => {
   const katakanaData = ref(INITIAL_KATAKANA.map(k => ({ ...k })))
   const vocabData = ref(INITIAL_VOCAB.map(v => ({ ...v })))
   const dailyStats = ref({})
+  /** Kaguya reading texts: sentence id → ISO timestamp of last successful Conferma save. */
+  const readingTextsCompletedAt = ref({})
 
   /** Normalizza una giornata in { total, correct, kana, katakana, vocab }. I dati legacy hanno solo total/correct → trattati come kana. */
   function _normalizeDayStats(day) {
@@ -388,6 +390,7 @@ export const useAppStore = defineStore('app', () => {
       katakanaData: katakanaData.value.map(k => ({ ...k })),
       vocabData: vocabData.value.map(v => ({ ...v })),
       dailyStats: { ...dailyStats.value },
+      readingTextsCompletedAt: { ...readingTextsCompletedAt.value },
       _savedAt: new Date().toISOString(),
       _profile: currentProfile.value,
     }
@@ -827,6 +830,47 @@ export const useAppStore = defineStore('app', () => {
     _advanceQuiz()
   }
 
+  /**
+   * Reading practice: each mora counts as one hiragana quiz (kana daily stats + per-kana score).
+   * @param {Array<{ character: string, ok: boolean }>} outcomes character must match kanaData.character (e.g. きゃ)
+   */
+  function applyReadingPracticeKanaResults(outcomes) {
+    if (!outcomes?.length) return
+    const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
+      .toISOString().split('T')[0]
+    const curDay = _normalizeDayStats(dailyStats.value[todayStr])
+    let kanaTotalAdd = 0
+    let kanaCorrectAdd = 0
+    for (const row of outcomes) {
+      const ch = row.character
+      if (!ch) continue
+      kanaTotalAdd += 1
+      if (row.ok) kanaCorrectAdd += 1
+      const ok = row.ok
+      kanaData.value = kanaData.value.map((x) => {
+        if (x.character !== ch) return x
+        const ns = ok ? Math.min(100, x.score + 25) : (x.score >= 80 ? 40 : 0)
+        return { ...x, score: ns, attempts: x.attempts + 1 }
+      })
+    }
+    const nextDay = {
+      ...curDay,
+      total: curDay.total + kanaTotalAdd,
+      correct: curDay.correct + kanaCorrectAdd,
+      kana: {
+        total: curDay.kana.total + kanaTotalAdd,
+        correct: curDay.kana.correct + kanaCorrectAdd,
+      },
+      katakana: curDay.katakana,
+      vocab: curDay.vocab,
+    }
+    dailyStats.value = {
+      ...dailyStats.value,
+      [todayStr]: nextDay,
+    }
+    sync()
+  }
+
   function undoLastAnswer() {
     const s = lastAnswerSnapshot.value
     if (!s) return
@@ -1207,6 +1251,24 @@ export const useAppStore = defineStore('app', () => {
       }
       dailyStats.value = normalized
     }
+    if (raw.readingTextsCompletedAt && typeof raw.readingTextsCompletedAt === 'object') {
+      const next = {}
+      for (const [k, v] of Object.entries(raw.readingTextsCompletedAt)) {
+        if (typeof v === 'string' && v) next[String(k)] = v
+      }
+      readingTextsCompletedAt.value = next
+    } else {
+      readingTextsCompletedAt.value = {}
+    }
+  }
+
+  /** Set or clear last completion time for a reading sentence (ISO string or null/undefined to remove). */
+  function setReadingTextCompletionAt(sentenceId, isoOrNull) {
+    const id = String(sentenceId)
+    const next = { ...readingTextsCompletedAt.value }
+    if (isoOrNull == null || isoOrNull === '') delete next[id]
+    else next[id] = isoOrNull
+    readingTextsCompletedAt.value = next
   }
 
   async function _loadProfileData() {
@@ -1369,5 +1431,8 @@ export const useAppStore = defineStore('app', () => {
     resetKanaScore, resetKatakanaScore, resetVocabScore,
     selectProfile, setProfileFromRoute, switchProfile,
     init,
+    applyReadingPracticeKanaResults,
+    readingTextsCompletedAt,
+    setReadingTextCompletionAt,
   }
 })

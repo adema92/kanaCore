@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "build:kaguya": "node scripts/build-kaguya-json.mjs",
     "preview": "vite preview",
     "deploy": "pnpm run build && pnpm exec vercel --prod --yes"
   },

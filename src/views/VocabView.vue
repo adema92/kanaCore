@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { BookOpen } from 'lucide-vue-next'
+import { BookOpen, Languages } from 'lucide-vue-next'
 import { useAppStore } from '../stores/appStore'
 
 const store = useAppStore()
@@ -69,7 +69,10 @@ function catStats(words) {
           class="flex-1 bg-white/25 backdrop-blur text-white font-black py-3.5 rounded-2xl text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest border border-white/50 flex flex-col items-center gap-0.5"
           @click="store.handleStartQuizClick('vocab-romaji')"
         >
-          <span class="text-xl font-black">あ</span>
+          <Languages
+            :size="22"
+            class="lucide lucide-languages-icon shrink-0 text-white mb-1 drop-shadow-sm"
+          />
           <span>Traduci</span>
         </button>
       </div>
