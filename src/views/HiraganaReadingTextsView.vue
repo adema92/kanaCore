@@ -3,9 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
-  Check,
   Languages,
-  Loader2,
   X,
 } from 'lucide-vue-next'
 import { useAppStore } from '../stores/appStore'
@@ -15,8 +13,9 @@ import {
   compareReadingTokens,
   parseUserRomajiTokens,
   parseUserRomajiWords,
-  compareReadingWords,
-  expandWordOkToKanaOk,
+  compareReadingWordsPerKana,
+  compareReadingTokenProgress,
+  compareReadingWordProgress,
 } from '../utils/readingRomajiTokens.js'
 
 const store = useAppStore()
@@ -53,6 +52,8 @@ const wordTooltipWordKey = ref(null)
 const tooltipRootRef = ref(null)
 const tooltipBoxStyle = ref(null)
 const showFullTranslation = ref(false)
+const recapWordCardRefs = ref([])
+const recapMoraCardRefs = ref([])
 
 const wordSegments = computed(() => activeSentence.value?.words ?? [])
 const hasWordMode = computed(() => wordSegments.value.length > 0)
@@ -94,6 +95,8 @@ watch(
     wordTooltipWordKey.value = null
     tooltipBoxStyle.value = null
     showFullTranslation.value = false
+    recapWordCardRefs.value = []
+    recapMoraCardRefs.value = []
   },
 )
 
@@ -202,14 +205,14 @@ watch(wordTooltip, (v, _ov, onCleanup) => {
 })
 
 const displayWithStatus = computed(() => {
-  if (!activeSentence.value || !kanaOk.value || hasWordMode.value) return null
+  if (!activeSentence.value || !displayKanaState.value || hasWordMode.value) return null
   const tokens = activeSentence.value.tokens
   let ki = 0
   return tokens.map((t) => {
     if (t.punct) return { kind: 'punct', graph: t.graph, ok: null }
     if (t.romaji === '' || t.romaji == null)
       return { kind: 'small', graph: t.graph, ok: null }
-    const ok = kanaOk.value[ki]
+    const ok = displayKanaState.value[ki]
     ki += 1
     return {
       kind: 'kana',
@@ -221,36 +224,55 @@ const displayWithStatus = computed(() => {
 })
 
 const displayWordsWithStatus = computed(() => {
-  if (!activeSentence.value || !kanaOk.value || !hasWordMode.value) return null
+  if (!activeSentence.value || !displayKanaState.value || !hasWordMode.value) return null
   const words = wordSegments.value
   let ki = 0
   return words.map((w) => {
     const n = w.moraEnd - w.moraStart
-    const slice = kanaOk.value.slice(ki, ki + n)
+    const slice = displayKanaState.value.slice(ki, ki + n)
     ki += n
-    const ok = slice.length === n && slice.every(Boolean)
+    const ok = slice.every((x) => x === null)
+      ? null
+      : (slice.length === n && slice.every(Boolean))
     return { ...w, ok }
   })
 })
 
-const onVerify = () => {
-  if (!activeSentence.value) return
-  if (hasWordMode.value) {
-    const words = wordSegments.value
-    const userWords = parseUserRomajiWords(romajiInput.value)
-    const { wordOk } = compareReadingWords(userWords, words)
-    kanaOk.value = expandWordOkToKanaOk(words, wordOk)
-    verified.value = true
-    return
-  }
-  const userTok = parseUserRomajiTokens(romajiInput.value)
-  const { kanaOk: okList } = compareReadingTokens(userTok, expectedKana.value)
-  kanaOk.value = okList
-  verified.value = true
-}
-
 const userWordsRecap = computed(() => parseUserRomajiWords(romajiInput.value))
 const userMoraRecap = computed(() => parseUserRomajiTokens(romajiInput.value))
+
+const liveKanaState = computed(() => {
+  if (!activeSentence.value) return null
+  if (hasWordMode.value) {
+    const { wordState } = compareReadingWordProgress(
+      romajiInput.value,
+      wordSegments.value,
+      expectedKana.value,
+    )
+    const expanded = []
+    for (let j = 0; j < wordSegments.value.length; j += 1) {
+      const n = wordSegments.value[j].moraEnd - wordSegments.value[j].moraStart
+      for (let k = 0; k < n; k += 1) expanded.push(wordState[j] ?? null)
+    }
+    return expanded
+  }
+  const { kanaState } = compareReadingTokenProgress(userMoraRecap.value, expectedKana.value)
+  return kanaState
+})
+
+const displayKanaState = computed(() => {
+  if (verified.value && kanaOk.value) return kanaOk.value
+  return liveKanaState.value
+})
+
+const canConfirmReading = computed(() => {
+  if (!activeSentence.value || saved.value) return false
+  if (!romajiInput.value.trim()) return false
+  const state = displayKanaState.value
+  if (!state?.length) return false
+  if (state.length !== expectedKana.value.length) return false
+  return state.every((x) => x !== null)
+})
 
 const recapMoraStats = computed(() => {
   if (!kanaOk.value?.length) return null
@@ -265,12 +287,6 @@ const recapWordStats = computed(() => {
   return { ok, wrong: w.length - ok, total: w.length }
 })
 
-const expectedRomajiLineRecap = computed(() => {
-  if (!activeSentence.value) return ''
-  if (hasWordMode.value) return activeSentence.value.romajiReference || ''
-  return expectedKana.value.map((k) => k.romaji).join(' ')
-})
-
 const recapMoraRows = computed(() => {
   if (hasWordMode.value || !kanaOk.value?.length || !expectedKana.value.length) return null
   return expectedKana.value.map((row, j) => ({
@@ -281,41 +297,89 @@ const recapMoraRows = computed(() => {
   }))
 })
 
+const recapInlineChunks = computed(() => {
+  if (displayWordsWithStatus.value?.length) {
+    return displayWordsWithStatus.value.map((cell, idx) => ({
+      key: `w-${idx}`,
+      text: cell.hiragana,
+      ok: cell.ok === true,
+      expected: cell.romaji,
+      user: userWordsRecap.value[idx] || '',
+    }))
+  }
+  if (recapMoraRows.value?.length) {
+    return recapMoraRows.value.map((row, idx) => ({
+      key: `m-${idx}`,
+      text: row.graph,
+      ok: row.ok === true,
+      expected: row.expected,
+      user: row.user || '',
+    }))
+  }
+  return []
+})
+
+const buildFinalKanaOk = () => {
+  if (!activeSentence.value) return null
+  if (hasWordMode.value) {
+    const words = wordSegments.value
+    const userWords = parseUserRomajiWords(romajiInput.value)
+    const { kanaOk: fineKanaOk } = compareReadingWordsPerKana(userWords, words, expectedKana.value)
+    return fineKanaOk
+  }
+  const userTok = parseUserRomajiTokens(romajiInput.value)
+  const { kanaOk: okList } = compareReadingTokens(userTok, expectedKana.value)
+  return okList
+}
+
 const recapScoreStats = computed(() => {
   const s = recapWordStats.value || recapMoraStats.value
   if (!s?.total) return null
   return { ok: s.ok, wrong: s.wrong, total: s.total }
 })
 
-const recapDonutStyle = computed(() => {
-  const s = recapScoreStats.value
-  if (!s) return { background: '#e2e8f0' }
-  const { ok, wrong, total } = s
-  const okDeg = (ok / total) * 360
-  if (wrong === 0)
-    return { background: 'conic-gradient(from -90deg, #34d399 0deg, #34d399 360deg)' }
-  if (ok === 0)
-    return { background: 'conic-gradient(from -90deg, #fb7185 0deg 360deg)' }
-  return {
-    background: `conic-gradient(from -90deg, #34d399 0deg, #34d399 ${okDeg}deg, #fb7185 ${okDeg}deg 360deg)`,
-  }
-})
-
 const closeResultModal = () => {
   resultModalPhase.value = 'idle'
   saveError.value = ''
+  recapWordCardRefs.value = []
+  recapMoraCardRefs.value = []
   goList()
 }
 
+const setRecapWordCardRef = (el, idx) => {
+  if (!el) return
+  recapWordCardRefs.value[idx] = el
+}
+
+const setRecapMoraCardRef = (el, idx) => {
+  if (!el) return
+  recapMoraCardRefs.value[idx] = el
+}
+
+const onRecapChunkClick = (_ev, chunk) => {
+  if (chunk.ok) return
+  const [kind, idxRaw] = String(chunk.key).split('-')
+  const idx = Number(idxRaw)
+  if (Number.isNaN(idx)) return
+  const el = kind === 'w'
+    ? recapWordCardRefs.value[idx]
+    : recapMoraCardRefs.value[idx]
+  el?.scrollIntoView?.({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+}
+
 const onConfirmSave = async () => {
-  if (!activeSentence.value || !kanaOk.value) return
+  if (!activeSentence.value) return
   if (resultModalPhase.value === 'loading') return
+  const finalKanaOk = buildFinalKanaOk()
+  if (!finalKanaOk?.length) return
+  kanaOk.value = finalKanaOk
+  verified.value = true
   saveError.value = ''
   resultModalPhase.value = 'loading'
   await nextTick()
   const outcomes = expectedKana.value.map((row, j) => ({
     character: row.statChar,
-    ok: !!kanaOk.value[j],
+    ok: !!finalKanaOk[j],
   }))
   const sid = activeSentence.value.id
   const prevCompletedIso = store.readingTextsCompletedAt?.[sid]
@@ -466,30 +530,7 @@ const partTitle = (n) => {
           class="scroll-mt-3"
         >
           <div
-            v-if="!verified && hasWordMode"
-            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium flex flex-wrap gap-x-1 gap-y-1.5"
-            lang="ja"
-          >
-            <button
-              v-for="(w, widx) in wordSegments"
-              :key="widx"
-              type="button"
-              data-reading-word-btn
-              class="rounded-lg px-1 py-0.5 border border-transparent hover:border-pink-200 hover:bg-pink-50/80 transition-colors text-left"
-              @click="onWordTipClick($event, w, `${activeSentence.id}-u-${widx}`)"
-            >
-              {{ w.hiragana }}
-            </button>
-          </div>
-
-          <p
-            v-else-if="!verified"
-            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium break-all"
-            lang="ja"
-          >{{ activeSentence.hiragana }}</p>
-
-          <div
-            v-else-if="verified && displayWordsWithStatus"
+            v-if="hasWordMode && displayWordsWithStatus"
             class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium flex flex-wrap gap-x-1 gap-y-1.5"
             lang="ja"
           >
@@ -510,8 +551,14 @@ const partTitle = (n) => {
             </button>
           </div>
 
+          <p
+            v-else-if="!hasWordMode && !displayWithStatus"
+            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium break-all"
+            lang="ja"
+          >{{ activeSentence.hiragana }}</p>
+
           <div
-            v-else-if="verified && displayWithStatus"
+            v-else-if="displayWithStatus"
             class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium break-all flex flex-wrap gap-y-1"
             lang="ja"
           >
@@ -586,21 +633,10 @@ const partTitle = (n) => {
             />
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-2 pt-1">
-            <button
-              type="button"
-              class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm uppercase tracking-widest bg-pink-500 text-white shadow-md active:scale-[0.98] transition-all disabled:opacity-50"
-              :disabled="saved || !romajiInput.trim()"
-              @click="onVerify"
-            >
-              <Check :size="18" /> Verifica
-            </button>
-          </div>
-
           <button
             type="button"
             class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm uppercase tracking-widest bg-white border-2 border-pink-300 text-pink-700 shadow-sm active:scale-[0.98] transition-all disabled:opacity-45"
-            :disabled="!verified || saved || store.isSyncing || resultModalPhase === 'loading'"
+            :disabled="!canConfirmReading || store.isSyncing || resultModalPhase === 'loading'"
             @click="onConfirmSave"
           >
             Conferma
@@ -639,119 +675,96 @@ const partTitle = (n) => {
           :aria-label="resultModalPhase === 'loading' ? 'Salvataggio in corso' : 'Riepilogo esercizio'"
         >
           <div
-            class="flex shrink-0 items-center justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2"
-          >
-            <div
-              v-if="resultModalPhase === 'loading'"
-              class="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-pink-200 bg-white text-pink-500 shadow-sm"
-              aria-hidden="true"
-            >
-              <Loader2 class="animate-spin shrink-0" :size="26" />
-            </div>
-            <button
-              v-else-if="resultModalPhase === 'done'"
-              type="button"
-              class="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-pink-200 bg-white text-pink-600 shadow-sm active:scale-95"
-              aria-label="Chiudi riepilogo"
-              @click="closeResultModal"
-            >
-              <X :size="22" />
-            </button>
-            <button
-              v-else-if="resultModalPhase === 'error'"
-              type="button"
-              class="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-pink-200 bg-white text-pink-600 shadow-sm active:scale-95"
-              aria-label="Chiudi"
-              @click="closeResultModal"
-            >
-              <X :size="22" />
-            </button>
-          </div>
-
-          <div
             v-if="resultModalPhase === 'loading'"
             class="flex-1"
-            aria-hidden="true"
           />
 
           <div
             v-else-if="resultModalPhase === 'done'"
             class="flex min-h-0 flex-1 flex-col"
           >
+            <div class="flex shrink-0 items-center justify-end px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+              <button
+                type="button"
+                class="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-pink-200 bg-white text-pink-600 shadow-sm active:scale-95"
+                aria-label="Chiudi riepilogo"
+                @click="closeResultModal"
+              >
+                <X :size="22" />
+              </button>
+            </div>
             <div
-              class="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-4"
+              class="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-5"
             >
-              <div>
-                <p class="text-xs font-black uppercase tracking-widest text-pink-600">Riepilogo</p>
-                <div v-if="recapScoreStats" class="mt-3 flex items-center gap-4">
-                  <div
-                    class="relative h-[5.5rem] w-[5.5rem] shrink-0 rounded-full p-[5px] shadow-inner"
-                    :style="recapDonutStyle"
-                  >
-                    <div
-                      class="absolute inset-[10px] flex flex-col items-center justify-center rounded-full bg-[#fff0f5] text-center leading-none"
-                    >
-                      <span class="text-lg font-black tabular-nums text-slate-800">
-                        {{ recapScoreStats.ok }}/{{ recapScoreStats.total }}
-                      </span>
-                    </div>
-                  </div>
-                  <p
-                    v-if="recapScoreStats.wrong === 0"
-                    class="text-sm font-bold text-emerald-700"
-                  >
-                    Tutte giuste
-                  </p>
-                  <p
-                    v-else
-                    class="max-w-[12rem] text-sm font-semibold leading-snug text-slate-600"
-                  >
-                    {{ recapScoreStats.wrong === 1 ? '1 errore da rivedere' : `${recapScoreStats.wrong} errori da rivedere` }}
-                  </p>
+              <div class="text-center relative rounded-3xl border border-pink-200/70 bg-gradient-to-br from-pink-100/70 via-rose-50/70 to-amber-50/60 px-3 py-4 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.24em] bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">Riepilogo</p>
+                <div class="mt-2 flex items-center justify-center gap-4">
+                  <img
+                    src="/11.png"
+                    alt=""
+                    class="pointer-events-none select-none h-20 w-20 object-contain drop-shadow-sm opacity-95"
+                    width="80"
+                    height="80"
+                    draggable="false"
+                  />
                 </div>
+                <p v-if="recapScoreStats" class="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  {{ recapScoreStats.ok }}/{{ recapScoreStats.total }} indovinate
+                </p>
               </div>
-              <div class="space-y-1">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Traccia di riferimento</p>
-                <p class="text-xs font-mono text-slate-900 break-all leading-relaxed">{{ expectedRomajiLineRecap }}</p>
+              <div class="space-y-2 rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 shadow-sm">
+                <p class="text-center text-[16px] font-semibold break-words leading-relaxed">
+                  <template v-for="chunk in recapInlineChunks" :key="chunk.key">
+                    <span
+                      :class="[
+                        chunk.ok ? 'text-emerald-700' : 'text-rose-700 cursor-pointer underline decoration-dotted underline-offset-4',
+                      ]"
+                      @click="onRecapChunkClick($event, chunk)"
+                    >{{ chunk.text }}</span>
+                    <span class="text-slate-500"> </span>
+                  </template>
+                </p>
               </div>
-              <div class="space-y-1">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">La tua trascrizione</p>
-                <p class="text-xs font-mono text-slate-900 break-all leading-relaxed">{{ romajiInput.trim() || '—' }}</p>
-              </div>
-              <div v-if="displayWordsWithStatus?.length" class="space-y-1.5">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Dettaglio parole</p>
-                <ul class="max-h-52 space-y-1.5 overflow-y-auto pr-1">
+              <div v-if="displayWordsWithStatus?.length" class="space-y-2">
+                <p class="text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Dettaglio parole</p>
+                <ul class="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
                   <li
                     v-for="(cell, idx) in displayWordsWithStatus"
                     :key="'rw'+idx"
-                    class="border-b border-pink-100/90 pb-1.5 text-xs last:border-0"
+                    :ref="(el) => setRecapWordCardRef(el, idx)"
+                    class="min-w-[11rem] max-w-[11rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 text-center text-xs shadow-sm"
                   >
-                    <span class="mr-1 text-base leading-none" lang="ja">{{ cell.hiragana }}</span>
-                    <span :class="cell.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ cell.ok ? '✓' : '✗' }}</span>
-                    <span class="mt-0.5 block text-slate-600">
-                      Atteso: <span class="font-mono text-emerald-800">{{ cell.romaji }}</span>
+                    <div class="flex items-center justify-center gap-1.5">
+                      <span class="text-2xl leading-none" lang="ja">{{ cell.hiragana }}</span>
+                      <span :class="cell.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ cell.ok ? '✓' : '✗' }}</span>
+                    </div>
+                    <span class="mt-2 block text-slate-500">
+                      Atteso: <span class="font-semibold text-emerald-800">{{ cell.romaji }}</span>
                     </span>
-                    <span v-if="!cell.ok" class="block text-slate-600">
-                      Tuo: <span class="font-mono text-rose-700">{{ userWordsRecap[idx] || '—' }}</span>
+                    <span v-if="!cell.ok" class="mt-1 block text-slate-500">
+                      Tuo: <span class="font-semibold text-rose-700">{{ userWordsRecap[idx] || '—' }}</span>
                     </span>
                   </li>
                 </ul>
               </div>
-              <ul v-else-if="recapMoraRows?.length" class="max-h-52 space-y-1 overflow-y-auto pr-1">
+              <ul v-else-if="recapMoraRows?.length" class="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory">
                 <li
                   v-for="(row, idx) in recapMoraRows"
                   :key="'rm'+idx"
-                  class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-pink-100/80 pb-1 text-xs last:border-0"
+                  :ref="(el) => setRecapMoraCardRef(el, idx)"
+                  class="min-w-[9.5rem] max-w-[9.5rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 text-center text-xs shadow-sm"
                 >
-                  <span lang="ja" class="font-medium text-slate-800">{{ row.graph }}</span>
-                  <span :class="row.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ row.ok ? '✓' : '✗' }}</span>
-                  <span class="font-mono text-[11px] text-slate-600">{{ row.expected }}</span>
-                  <span v-if="!row.ok" class="font-mono text-[11px] text-rose-700">({{ row.user || '—' }})</span>
+                  <div class="flex items-center justify-center gap-1.5 w-full">
+                    <span lang="ja" class="text-2xl font-medium text-slate-800">{{ row.graph }}</span>
+                    <span :class="row.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ row.ok ? '✓' : '✗' }}</span>
+                  </div>
+                  <span class="mt-2 block font-semibold text-slate-600">{{ row.expected }}</span>
+                  <span v-if="!row.ok" class="mt-1 block font-semibold text-rose-700">({{ row.user || '—' }})</span>
                 </li>
               </ul>
               <button
                 type="button"
-                class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm uppercase tracking-widest bg-pink-500 text-white shadow-md active:scale-[0.98] transition-all"
+                class="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] bg-pink-500 text-white shadow-md active:scale-[0.98] transition-all"
                 @click="closeResultModal"
               >
                 Chiudi

@@ -653,32 +653,6 @@ onUnmounted(() => {
       <!-- ===== APP PRINCIPALE ===== -->
       <template v-else>
 
-      <!-- Toast Salvato / Non salvato: durante save icona success ruota; a fine save si ferma, si ingrandisce una volta (o cambia in fail e si ingrandisce), poi fade out -->
-      <Transition name="toast">
-        <div
-          v-if="store.quizSavedToast"
-          class="fixed top-5 right-5 z-[400] pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.5rem,env(safe-area-inset-right))] pl-[max(0.5rem,env(safe-area-inset-left))] pointer-events-none"
-        >
-          <!-- key forza re-mount quando passa saving -> success/error così l'animazione scale parte -->
-          <div
-            :key="store.quizSavedToast"
-            :class="[
-              'flex items-center gap-2 bg-transparent px-3 py-2 rounded-xl text-sm font-black uppercase tracking-wide min-w-[2.5rem] min-h-[2.5rem]',
-              (store.quizSavedToast === 'success' || store.quizSavedToast === 'error') && 'toast-result'
-            ]"
-          >
-            <div :class="['w-8 h-8 flex items-center justify-center shrink-0', store.quizSavedToast === 'saving' && 'toast-spin']">
-              <img
-                :src="store.quizSavedToast === 'error' ? '/onigiri-unsaved.png' : store.quizSavedToast === 'success' ? '/12.png' : '/onigiri-saved.png'"
-                :alt="store.quizSavedToast === 'saving' ? 'Salvataggio' : store.quizSavedToast === 'success' ? 'Salvato' : 'Non salvato'"
-                class="w-8 h-8 object-contain block"
-              />
-            </div>
-            <span v-if="store.quizSavedToast === 'error'" class="min-w-[4rem]">Non salvato</span>
-          </div>
-        </div>
-      </Transition>
-
       <!-- ===== MODAL FINE QUIZ: loader → success/error → grafico + Ripeti / Continua ===== -->
       <div
         v-if="store.quizEndModalPhase"

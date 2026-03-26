@@ -29,6 +29,10 @@ export const normalizeReadingRomaji = (str) => {
     .replace(/ō/g, 'oo')
     .replace(/\s+/g, ' ')
     .trim()
+  // Accept particle variants in reading-text quizzes.
+  s = s.replace(/\bwo\b/g, 'o')
+  s = s.replace(/\bhe\b/g, 'e')
+  s = s.replace(/\bha\b/g, 'wa')
   s = s.replace(/sei/g, 'see')
   return s
 }
@@ -36,6 +40,9 @@ export const normalizeReadingRomaji = (str) => {
 /** Strip to a-z only for mora equality (reading texts). */
 export const compactReadingKey = (str) =>
   normalizeReadingRomaji(str).replace(/[^a-z]/g, '')
+
+export const compactCompareKey = (str) =>
+  normalizeRomajiForCompare(str).replace(/[^a-z]/g, '')
 
 /** Full reference line (Crunchy) compact match in build script. */
 export const compactRomajiKey = (str) =>
@@ -315,19 +322,105 @@ export function parseUserRomajiWords(input) {
     .map((x) => normalizeReadingRomaji(x))
 }
 
-export function compareReadingWords(userWords, wordSegments) {
+const expectedWordFromKana = (word, kanaSequence) =>
+  kanaSequence
+    .slice(word.moraStart, word.moraEnd)
+    .map((k) => k.romaji || '')
+    .join('')
+
+export function compareReadingWords(userWords, wordSegments, kanaSequence = null) {
   const n = wordSegments.length
   const m = userWords.length
   const wordOk = []
   for (let j = 0; j < n; j += 1) {
-    const eu = compactReadingKey(wordSegments[j].romaji)
-    const uu = j < m ? compactReadingKey(userWords[j]) : ''
+    const expectedRaw = kanaSequence?.length
+      ? expectedWordFromKana(wordSegments[j], kanaSequence)
+      : wordSegments[j].romaji
+    const eu = compactCompareKey(expectedRaw)
+    const uu = j < m ? compactCompareKey(userWords[j]) : ''
     wordOk.push(j < m && eu === uu)
   }
   return {
     wordOk,
     aligned: n === m && wordOk.every(Boolean),
   }
+}
+
+/**
+ * Word-mode fine grading: return one boolean per kana/mora.
+ * It compares each completed user word against expected mora slices, so a typo
+ * penalizes only the affected kana instead of the full word block.
+ */
+export function compareReadingWordsPerKana(userWords, wordSegments, kanaSequence) {
+  const kanaOk = []
+  for (let j = 0; j < wordSegments.length; j += 1) {
+    const seg = wordSegments[j]
+    const morae = kanaSequence.slice(seg.moraStart, seg.moraEnd)
+    const expectedParts = morae.map((m) => compactCompareKey(m.romaji || ''))
+    const expectedWord = expectedParts.join('')
+    const userWord = j < userWords.length ? compactCompareKey(userWords[j]) : ''
+    let pos = 0
+    for (const part of expectedParts) {
+      const take = userWord.slice(pos, pos + part.length)
+      kanaOk.push(!!part && take === part)
+      pos += part.length
+    }
+    // If lengths mismatch heavily, still preserve already matched kana above.
+    if (!expectedWord && morae.length) {
+      for (let k = 0; k < morae.length; k += 1) kanaOk.push(false)
+    }
+  }
+  return { kanaOk }
+}
+
+export function compareReadingTokenProgress(userTokens, expectedSequence) {
+  const expected = expectedSequence.map((x) => normalizeReadingRomaji(x.romaji))
+  const n = expected.length
+  const m = userTokens.length
+  const kanaState = []
+  for (let j = 0; j < n; j += 1) {
+    if (j >= m) {
+      kanaState.push(null)
+      continue
+    }
+    const eu = compactCompareKey(expected[j])
+    const uu = compactCompareKey(userTokens[j])
+    if (!uu) {
+      kanaState.push(null)
+      continue
+    }
+    kanaState.push(eu.startsWith(uu))
+  }
+  return { kanaState }
+}
+
+export function compareReadingWordProgress(rawInput, wordSegments, kanaSequence = null) {
+  const input = String(rawInput || '')
+  const userWords = parseUserRomajiWords(input)
+  const hasTrailingSpace = /\s$/.test(input)
+  const completedCount = hasTrailingSpace
+    ? userWords.length
+    : Math.max(0, userWords.length - 1)
+  const n = wordSegments.length
+  const wordState = []
+  for (let j = 0; j < n; j += 1) {
+    if (j >= completedCount) {
+      wordState.push(null)
+      continue
+    }
+    const expectedRaw = kanaSequence?.length
+      ? expectedWordFromKana(wordSegments[j], kanaSequence)
+      : wordSegments[j].romaji
+    const eu = compactCompareKey(expectedRaw)
+    const uu = compactCompareKey(userWords[j])
+    if (!uu) {
+      wordState.push(null)
+      continue
+    }
+    // Word mode: evaluate only completed words and require full-word equality.
+    wordState.push(eu === uu)
+  }
+  return { wordState }
 }
 
 export function expandWordOkToKanaOk(wordSegments, wordOk) {
