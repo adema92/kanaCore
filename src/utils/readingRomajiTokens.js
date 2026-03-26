@@ -1,6 +1,10 @@
 import hiraganaGrid from '../data/hiragana-grid.json' with { type: 'json' }
 
-/** Hepburn-style romaji normalization (aligned with appStore.normalizeRomajiForCompare). */
+/**
+ * Hepburn-style romaji normalization for reading-text compare.
+ * Avoids global sei→see (breaks seikai) and global ou→oo (breaks nou / inou).
+ * Macrons, ei at word end (えい), ou clusters not preceded by n (とう, きょう, …).
+ */
 export const normalizeRomajiForCompare = (str) => {
   let s = String(str)
     .toLowerCase()
@@ -11,29 +15,20 @@ export const normalizeRomajiForCompare = (str) => {
     .replace(/ō/g, 'oo')
     .replace(/\s+/g, ' ')
     .trim()
-  s = s.replace(/ou/g, 'oo')
-  s = s.replace(/sei/g, 'see')
+  s = s.replace(/([^n])ou/g, '$1oo')
+  s = s.replace(/^ou/g, 'oo')
+  s = s.replace(/ei$/g, 'ee')
   return s
 }
 
 /**
- * Per-mora / reading practice: do not apply global ou→oo (breaks no+u → "nou").
+ * User input: same long-vowel rules as compare + particle variants.
  */
 export const normalizeReadingRomaji = (str) => {
-  let s = String(str)
-    .toLowerCase()
-    .replace(/ā/g, 'aa')
-    .replace(/ī/g, 'ii')
-    .replace(/ū/g, 'uu')
-    .replace(/ē/g, 'ee')
-    .replace(/ō/g, 'oo')
-    .replace(/\s+/g, ' ')
-    .trim()
-  // Accept particle variants in reading-text quizzes.
+  let s = normalizeRomajiForCompare(str)
   s = s.replace(/\bwo\b/g, 'o')
   s = s.replace(/\bhe\b/g, 'e')
   s = s.replace(/\bha\b/g, 'wa')
-  s = s.replace(/sei/g, 'see')
   return s
 }
 
@@ -41,8 +36,13 @@ export const normalizeReadingRomaji = (str) => {
 export const compactReadingKey = (str) =>
   normalizeReadingRomaji(str).replace(/[^a-z]/g, '')
 
-export const compactCompareKey = (str) =>
-  normalizeRomajiForCompare(str).replace(/[^a-z]/g, '')
+export const compactCompareKey = (str) => {
+  let s = normalizeRomajiForCompare(str)
+  s = s.replace(/\bwo\b/g, 'o')
+  s = s.replace(/\bhe\b/g, 'e')
+  s = s.replace(/\bha\b/g, 'wa')
+  return s.replace(/[^a-z]/g, '')
+}
 
 /** Full reference line (Crunchy) compact match in build script. */
 export const compactRomajiKey = (str) =>
@@ -356,26 +356,38 @@ export function compareReadingWordsPerKana(userWords, wordSegments, kanaSequence
   for (let j = 0; j < wordSegments.length; j += 1) {
     const seg = wordSegments[j]
     const morae = kanaSequence.slice(seg.moraStart, seg.moraEnd)
-    const expectedParts = morae.map((m) => compactCompareKey(m.romaji || ''))
-    const expectedWord = expectedParts.join('')
-    const userWord = j < userWords.length ? compactCompareKey(userWords[j]) : ''
-    let pos = 0
-    for (const part of expectedParts) {
-      const take = userWord.slice(pos, pos + part.length)
-      kanaOk.push(!!part && take === part)
-      pos += part.length
-    }
-    // If lengths mismatch heavily, still preserve already matched kana above.
-    if (!expectedWord && morae.length) {
+    const rawParts = morae.map((m) => m.romaji || '')
+    const fullExp = rawParts.join('')
+    const expCanon = compactCompareKey(fullExp)
+    const userCanon = j < userWords.length ? compactCompareKey(userWords[j]) : ''
+    if (!morae.length) continue
+    if (!userCanon) {
       for (let k = 0; k < morae.length; k += 1) kanaOk.push(false)
+      continue
+    }
+    if (expCanon === userCanon) {
+      for (let k = 0; k < morae.length; k += 1) kanaOk.push(true)
+      continue
+    }
+    const bounds = [0]
+    for (let i = 0; i < rawParts.length; i += 1) {
+      bounds.push(compactCompareKey(rawParts.slice(0, i + 1).join('')).length)
+    }
+    if (expCanon.length !== userCanon.length) {
+      for (let k = 0; k < morae.length; k += 1) kanaOk.push(false)
+      continue
+    }
+    for (let i = 0; i < morae.length; i += 1) {
+      const segE = expCanon.slice(bounds[i], bounds[i + 1])
+      const segU = userCanon.slice(bounds[i], bounds[i + 1])
+      kanaOk.push(segE === segU)
     }
   }
   return { kanaOk }
 }
 
 export function compareReadingTokenProgress(userTokens, expectedSequence) {
-  const expected = expectedSequence.map((x) => normalizeReadingRomaji(x.romaji))
-  const n = expected.length
+  const n = expectedSequence.length
   const m = userTokens.length
   const kanaState = []
   for (let j = 0; j < n; j += 1) {
@@ -383,7 +395,7 @@ export function compareReadingTokenProgress(userTokens, expectedSequence) {
       kanaState.push(null)
       continue
     }
-    const eu = compactCompareKey(expected[j])
+    const eu = compactCompareKey(expectedSequence[j].romaji)
     const uu = compactCompareKey(userTokens[j])
     if (!uu) {
       kanaState.push(null)
@@ -475,8 +487,8 @@ export function compareReadingTokens(userTokens, expectedSequence) {
   const m = userTokens.length
   const kanaOk = []
   for (let j = 0; j < n; j += 1) {
-    const eu = compactReadingKey(expected[j])
-    const uu = j < m ? compactReadingKey(userTokens[j]) : ''
+    const eu = compactCompareKey(expectedSequence[j].romaji)
+    const uu = j < m ? compactCompareKey(userTokens[j]) : ''
     kanaOk.push(j < m && eu === uu)
   }
   const aligned = n === m && kanaOk.every(Boolean)

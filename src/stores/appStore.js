@@ -13,6 +13,7 @@ import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
 import katakanaPresetsJson from '../data/katakana-presets.json'
+import { normalizeRomajiForCompare } from '../utils/readingRomajiTokens.js'
 
 /* global __firebase_config, __app_id */
 const firebaseConfig =
@@ -940,27 +941,6 @@ export const useAppStore = defineStore('app', () => {
       const ok = normalizedUser === correctText
       processAnswer(ok, item, userText)
     }
-  }
-
-  /**
-   * Normalize romaji for equality checks: macrons → double vowels, then Hepburn "ou" → "oo"
-   * so Okāsan / Okaasan / (same form) and Otōsan / Otousan / Otoosan all match.
-   * Sensē / Sensei and Gakusē / Gakusei via sei→see after macrons.
-   */
-  function normalizeRomajiForCompare(str) {
-    let s = str
-      .toLowerCase()
-      .replace(/ā/g, 'aa')
-      .replace(/ī/g, 'ii')
-      .replace(/ū/g, 'uu')
-      .replace(/ē/g, 'ee')
-      .replace(/ō/g, 'oo')
-      .replace(/\s+/g, ' ')
-      .trim()
-    s = s.replace(/ou/g, 'oo')
-    // せい as Hepburn "sei" (Sensē / Gakusē vs Sensei / Gakusei)
-    s = s.replace(/sei/g, 'see')
-    return s
   }
 
   function handleAnswer(option) {
