@@ -1228,7 +1228,7 @@ onUnmounted(() => {
           <div class="flex-1 overflow-y-auto px-6 pb-4 space-y-2">
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">
-                Scegli una o più <b>categorie</b> per il quiz parole (Kana → romaji). Puoi includere tutte le parole disponibili.
+                Scegli le <b>categorie</b> per Quiz Parole (Kana → romaji). Il quiz aggiornerà solo le statistiche degli <b>hiragana</b>.
               </template>
               <template v-else>
                 Seleziona le <b>categorie</b> da includere nel quiz, il test influenzerà le <b>statistiche</b>

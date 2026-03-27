@@ -13,7 +13,7 @@ import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
 import katakanaPresetsJson from '../data/katakana-presets.json'
-import { normalizeRomajiForCompare } from '../utils/readingRomajiTokens.js'
+import { normalizeRomajiForCompare, tokenizeHiraganaRaw } from '../utils/readingRomajiTokens.js'
 
 /* global __firebase_config, __app_id */
 const firebaseConfig =
@@ -25,6 +25,7 @@ const auth = getAuth(firebaseApp)
 const db = getFirestore(firebaseApp)
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'
 const projectId = firebaseConfig.projectId || appId
+const VOCAB_STATS_RESET_VERSION = 1
 
 /** Max words for "last batch" quiz CTA (label uses min(this, pool length)). */
 export const VOCAB_LAST_BATCH_MAX = 20
@@ -392,6 +393,7 @@ export const useAppStore = defineStore('app', () => {
       vocabData: vocabData.value.map(v => ({ ...v })),
       dailyStats: { ...dailyStats.value },
       readingTextsCompletedAt: { ...readingTextsCompletedAt.value },
+      _vocabStatsResetVersion: VOCAB_STATS_RESET_VERSION,
       _savedAt: new Date().toISOString(),
       _profile: currentProfile.value,
     }
@@ -734,10 +736,30 @@ export const useAppStore = defineStore('app', () => {
     const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
       .toISOString().split('T')[0]
     const curDay = _normalizeDayStats(dailyStats.value[todayStr])
+    const isVocabKanaStatsQuiz =
+      quizType.value === 'vocab-kana-to-romaji' ||
+      quizType.value === 'vocab-kana-read' ||
+      quizType.value === 'vocab-romaji-input'
+    const vocabKanaOutcomes = isVocabKanaStatsQuiz
+      ? tokenizeHiraganaRaw(String(item?.word || '').split('/')[0].trim())
+        .filter((t) => t.type === 'kana' && t.statChar)
+        .map((t) => ({ character: t.statChar, ok }))
+      : []
+    const vocabKanaCharSet = new Set(vocabKanaOutcomes.map((x) => x.character).filter(Boolean))
     const getItemState = (arr) => arr.find((x) => x.id === item.id)
     const k = quizType.value === 'kana' ? getItemState(kanaData.value)
       : quizType.value === 'katakana' ? getItemState(katakanaData.value)
       : getItemState(vocabData.value)
+    const kanaStatsBefore = {}
+    if (vocabKanaCharSet.size > 0) {
+      for (const row of kanaData.value) {
+        if (!vocabKanaCharSet.has(row.character)) continue
+        kanaStatsBefore[row.character] = {
+          score: row.score,
+          attempts: row.attempts,
+        }
+      }
+    }
     lastAnswerSnapshot.value = {
       quizResults: { ...quizResults.value },
       todayStr,
@@ -745,6 +767,8 @@ export const useAppStore = defineStore('app', () => {
       itemId: item.id,
       scoreBefore: k ? k.score : 0,
       attemptsBefore: k ? k.attempts : 0,
+      isVocabKanaStatsQuiz,
+      kanaStatsBefore,
     }
     if (ok) {
       quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
@@ -756,17 +780,26 @@ export const useAppStore = defineStore('app', () => {
     }
 
     const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
+    const kanaTotalAdd = isVocabKanaStatsQuiz ? vocabKanaOutcomes.length : 0
+    const kanaCorrectAdd = isVocabKanaStatsQuiz
+      ? vocabKanaOutcomes.filter((x) => x.ok).length
+      : 0
     const nextDay = {
       ...curDay,
-      total: curDay.total + 1,
-      correct: curDay.correct + (ok ? 1 : 0),
+      total: curDay.total + (isVocabKanaStatsQuiz ? kanaTotalAdd : 1),
+      correct: curDay.correct + (isVocabKanaStatsQuiz ? kanaCorrectAdd : (ok ? 1 : 0)),
       kana: quizType.value === 'kana'
         ? { total: curDay.kana.total + 1, correct: curDay.kana.correct + (ok ? 1 : 0) }
+        : isVocabKanaStatsQuiz
+          ? {
+            total: curDay.kana.total + kanaTotalAdd,
+            correct: curDay.kana.correct + kanaCorrectAdd,
+          }
         : curDay.kana,
       katakana: quizType.value === 'katakana'
         ? { total: curDay.katakana.total + 1, correct: curDay.katakana.correct + (ok ? 1 : 0) }
         : curDay.katakana,
-      vocab: !isKanaQuiz
+      vocab: !isKanaQuiz && !isVocabKanaStatsQuiz
         ? { total: curDay.vocab.total + 1, correct: curDay.vocab.correct + (ok ? 1 : 0) }
         : curDay.vocab,
     }
@@ -788,6 +821,14 @@ export const useAppStore = defineStore('app', () => {
       kanaData.value = upd(kanaData.value)
     } else if (quizType.value === 'katakana') {
       katakanaData.value = upd(katakanaData.value)
+    } else if (isVocabKanaStatsQuiz) {
+      for (const row of vocabKanaOutcomes) {
+        kanaData.value = kanaData.value.map((x) => {
+          if (x.character !== row.character) return x
+          const ns = row.ok ? Math.min(100, x.score + 25) : (x.score >= 80 ? 40 : 0)
+          return { ...x, score: ns, attempts: x.attempts + 1 }
+        })
+      }
     } else {
       vocabData.value = upd(vocabData.value)
     }
@@ -884,7 +925,13 @@ export const useAppStore = defineStore('app', () => {
       data.map((x) =>
         x.id === s.itemId ? { ...x, score: s.scoreBefore, attempts: s.attemptsBefore } : x
       )
-    if (quizType.value === 'kana') {
+    if (s.isVocabKanaStatsQuiz) {
+      kanaData.value = kanaData.value.map((x) => {
+        const prev = s.kanaStatsBefore?.[x.character]
+        if (!prev) return x
+        return { ...x, score: prev.score, attempts: prev.attempts }
+      })
+    } else if (quizType.value === 'kana') {
       kanaData.value = revert(kanaData.value)
     } else if (quizType.value === 'katakana') {
       katakanaData.value = revert(katakanaData.value)
@@ -1224,13 +1271,22 @@ export const useAppStore = defineStore('app', () => {
         personalNote: cloud?.personalNote ?? base.personalNote,
       }
     })
+    const normalizedDaily = {}
     if (raw.dailyStats && typeof raw.dailyStats === 'object') {
-      const normalized = {}
       for (const [date, day] of Object.entries(raw.dailyStats)) {
-        normalized[date] = _normalizeDayStats(day)
+        normalizedDaily[date] = _normalizeDayStats(day)
       }
-      dailyStats.value = normalized
     }
+    const needsVocabReset = Number(raw?._vocabStatsResetVersion || 0) < VOCAB_STATS_RESET_VERSION
+    if (needsVocabReset) {
+      vocabData.value = vocabData.value.map((v) => ({ ...v, score: 0, attempts: 0 }))
+      for (const day of Object.values(normalizedDaily)) {
+        day.vocab = { total: 0, correct: 0 }
+        day.total = day.kana.total + day.katakana.total
+        day.correct = day.kana.correct + day.katakana.correct
+      }
+    }
+    dailyStats.value = normalizedDaily
     if (raw.readingTextsCompletedAt && typeof raw.readingTextsCompletedAt === 'object') {
       const next = {}
       for (const [k, v] of Object.entries(raw.readingTextsCompletedAt)) {
@@ -1240,6 +1296,7 @@ export const useAppStore = defineStore('app', () => {
     } else {
       readingTextsCompletedAt.value = {}
     }
+    if (needsVocabReset) sync()
   }
 
   /** Set or clear last completion time for a reading sentence (ISO string or null/undefined to remove). */
