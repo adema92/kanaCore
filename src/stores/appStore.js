@@ -611,26 +611,8 @@ export const useAppStore = defineStore('app', () => {
 
   function openQuizEndModalAndSave() {
     quizActive.value = false
-    quizEndModalPhase.value = 'saving'
-    const savingStart = Date.now()
-    const minSavingMs = 700
-    saveNow({ fromQuizEnd: true })
-      .then(() => {
-        const elapsed = Date.now() - savingStart
-        const wait = Math.max(0, minSavingMs - elapsed)
-        setTimeout(() => {
-          quizEndModalPhase.value = 'success'
-          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 800)
-        }, wait)
-      })
-      .catch(() => {
-        const elapsed = Date.now() - savingStart
-        const wait = Math.max(0, minSavingMs - elapsed)
-        setTimeout(() => {
-          quizEndModalPhase.value = 'error'
-          setTimeout(() => { quizEndModalPhase.value = 'chart' }, 800)
-        }, wait)
-      })
+    quizEndModalPhase.value = 'chart'
+    void saveNow({ fromQuizEnd: true })
   }
 
   function closeQuizEndModal() {

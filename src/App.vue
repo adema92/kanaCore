@@ -692,43 +692,12 @@ onUnmounted(() => {
       <!-- ===== APP PRINCIPALE ===== -->
       <template v-else>
 
-      <!-- ===== MODAL FINE QUIZ: loader → success/error → grafico + Ripeti / Continua ===== -->
+      <!-- ===== MODAL FINE QUIZ: risultati + Ripeti / Continua (salvataggio cloud in background) ===== -->
       <div
         v-if="store.quizEndModalPhase"
         class="fixed inset-0 z-[350] flex flex-col items-center justify-center bg-slate-800/75 backdrop-blur-sm overflow-hidden touch-none"
       >
-        <!-- Phase: saving – full-screen loader (same icon as toast, spinning) -->
         <div
-          v-if="store.quizEndModalPhase === 'saving'"
-          class="flex flex-col items-center justify-center w-full h-full"
-        >
-          <div class="w-16 h-16 flex items-center justify-center toast-spin">
-            <img src="/onigiri-saved.png" alt="Salvataggio" class="w-16 h-16 object-contain block" />
-          </div>
-          <p class="mt-4 text-white font-bold uppercase tracking-widest text-sm">Salvataggio...</p>
-        </div>
-        <!-- Phase: success – full-screen success icon -->
-        <div
-          v-else-if="store.quizEndModalPhase === 'success'"
-          class="flex flex-col items-center justify-center w-full h-full"
-        >
-          <div class="w-24 h-24 flex items-center justify-center toast-result">
-            <img src="/12.png" alt="Salvato" class="w-24 h-24 object-contain block" />
-          </div>
-        </div>
-        <!-- Phase: error – full-screen error icon -->
-        <div
-          v-else-if="store.quizEndModalPhase === 'error'"
-          class="flex flex-col items-center justify-center w-full h-full"
-        >
-          <div class="w-24 h-24 flex items-center justify-center toast-result">
-            <img src="/onigiri-unsaved.png" alt="Non salvato" class="w-24 h-24 object-contain block" />
-          </div>
-          <p class="mt-4 text-white font-bold uppercase tracking-widest text-sm">Non salvato</p>
-        </div>
-        <!-- Phase: chart – pie chart + Ripeti test / Continua -->
-        <div
-          v-else-if="store.quizEndModalPhase === 'chart'"
           class="flex flex-col items-center justify-center w-full max-w-sm px-6 py-8"
         >
           <h2 class="text-lg font-black text-white uppercase tracking-widest mb-1">Risultati quiz</h2>
@@ -2062,31 +2031,4 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* Quiz saved toast: fade in/out */
-.toast-enter-active,
-.toast-leave-active {
-  transition: opacity 0.25s ease;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-}
-
-/* Rotazione icona durante salvataggio */
-@keyframes toast-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.toast-spin {
-  animation: toast-spin 0.8s linear infinite;
-}
-
-/* Ingrandimento una volta quando success/error (elemento ha :key quindi viene rimontato e l'animazione parte) */
-@keyframes toast-pop {
-  from { transform: scale(1); }
-  to { transform: scale(1.45); }
-}
-.toast-result {
-  animation: toast-pop 0.4s ease-out forwards;
-}
 </style>
