@@ -322,7 +322,7 @@ const selectDay = (key) => {
     <div class="bg-white rounded-3xl shadow-sm border border-violet-50/80 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span class="text-pink-400">あ</span> Kana oggi
+          <span class="text-pink-400">あ</span> Hiragana oggi
         </h2>
         <button
           type="button"
