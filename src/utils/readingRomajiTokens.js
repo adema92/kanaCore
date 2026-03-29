@@ -148,6 +148,61 @@ export function tokenizeHiraganaRaw(hiragana) {
 }
 
 /**
+ * Split a vocabulary word into per-mora stats for hiragana vs katakana grids.
+ * Hiragana runs use kanaData keys; katakana runs use katakanaData keys (same mora length as tokenizer graph).
+ * Kanji and unknown chars are skipped. `ok` is the word-level quiz outcome applied to each mora.
+ */
+export function tokenizeWordForVocabKanaStats(word, ok) {
+  const raw = String(word || '')
+    .split('/')[0]
+    .trim()
+    .replace(/\s+/g, '')
+  const outcomes = []
+  let i = 0
+  while (i < raw.length) {
+    const ch = raw[i]
+    if (/[、。．！？「」『』]/.test(ch)) {
+      i += 1
+      continue
+    }
+    if (/[ぁ-ゖ]/.test(ch)) {
+      let j = i
+      while (j < raw.length && /[ぁ-ゖ]/.test(raw[j])) j++
+      const run = raw.slice(i, j)
+      const tokens = tokenizeHiraganaRaw(run).filter((t) => t.type === 'kana' && t.statChar)
+      for (const t of tokens) outcomes.push({ script: 'hiragana', character: t.statChar, ok })
+      i = j
+      continue
+    }
+    if (/[ァ-ヶ]/.test(ch)) {
+      let j = i
+      while (j < raw.length && /[ァ-ヶ]/.test(raw[j])) j++
+      const run = raw.slice(i, j)
+      const hirRun = [...run]
+        .map((c) => {
+          const cp = c.codePointAt(0)
+          if (cp >= 0x30a1 && cp <= 0x30f6) return String.fromCodePoint(cp - 0x60)
+          return c
+        })
+        .join('')
+      const tokList = tokenizeHiraganaRaw(hirRun)
+      let kPos = 0
+      for (const t of tokList) {
+        if (t.type !== 'kana' || !t.statChar) continue
+        const len = t.graph.length
+        const kataMora = run.slice(kPos, kPos + len)
+        kPos += len
+        outcomes.push({ script: 'katakana', character: kataMora, ok })
+      }
+      i = j
+      continue
+    }
+    i += 1
+  }
+  return outcomes
+}
+
+/**
  * Resolve は readings to match compactRomajiKey target.
  */
 export function resolveHaTokens(tokens, targetCompact) {

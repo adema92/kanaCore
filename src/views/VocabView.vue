@@ -1,11 +1,21 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { BookOpen, Languages } from 'lucide-vue-next'
 import { useAppStore } from '../stores/appStore'
 
 const store = useAppStore()
+const route = useRoute()
 
-const homeScriptFilter = ref('both')
+const homeScriptFilter = ref('hiragana')
+
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/vocab') homeScriptFilter.value = 'hiragana'
+  },
+  { immediate: true }
+)
 
 const filteredVocabData = computed(() =>
   store.filterVocabByScript(store.vocabData, homeScriptFilter.value)
@@ -50,6 +60,20 @@ function catStats(words) {
   const inCorso    = words.filter(w => w.score >= 40 && w.score < 80).length
   const daStud     = words.filter(w => w.score < 40).length
   return { padronanza, inCorso, daStud, total: words.length }
+}
+
+/** When Katakana tab is active, drop redundant "Katakana" from section titles (tab already shows script). */
+function categoryHeadingLabel(cat) {
+  if (homeScriptFilter.value === 'katakana') {
+    if (cat === 'Random Katakana') return 'Random'
+    if (cat === 'Presentazione Katakana') return 'Presentazione'
+    return cat
+  }
+  if (homeScriptFilter.value === 'both') {
+    if (cat.endsWith(' Mix')) return cat.replace(/\s+Mix$/, '')
+    return cat
+  }
+  return cat
 }
 </script>
 
@@ -120,7 +144,7 @@ function catStats(words) {
               : 'text-slate-500 border-transparent bg-transparent',
           ]"
           @click="homeScriptFilter = 'both'"
-        >Entrambi</button>
+        >Mix</button>
       </div>
     </div>
 
@@ -138,7 +162,7 @@ function catStats(words) {
       >
         <div class="flex items-center gap-3 min-w-0">
           <div class="text-left min-w-0">
-            <p class="font-black text-slate-500 uppercase text-sm tracking-wide leading-tight">{{ cat }}</p>
+            <p class="font-black text-slate-500 uppercase text-sm tracking-wide leading-tight">{{ categoryHeadingLabel(cat) }}</p>
             <p class="text-[11px] text-slate-400 font-semibold mt-0.5">{{ words.length }} parole</p>
           </div>
         </div>
