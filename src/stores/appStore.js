@@ -1156,7 +1156,7 @@ export const useAppStore = defineStore('app', () => {
       selectedVocabCategories.value.includes(v.category)
     )
     const filtered = filterVocabByScript(byCategory, selectedVocabScript.value)
-    const minVocab = (quizType.value === 'vocab' || quizType.value === 'vocab-romaji') ? 4 : 1
+    const minVocab = (quizType.value === 'vocab' || quizType.value === 'vocab-romaji') ? 3 : 1
     if (filtered.length < minVocab) {
       customAlert.value = `🌸 Seleziona categorie con almeno ${minVocab} parole!`
       return
