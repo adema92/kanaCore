@@ -291,6 +291,7 @@ export const useAppStore = defineStore('app', () => {
   const newKatakanaPresetName = ref('')
   const quizPendingItems = ref([])
   const selectedVocabCategories = ref([])
+  const selectedVocabScript = ref('both')
   /** True after proceedFromVocabSetup; used to show "back to categories" in difficulty modal. */
   const enteredDifficultyFromVocabCategories = ref(false)
   const quizDifficulty = ref('medio')
@@ -1034,6 +1035,27 @@ export const useAppStore = defineStore('app', () => {
     return allCategoryNames.includes('Random') ? ['Random'] : []
   }
 
+  function getVocabScriptsFromWord(word) {
+    const source = String(word || '')
+    const hasHiragana = /[ぁ-ゖ]/.test(source)
+    const hasKatakana = /[ァ-ヶ]/.test(source)
+    return { hasHiragana, hasKatakana }
+  }
+
+  function matchVocabItemByScript(item, script = selectedVocabScript.value) {
+    if (script === 'both') return true
+    const { hasHiragana, hasKatakana } = getVocabScriptsFromWord(item?.word)
+    if (script === 'hiragana') return hasHiragana
+    if (script === 'katakana') return hasKatakana
+    return true
+  }
+
+  function filterVocabByScript(items, script = selectedVocabScript.value) {
+    if (!Array.isArray(items)) return []
+    if (script === 'both') return [...items]
+    return items.filter((item) => matchVocabItemByScript(item, script))
+  }
+
   function handleStartQuizClick(type, forced = null) {
     quizType.value = type
     if (forced) {
@@ -1057,7 +1079,9 @@ export const useAppStore = defineStore('app', () => {
       selectedKatakanaIds.value = []
       katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
-      const allCats = [...new Set(vocabData.value.map(v => v.category))]
+      selectedVocabScript.value = 'both'
+      const scriptFiltered = filterVocabByScript(vocabData.value, selectedVocabScript.value)
+      const allCats = [...new Set(scriptFiltered.map(v => v.category))]
       if (allCats.length < 1) {
         customAlert.value = '🌸 Nessuna categoria vocabolario disponibile!'
         return
@@ -1068,15 +1092,17 @@ export const useAppStore = defineStore('app', () => {
       vocabSetupModalOpen.value = true
     } else {
       enteredDifficultyFromVocabCategories.value = false
+      selectedVocabScript.value = 'both'
       selectedVocabCategories.value = defaultSelectedVocabCategories([...new Set(vocabData.value.map(v => v.category))])
       vocabSetupModalOpen.value = true
     }
   }
 
   function proceedFromVocabSetup() {
-    const filtered = vocabData.value.filter(v =>
+    const byCategory = vocabData.value.filter(v =>
       selectedVocabCategories.value.includes(v.category)
     )
+    const filtered = filterVocabByScript(byCategory, selectedVocabScript.value)
     const minVocab = (quizType.value === 'vocab' || quizType.value === 'vocab-romaji') ? 4 : 1
     if (filtered.length < minVocab) {
       customAlert.value = `🌸 Seleziona categorie con almeno ${minVocab} parole!`
@@ -1451,7 +1477,7 @@ export const useAppStore = defineStore('app', () => {
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
     quizActive, quizEndModalPhase, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
-    selectedVocabCategories, enteredDifficultyFromVocabCategories,
+    selectedVocabCategories, selectedVocabScript, enteredDifficultyFromVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
     quizType, options, selectedOption, isAnswered, quizResults, manualInput,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
@@ -1463,6 +1489,7 @@ export const useAppStore = defineStore('app', () => {
     handleManualSubmit, handleAnswer,
     advanceAfterFeedback, undoLastAnswer,
     orderVocabCategories,
+    getVocabScriptsFromWord, matchVocabItemByScript, filterVocabByScript,
     handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, backFromDifficultyToVocabSetup, closeDifficultyModal, closeVocabSetupModal, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetKatakanaScore, resetVocabScore,

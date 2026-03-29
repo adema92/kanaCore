@@ -13,11 +13,21 @@ const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
+const vocabSetupFilteredData = computed(() =>
+  store.filterVocabByScript(store.vocabData, store.selectedVocabScript)
+)
+
 const canProceedVocabSetup = computed(() => store.selectedVocabCategories.length > 0)
 
 const orderedVocabCategoriesList = computed(() => {
-  const uniq = [...new Set(store.vocabData.map(v => v.category))]
+  const uniq = [...new Set(vocabSetupFilteredData.value.map(v => v.category))]
   return store.orderVocabCategories(uniq)
+})
+
+const vocabSetupScriptLabel = computed(() => {
+  if (store.selectedVocabScript === 'hiragana') return 'hiragana'
+  if (store.selectedVocabScript === 'katakana') return 'katakana'
+  return 'hiragana + katakana'
 })
 
 const quizActiveBgStyle = computed(() => {
@@ -436,6 +446,11 @@ const showCorrectAnswerInFeedback = ref(false)
 
 watch(() => store.answerFeedback, () => {
   showCorrectAnswerInFeedback.value = false
+})
+
+watch(() => store.selectedVocabScript, () => {
+  const allowedCategories = new Set(orderedVocabCategoriesList.value)
+  store.selectedVocabCategories = store.selectedVocabCategories.filter((cat) => allowedCategories.has(cat))
 })
 
 async function onInputFocus() {
@@ -1226,12 +1241,30 @@ onUnmounted(() => {
 
           <!-- Lista categorie -->
           <div class="flex-1 overflow-y-auto px-6 pb-4 space-y-2">
+            <label class="block text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Script vocaboli</label>
+            <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-3">
+              <button
+                type="button"
+                :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'hiragana' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                @click="store.selectedVocabScript = 'hiragana'"
+              >Hiragana</button>
+              <button
+                type="button"
+                :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'katakana' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                @click="store.selectedVocabScript = 'katakana'"
+              >Katakana</button>
+              <button
+                type="button"
+                :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'both' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                @click="store.selectedVocabScript = 'both'"
+              >Entrambi</button>
+            </div>
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">
-                Scegli le <b>categorie</b> per Quiz Parole (Kana → romaji). Il quiz aggiornerà solo le statistiche degli <b>hiragana</b>.
+                Scegli una o più <b>categorie</b> per il quiz parole (Kana → romaji), filtrate per <b>{{ vocabSetupScriptLabel }}</b>.
               </template>
               <template v-else>
-                Seleziona le <b>categorie</b> da includere nel quiz, il test influenzerà le <b>statistiche</b>
+                Seleziona le <b>categorie</b> filtrate per <b>{{ vocabSetupScriptLabel }}</b>, il test influenzerà le <b>statistiche</b>
               </template>
             </p>
             <div class="shrink-0 mt-4 pb-4" aria-hidden="true">
@@ -1262,7 +1295,7 @@ onUnmounted(() => {
                 <div class="text-left">
                   <div>{{ cat }}</div>
                   <div class="text-[10px] font-semibold normal-case opacity-60">
-                    {{ store.vocabData.filter(v => v.category === cat).length }} parole
+                    {{ vocabSetupFilteredData.filter(v => v.category === cat).length }} parole
                   </div>
                 </div>
               </div>

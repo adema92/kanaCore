@@ -5,12 +5,23 @@ import { useAppStore } from '../stores/appStore'
 
 const store = useAppStore()
 
+const homeScriptFilter = ref('both')
+
+const filteredVocabData = computed(() =>
+  store.filterVocabByScript(store.vocabData, homeScriptFilter.value)
+)
+
 const vocabByCategory = computed(() => {
-  return store.vocabData.reduce((acc, curr) => {
+  return filteredVocabData.value.reduce((acc, curr) => {
     if (!acc[curr.category]) acc[curr.category] = []
     acc[curr.category].push(curr)
     return acc
   }, {})
+})
+
+const orderedCategoryEntries = computed(() => {
+  const orderedNames = store.orderVocabCategories(Object.keys(vocabByCategory.value))
+  return orderedNames.map((name) => [name, vocabByCategory.value[name]])
 })
 
 // Accordion: categorie chiuse di default.
@@ -55,7 +66,7 @@ function catStats(words) {
       />
       <h1 class="text-2xl font-black mb-0.5 uppercase tracking-tight">Vocabolario</h1>
       <p class="text-white/90 text-xs font-semibold mb-5 opacity-90 uppercase tracking-widest">
-        {{ store.vocabData.length }} parole
+        {{ filteredVocabData.length }} parole
       </p>
       <div class="flex gap-3 mb-2">
         <button
@@ -78,9 +89,44 @@ function catStats(words) {
       </div>
     </div>
 
+    <div class="vocab-script-nav rounded-3xl p-1">
+      <div class="flex p-1 rounded-2xl gap-1">
+        <button
+          type="button"
+          :class="[
+            'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
+            homeScriptFilter === 'hiragana'
+              ? 'bg-white text-amber-600 border-amber-400'
+              : 'text-slate-500 border-transparent bg-transparent',
+          ]"
+          @click="homeScriptFilter = 'hiragana'"
+        >Hiragana</button>
+        <button
+          type="button"
+          :class="[
+            'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
+            homeScriptFilter === 'katakana'
+              ? 'bg-white text-amber-600 border-amber-400'
+              : 'text-slate-500 border-transparent bg-transparent',
+          ]"
+          @click="homeScriptFilter = 'katakana'"
+        >Katakana</button>
+        <button
+          type="button"
+          :class="[
+            'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
+            homeScriptFilter === 'both'
+              ? 'bg-white text-amber-600 border-amber-400'
+              : 'text-slate-500 border-transparent bg-transparent',
+          ]"
+          @click="homeScriptFilter = 'both'"
+        >Entrambi</button>
+      </div>
+    </div>
+
     <!-- Accordion per categoria -->
     <div
-      v-for="[cat, words] in Object.entries(vocabByCategory)"
+      v-for="[cat, words] in orderedCategoryEntries"
       :key="cat"
       class="vocab-section rounded-3xl shadow-sm overflow-hidden"
     >
@@ -156,6 +202,11 @@ function catStats(words) {
 .vocab-section {
   background: var(--vocab-bg);
   border: 1px solid rgba(255, 201, 158, 0.4);
+}
+
+.vocab-script-nav {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 201, 158, 0.45);
 }
 
 .vocab-section-header {
