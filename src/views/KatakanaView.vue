@@ -79,7 +79,7 @@ const store = useAppStore()
               store.speakText(item.c)
             }"
           >
-            <span class="text-xl font-black leading-none">{{ item.c }}</span>
+            <span class="font-black leading-none" :class="item.c.length > 1 ? 'text-sm sm:text-base' : 'text-xl'">{{ item.c }}</span>
             <span
               v-if="!store.hideKatakanaGridRomaji"
               class="text-[9px] font-bold uppercase opacity-50 mt-0.5 tracking-wide leading-none"
