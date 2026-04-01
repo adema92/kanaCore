@@ -322,7 +322,7 @@ const selectDay = (key) => {
     <div class="bg-white rounded-3xl shadow-sm border border-violet-50/80 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xs sm:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span class="text-pink-400">あ</span> Kana oggi
+          <span class="text-pink-400">あ</span> Hiragana oggi
         </h2>
         <button
           type="button"
@@ -352,11 +352,11 @@ const selectDay = (key) => {
         </div>
         <div class="flex-1 space-y-2 min-w-0 w-full">
           <div class="flex items-center justify-between py-2 px-3 bg-violet-50/80 rounded-lg border border-violet-100/80">
-            <span class="text-[10px] sm:text-[11px] font-bold text-violet-500 uppercase tracking-wider">Kana corretti</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-violet-500 uppercase tracking-wider">Corretti</span>
             <span class="font-bold text-violet-500 text-sm">{{ dayStats.kana.correct }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-pink-50 rounded-lg border border-pink-200">
-            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Kana errati</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Errati</span>
             <span class="font-bold text-pink-500 text-sm">{{ dayStats.kana.wrong }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -401,11 +401,11 @@ const selectDay = (key) => {
         </div>
         <div class="flex-1 space-y-2 min-w-0 w-full">
           <div class="flex items-center justify-between py-2 px-3 bg-[rgb(168_249_173)]/80 rounded-lg border border-[#86efac]">
-            <span class="text-[10px] sm:text-[11px] font-bold text-[#16a34a] uppercase tracking-wider">Katakana corretti</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-[#16a34a] uppercase tracking-wider">Corretti</span>
             <span class="font-bold text-[#16a34a] text-sm">{{ dayStats.katakana.correct }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-blue-50 rounded-lg border border-blue-200">
-            <span class="text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-wider">Katakana errati</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-blue-600 uppercase tracking-wider">Errati</span>
             <span class="font-bold text-blue-600 text-sm">{{ dayStats.katakana.wrong }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -450,11 +450,11 @@ const selectDay = (key) => {
         </div>
         <div class="flex-1 space-y-2 min-w-0 w-full">
           <div class="flex items-center justify-between py-2 px-3 bg-emerald-50/80 rounded-lg border border-emerald-100/80">
-            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Vocaboli corretti</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Corretti</span>
             <span class="font-bold text-emerald-600 text-sm">{{ dayStats.vocab.correct }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-pink-50 rounded-lg border border-pink-200">
-            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Vocaboli errati</span>
+            <span class="text-[10px] sm:text-[11px] font-bold text-pink-500 uppercase tracking-wider">Errati</span>
             <span class="font-bold text-pink-500 text-sm">{{ dayStats.vocab.wrong }}</span>
           </div>
           <div class="flex items-center justify-between py-2 px-3 bg-slate-50 rounded-lg border border-slate-100">
@@ -567,7 +567,7 @@ const selectDay = (key) => {
           <div class="w-px self-stretch bg-slate-200 min-h-[2.5rem]" aria-hidden="true"></div>
           <div class="flex flex-col items-center gap-1">
             <span class="font-bold text-slate-400 uppercase tracking-wider">Vocaboli</span>
-            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabCorrect }}</span> corrette</span>
+            <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabCorrect }}</span> corretti</span>
             <span class="text-slate-500"><span class="font-bold">{{ displayedSummary.vocabWrong }}</span> errati</span>
           </div>
         </div>
