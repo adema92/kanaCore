@@ -1,11 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { BookOpen, Languages } from 'lucide-vue-next'
-import { useAppStore } from '../stores/appStore'
+import { useAppStore, vocabCategoryLabelForScript } from '../stores/appStore'
 
 const store = useAppStore()
 
-const homeScriptFilter = ref('both')
+const homeScriptFilter = ref('hiragana')
 
 const filteredVocabData = computed(() =>
   store.filterVocabByScript(store.vocabData, homeScriptFilter.value)
@@ -138,7 +138,7 @@ function catStats(words) {
       >
         <div class="flex items-center gap-3 min-w-0">
           <div class="text-left min-w-0">
-            <p class="font-black text-slate-500 uppercase text-sm tracking-wide leading-tight">{{ cat }}</p>
+            <p class="font-black text-slate-500 uppercase text-sm tracking-wide leading-tight">{{ vocabCategoryLabelForScript(cat, homeScriptFilter) }}</p>
             <p class="text-[11px] text-slate-400 font-semibold mt-0.5">{{ words.length }} parole</p>
           </div>
         </div>

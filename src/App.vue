@@ -5,7 +5,15 @@ import {
   BookOpen, X, Volume2, ChevronLeft,
   Info, AlertTriangle, CheckCheck, Square, Save, Eye, ListOrdered,
 } from 'lucide-vue-next'
-import { useAppStore, hiraganaPresets, katakanaPresets, INITIAL_KANA, INITIAL_VOCAB, VOCAB_LAST_BATCH_MAX } from './stores/appStore'
+import {
+  useAppStore,
+  hiraganaPresets,
+  katakanaPresets,
+  INITIAL_KANA,
+  INITIAL_VOCAB,
+  VOCAB_LAST_BATCH_MAX,
+  vocabCategoryLabelForScript,
+} from './stores/appStore'
 import NavItem from './components/ui/NavItem.vue'
 import StrokeOrderSvg from './components/features/StrokeOrderSvg.vue'
 
@@ -1262,7 +1270,7 @@ onUnmounted(() => {
                   <span v-if="store.selectedVocabCategories.includes(cat)" class="leading-none">✔</span>
                 </span>
                 <div class="text-left">
-                  <div>{{ cat }}</div>
+                  <div>{{ vocabCategoryLabelForScript(cat, store.selectedVocabScript) }}</div>
                   <div class="text-[10px] font-semibold normal-case opacity-60">
                     {{ vocabSetupFilteredData.filter(v => v.category === cat).length }} parole
                   </div>

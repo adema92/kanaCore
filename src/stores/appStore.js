@@ -6,9 +6,12 @@ import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore'
 
 import salutiVocab from '../data/saluti.json'
 import randomVocab from '../data/random.json'
+import randomKatakanaVocab from '../data/random-katakana.json'
 import combinateVocab from '../data/combinate.json'
 import allungamentiVocab from '../data/allungamenti.json'
 import presentazioneVocab from '../data/presentazione.json'
+import presentazioneKatakanaVocab from '../data/presentazione-katakana.json'
+import presentazioneMixVocab from '../data/presentazione-mix.json'
 import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
@@ -71,7 +74,38 @@ export const hiraganaPresets = hiraganaPresetsJson
 
 export const katakanaPresets = katakanaPresetsJson
 
-export const INITIAL_VOCAB = [...salutiVocab, ...randomVocab, ...combinateVocab, ...allungamentiVocab, ...presentazioneVocab]
+export const INITIAL_VOCAB = [
+  ...salutiVocab,
+  ...randomVocab,
+  ...randomKatakanaVocab,
+  ...combinateVocab,
+  ...allungamentiVocab,
+  ...presentazioneVocab,
+  ...presentazioneKatakanaVocab,
+  ...presentazioneMixVocab,
+]
+
+/**
+ * Etichetta categoria in lista vocab / modale quiz: toglie suffisso ridondante rispetto al tab
+ * (Katakana/Hiragana/Mix); i dati restano con category piena.
+ */
+export function vocabCategoryLabelForScript(category, script) {
+  const c = String(category || '').trim()
+  if (!c) return c
+  if (script === 'katakana') {
+    const s = c.replace(/\s+Katakana\s*$/i, '').trim()
+    return s || c
+  }
+  if (script === 'hiragana') {
+    const s = c.replace(/\s+Hiragana\s*$/i, '').trim()
+    return s || c
+  }
+  if (script === 'both') {
+    const s = c.replace(/\s+Mix\s*$/i, '').trim()
+    return s || c
+  }
+  return c
+}
 
 // Mappa romaji → kana per quiz lettura.
 export const ROMAJI_TO_KANA = Object.fromEntries(
@@ -291,7 +325,7 @@ export const useAppStore = defineStore('app', () => {
   const newKatakanaPresetName = ref('')
   const quizPendingItems = ref([])
   const selectedVocabCategories = ref([])
-  const selectedVocabScript = ref('both')
+  const selectedVocabScript = ref('hiragana')
   /** True after proceedFromVocabSetup; used to show "back to categories" in difficulty modal. */
   const enteredDifficultyFromVocabCategories = ref(false)
   const quizDifficulty = ref('medio')
@@ -1001,8 +1035,8 @@ export const useAppStore = defineStore('app', () => {
     return sorted.slice(-take)
   }
 
-  /** UI order: Random → COMBINATE → ALLUNGAMENTI → others (A–Z, it). */
-  const VOCAB_CATEGORY_ORDER_PREFIX = ['Random', 'COMBINATE', 'ALLUNGAMENTI']
+  /** UI order: Random → Random Katakana → COMBINATE → ALLUNGAMENTI → others (A–Z, it). */
+  const VOCAB_CATEGORY_ORDER_PREFIX = ['Random', 'Random Katakana', 'COMBINATE', 'ALLUNGAMENTI']
 
   function orderVocabCategories(categories) {
     const set = new Set(categories)
@@ -1025,16 +1059,15 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function matchVocabItemByScript(item, script = selectedVocabScript.value) {
-    if (script === 'both') return true
     const { hasHiragana, hasKatakana } = getVocabScriptsFromWord(item?.word)
-    if (script === 'hiragana') return hasHiragana
-    if (script === 'katakana') return hasKatakana
+    if (script === 'both') return hasHiragana && hasKatakana
+    if (script === 'hiragana') return hasHiragana && !hasKatakana
+    if (script === 'katakana') return hasKatakana && !hasHiragana
     return true
   }
 
   function filterVocabByScript(items, script = selectedVocabScript.value) {
     if (!Array.isArray(items)) return []
-    if (script === 'both') return [...items]
     return items.filter((item) => matchVocabItemByScript(item, script))
   }
 
@@ -1061,7 +1094,7 @@ export const useAppStore = defineStore('app', () => {
       selectedKatakanaIds.value = []
       katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
-      selectedVocabScript.value = 'both'
+      selectedVocabScript.value = 'hiragana'
       const scriptFiltered = filterVocabByScript(vocabData.value, selectedVocabScript.value)
       const allCats = [...new Set(scriptFiltered.map(v => v.category))]
       if (allCats.length < 1) {
@@ -1074,7 +1107,7 @@ export const useAppStore = defineStore('app', () => {
       vocabSetupModalOpen.value = true
     } else {
       enteredDifficultyFromVocabCategories.value = false
-      selectedVocabScript.value = 'both'
+      selectedVocabScript.value = 'hiragana'
       selectedVocabCategories.value = defaultSelectedVocabCategories([...new Set(vocabData.value.map(v => v.category))])
       vocabSetupModalOpen.value = true
     }
