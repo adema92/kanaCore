@@ -456,10 +456,18 @@ watch(() => store.answerFeedback, () => {
   showCorrectAnswerInFeedback.value = false
 })
 
-watch(() => store.selectedVocabScript, () => {
-  const allowedCategories = new Set(orderedVocabCategoriesList.value)
-  store.selectedVocabCategories = store.selectedVocabCategories.filter((cat) => allowedCategories.has(cat))
-})
+watch(
+  () => store.selectedVocabScript,
+  async () => {
+    await nextTick()
+    const allowedCategories = new Set(orderedVocabCategoriesList.value)
+    let next = store.selectedVocabCategories.filter((cat) => allowedCategories.has(cat))
+    if (next.length === 0 && orderedVocabCategoriesList.value.length > 0) {
+      next = [orderedVocabCategoriesList.value[0]]
+    }
+    store.selectedVocabCategories = next
+  }
+)
 
 async function onInputFocus() {
   await nextTick()
@@ -1951,9 +1959,9 @@ onUnmounted(() => {
                 </button>
               </div>
 
-              <!-- Blocco centrale: nascosto se sbagliato in quiz parole (vocab) o kana/katakana romaji→kana (evita spoiler) -->
+              <!-- Blocco centrale: nascosto se sbagliato kana/katakana romaji→kana finché non si tocca "Vedi risposta" (evita spoiler) -->
               <div
-                v-if="store.answerFeedback.ok || (!store.quizType.startsWith('vocab') && (!['kana','katakana'].includes(store.quizType) || store.quizDirection !== 'romaji-to-ja'))"
+                v-if="store.answerFeedback.ok || (!store.quizType.startsWith('vocab') && (!['kana','katakana'].includes(store.quizType) || store.quizDirection !== 'romaji-to-ja' || showCorrectAnswerInFeedback))"
                 class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center"
               >
                 <p class="text-3xl font-black text-slate-700 mb-1">{{ store.answerFeedback.questionLabel }}</p>

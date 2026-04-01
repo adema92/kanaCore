@@ -852,10 +852,10 @@ export const useAppStore = defineStore('app', () => {
 
     sync()
 
-    const isKana = quizType.value === 'kana'
+    const isKanaTypeQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
     const isVocabKanaToRomaji = quizType.value === 'vocab-kana-to-romaji'
     let correctAnswer = ''
-    if (quizType.value === 'kana') {
+    if (quizType.value === 'kana' || quizType.value === 'katakana') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.romaji : item.character
     } else if (quizType.value === 'vocab') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.meaning : item.word
@@ -864,7 +864,7 @@ export const useAppStore = defineStore('app', () => {
         ? item.word.split('/')[0]
         : item.romaji.split('/')[0]
     } else {
-      correctAnswer = isKana ? item.romaji : item.meaning
+      correctAnswer = item.meaning || ''
     }
 
     if (!skipFeedback) {
@@ -875,7 +875,7 @@ export const useAppStore = defineStore('app', () => {
           ok,
           userAnswer: userAnswerText || '',
           correctAnswer,
-          questionLabel: isKana ? item.character : item.word,
+          questionLabel: isKanaTypeQuiz ? item.character : item.word,
           romaji: item.romaji || '',
           meaning: item.meaning || '',
         }
@@ -1048,7 +1048,8 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function defaultSelectedVocabCategories(allCategoryNames) {
-    return allCategoryNames.includes('Random') ? ['Random'] : []
+    const ordered = orderVocabCategories([...new Set(allCategoryNames)])
+    return ordered.length > 0 ? [ordered[0]] : []
   }
 
   function getVocabScriptsFromWord(word) {
