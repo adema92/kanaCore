@@ -1242,7 +1242,7 @@ onUnmounted(() => {
                 type="button"
                 :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'both' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                 @click="store.selectedVocabScript = 'both'"
-              >Entrambi</button>
+              >Mix</button>
             </div>
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">

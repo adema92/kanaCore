@@ -120,7 +120,7 @@ function catStats(words) {
               : 'text-slate-500 border-transparent bg-transparent',
           ]"
           @click="homeScriptFilter = 'both'"
-        >Entrambi</button>
+        >Mix</button>
       </div>
     </div>
 

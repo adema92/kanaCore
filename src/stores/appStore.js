@@ -16,7 +16,11 @@ import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
 import katakanaPresetsJson from '../data/katakana-presets.json'
-import { normalizeRomajiForCompare, tokenizeHiraganaRaw } from '../utils/readingRomajiTokens.js'
+import {
+  normalizeRomajiForCompare,
+  tokenizeHiraganaRaw,
+  tokenizeWordForVocabKanaStats,
+} from '../utils/readingRomajiTokens.js'
 
 /* global __firebase_config, __app_id */
 const firebaseConfig =
@@ -757,21 +761,32 @@ export const useAppStore = defineStore('app', () => {
       quizType.value === 'vocab-kana-to-romaji' ||
       quizType.value === 'vocab-kana-read' ||
       quizType.value === 'vocab-romaji-input'
-    const vocabKanaOutcomes = isVocabKanaStatsQuiz
-      ? tokenizeHiraganaRaw(String(item?.word || '').split('/')[0].trim())
-        .filter((t) => t.type === 'kana' && t.statChar)
-        .map((t) => ({ character: t.statChar, ok }))
+    const vocabMoraOutcomes = isVocabKanaStatsQuiz
+      ? tokenizeWordForVocabKanaStats(item?.word, ok)
       : []
-    const vocabKanaCharSet = new Set(vocabKanaOutcomes.map((x) => x.character).filter(Boolean))
+    const hiraOutcomes = vocabMoraOutcomes.filter((o) => o.script === 'hiragana')
+    const kataOutcomes = vocabMoraOutcomes.filter((o) => o.script === 'katakana')
     const getItemState = (arr) => arr.find((x) => x.id === item.id)
     const k = quizType.value === 'kana' ? getItemState(kanaData.value)
       : quizType.value === 'katakana' ? getItemState(katakanaData.value)
       : getItemState(vocabData.value)
     const kanaStatsBefore = {}
-    if (vocabKanaCharSet.size > 0) {
+    const katakanaStatsBefore = {}
+    const hiraCharSet = new Set(hiraOutcomes.map((x) => x.character).filter(Boolean))
+    const kataCharSet = new Set(kataOutcomes.map((x) => x.character).filter(Boolean))
+    if (hiraCharSet.size > 0) {
       for (const row of kanaData.value) {
-        if (!vocabKanaCharSet.has(row.character)) continue
+        if (!hiraCharSet.has(row.character)) continue
         kanaStatsBefore[row.character] = {
+          score: row.score,
+          attempts: row.attempts,
+        }
+      }
+    }
+    if (kataCharSet.size > 0) {
+      for (const row of katakanaData.value) {
+        if (!kataCharSet.has(row.character)) continue
+        katakanaStatsBefore[row.character] = {
           score: row.score,
           attempts: row.attempts,
         }
@@ -786,6 +801,7 @@ export const useAppStore = defineStore('app', () => {
       attemptsBefore: k ? k.attempts : 0,
       isVocabKanaStatsQuiz,
       kanaStatsBefore,
+      katakanaStatsBefore,
     }
     if (ok) {
       quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
@@ -797,14 +813,16 @@ export const useAppStore = defineStore('app', () => {
     }
 
     const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
-    const kanaTotalAdd = isVocabKanaStatsQuiz ? vocabKanaOutcomes.length : 0
-    const kanaCorrectAdd = isVocabKanaStatsQuiz
-      ? vocabKanaOutcomes.filter((x) => x.ok).length
-      : 0
+    const kanaTotalAdd = isVocabKanaStatsQuiz ? hiraOutcomes.length : 0
+    const kanaCorrectAdd = isVocabKanaStatsQuiz ? hiraOutcomes.filter((x) => x.ok).length : 0
+    const kataTotalAdd = isVocabKanaStatsQuiz ? kataOutcomes.length : 0
+    const kataCorrectAdd = isVocabKanaStatsQuiz ? kataOutcomes.filter((x) => x.ok).length : 0
+    const vocabMoraAttempts = kanaTotalAdd + kataTotalAdd
+    const vocabMoraCorrect = kanaCorrectAdd + kataCorrectAdd
     const nextDay = {
       ...curDay,
-      total: curDay.total + (isVocabKanaStatsQuiz ? kanaTotalAdd : 1),
-      correct: curDay.correct + (isVocabKanaStatsQuiz ? kanaCorrectAdd : (ok ? 1 : 0)),
+      total: curDay.total + (isVocabKanaStatsQuiz ? vocabMoraAttempts : 1),
+      correct: curDay.correct + (isVocabKanaStatsQuiz ? vocabMoraCorrect : (ok ? 1 : 0)),
       kana: quizType.value === 'kana'
         ? { total: curDay.kana.total + 1, correct: curDay.kana.correct + (ok ? 1 : 0) }
         : isVocabKanaStatsQuiz
@@ -815,7 +833,12 @@ export const useAppStore = defineStore('app', () => {
         : curDay.kana,
       katakana: quizType.value === 'katakana'
         ? { total: curDay.katakana.total + 1, correct: curDay.katakana.correct + (ok ? 1 : 0) }
-        : curDay.katakana,
+        : isVocabKanaStatsQuiz
+          ? {
+            total: curDay.katakana.total + kataTotalAdd,
+            correct: curDay.katakana.correct + kataCorrectAdd,
+          }
+          : curDay.katakana,
       vocab: !isKanaQuiz && !isVocabKanaStatsQuiz
         ? { total: curDay.vocab.total + 1, correct: curDay.vocab.correct + (ok ? 1 : 0) }
         : curDay.vocab,
@@ -839,8 +862,15 @@ export const useAppStore = defineStore('app', () => {
     } else if (quizType.value === 'katakana') {
       katakanaData.value = upd(katakanaData.value)
     } else if (isVocabKanaStatsQuiz) {
-      for (const row of vocabKanaOutcomes) {
+      for (const row of hiraOutcomes) {
         kanaData.value = kanaData.value.map((x) => {
+          if (x.character !== row.character) return x
+          const ns = row.ok ? Math.min(100, x.score + 25) : (x.score >= 80 ? 40 : 0)
+          return { ...x, score: ns, attempts: x.attempts + 1 }
+        })
+      }
+      for (const row of kataOutcomes) {
+        katakanaData.value = katakanaData.value.map((x) => {
           if (x.character !== row.character) return x
           const ns = row.ok ? Math.min(100, x.score + 25) : (x.score >= 80 ? 40 : 0)
           return { ...x, score: ns, attempts: x.attempts + 1 }
@@ -945,6 +975,11 @@ export const useAppStore = defineStore('app', () => {
     if (s.isVocabKanaStatsQuiz) {
       kanaData.value = kanaData.value.map((x) => {
         const prev = s.kanaStatsBefore?.[x.character]
+        if (!prev) return x
+        return { ...x, score: prev.score, attempts: prev.attempts }
+      })
+      katakanaData.value = katakanaData.value.map((x) => {
+        const prev = s.katakanaStatsBefore?.[x.character]
         if (!prev) return x
         return { ...x, score: prev.score, attempts: prev.attempts }
       })
