@@ -27,22 +27,8 @@ const orderedVocabCategoriesList = computed(() => {
 const vocabSetupScriptLabel = computed(() => {
   if (store.selectedVocabScript === 'hiragana') return 'hiragana'
   if (store.selectedVocabScript === 'katakana') return 'katakana'
-  return 'mix'
+  return 'hiragana + katakana'
 })
-
-/** Category row title in vocab setup modal: avoid repeating script (nav already shows it). */
-function vocabSetupCategoryLabel(cat) {
-  if (store.selectedVocabScript === 'katakana') {
-    if (cat === 'Random Katakana') return 'Random'
-    if (cat === 'Presentazione Katakana') return 'Presentazione'
-    return cat
-  }
-  if (store.selectedVocabScript === 'both') {
-    if (cat.endsWith(' Mix')) return cat.replace(/\s+Mix$/, '')
-    return cat
-  }
-  return cat
-}
 
 const quizActiveBgStyle = computed(() => {
   const t = store.quizType
@@ -463,18 +449,8 @@ watch(() => store.answerFeedback, () => {
 })
 
 watch(() => store.selectedVocabScript, () => {
-  nextTick(() => {
-    const list = orderedVocabCategoriesList.value
-    if (list.length === 0) {
-      store.selectedVocabCategories = []
-      return
-    }
-    store.selectedVocabCategories = [list[0]]
-  })
-})
-
-watch(() => store.vocabSetupModalOpen, (open) => {
-  if (open) store.selectedVocabScript = 'hiragana'
+  const allowedCategories = new Set(orderedVocabCategoriesList.value)
+  store.selectedVocabCategories = store.selectedVocabCategories.filter((cat) => allowedCategories.has(cat))
 })
 
 async function onInputFocus() {
@@ -870,8 +846,7 @@ onUnmounted(() => {
                   :key="p.id"
                   type="button"
                   :class="[
-                    'inline-flex items-center justify-center w-[4.25rem] min-w-[4.25rem] min-h-11 px-3 font-black rounded-xl uppercase border-2 transition-all',
-                    p.compactLabel ? 'text-[10px] leading-tight tracking-wide' : 'text-xs',
+                    'w-[4.25rem] min-w-[4.25rem] px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
                     p.kanaIds.every(id => store.selectedKatakanaIds.includes(id))
                       ? 'text-white'
                       : 'bg-blue-50 text-blue-600 border-blue-100 active:bg-blue-100'
@@ -898,8 +873,7 @@ onUnmounted(() => {
                 v-for="k in store.katakanaData"
                 :key="k.id"
                 :class="[
-                  'aspect-square rounded-xl flex items-center justify-center font-black border-2 transition-all active:scale-90',
-                  k.character.length > 1 ? 'text-sm sm:text-base tracking-tight' : 'text-lg',
+                  'aspect-square rounded-xl flex items-center justify-center text-lg font-black border-2 transition-all active:scale-90',
                   store.selectedKatakanaIds.includes(k.id)
                     ? 'text-white shadow-md'
                     : 'bg-white border-slate-100 text-slate-300'
@@ -1220,9 +1194,7 @@ onUnmounted(() => {
         style="touch-action:none;"
         @click.self="store.closeVocabSetupModal()"
       >
-        <div
-          class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[80dvh] max-h-[80dvh]"
-        >
+        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[80dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1236,8 +1208,9 @@ onUnmounted(() => {
             ><X :size="18" /></button>
           </div>
 
-          <!-- Lista categorie (min-h sul pannello: altezza stabile tra tab Hiragana / Katakana / Mix) -->
-          <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-4 space-y-2">
+          <!-- Lista categorie -->
+          <div class="flex-1 overflow-y-auto px-6 pb-4 space-y-2">
+            <label class="block text-[11px] font-black text-slate-300 uppercase tracking-[0.3em]">Script vocaboli</label>
             <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-3">
               <button
                 type="button"
@@ -1253,7 +1226,7 @@ onUnmounted(() => {
                 type="button"
                 :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'both' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                 @click="store.selectedVocabScript = 'both'"
-              >Mix</button>
+              >Entrambi</button>
             </div>
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">
@@ -1289,7 +1262,7 @@ onUnmounted(() => {
                   <span v-if="store.selectedVocabCategories.includes(cat)" class="leading-none">✔</span>
                 </span>
                 <div class="text-left">
-                  <div>{{ vocabSetupCategoryLabel(cat) }}</div>
+                  <div>{{ cat }}</div>
                   <div class="text-[10px] font-semibold normal-case opacity-60">
                     {{ vocabSetupFilteredData.filter(v => v.category === cat).length }} parole
                   </div>
