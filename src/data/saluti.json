@@ -15,7 +15,7 @@
   { "id": "sal_14", "word": "おさきに", "romaji": "Osakini", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "sal_15", "word": "おさきにしつれいします", "romaji": "Osakini shitsurei shimasu", "meaning": "Arrivederci, tolgo il disturbo prima di voi", "category": "Saluti", "tone": "Formale", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "sal_16", "word": "またあした", "romaji": "Mata ashita", "meaning": "A domani", "category": "Saluti", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "sal_17", "word": "さようなら", "romaji": "Sayonara", "meaning": "Arrivederci", "category": "Saluti", "tone": "Neutro", "personalNote": "Non ci si vedrà per molto o non si sa quando ci si rivedrà", "score": 0, "attempts": 0 },
+  { "id": "sal_17", "word": "さようなら", "romaji": "Sayōnara", "meaning": "Arrivederci", "category": "Saluti", "tone": "Neutro", "personalNote": "Non ci si vedrà per molto o non si sa quando ci si rivedrà", "score": 0, "attempts": 0 },
   { "id": "sal_18", "word": "いってきます", "romaji": "Ittekimasu", "meaning": "Ciao, vado e torno (frase di chi esce)", "category": "Saluti", "tone": "Neutro", "personalNote": "Contesto: casa", "score": 0, "attempts": 0 },
   { "id": "sal_19", "word": "いってらっしゃい", "romaji": "Itterashai", "meaning": "Ciao, vai e torna (risposta di chi rimane)", "category": "Saluti", "tone": "Neutro", "personalNote": "Contesto: casa", "score": 0, "attempts": 0 },
   { "id": "sal_20", "word": "ただいま", "romaji": "Tadaima", "meaning": "Ciao, sono tornato (detto da chi era uscito)", "category": "Saluti", "tone": "Neutro", "personalNote": "Contesto: casa", "score": 0, "attempts": 0 },
