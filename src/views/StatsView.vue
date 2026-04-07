@@ -144,12 +144,11 @@ const periodWrongPct = computed(() =>
   periodTotal.value > 0 ? Math.round((periodWrong.value / periodTotal.value) * 100) : 0
 )
 
-// Giorni consecutivi: salta giorni senza attività, poi conta indietro i giorni con attività (allineato al grafico).
+// Giorni consecutivi: richiede attività anche oggi (reset automatico a mezzanotte se oggi è vuoto).
 const consecutiveDays = computed(() => {
   const stats = store.dailyStats
   const d = new Date()
   let count = 0
-  let foundActive = false
   for (let i = 0; i < 365; i++) {
     const key = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
     const raw = stats[key]
@@ -158,9 +157,8 @@ const consecutiveDays = computed(() => {
     const vocabTotal = raw?.vocab && typeof raw.vocab === 'object' ? (raw.vocab.total ?? 0) : 0
     const total = (kanaRaw + katakanaRaw + vocabTotal) || (raw?.total ?? 0)
     if (total > 0) {
-      foundActive = true
       count++
-    } else if (foundActive) {
+    } else {
       break
     }
     d.setDate(d.getDate() - 1)
