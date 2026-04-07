@@ -13,7 +13,7 @@
   body {
     -webkit-tap-highlight-color: transparent;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: none;
+    overscroll-behavior-y: contain;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -26,10 +26,19 @@
     cursor: pointer;
   }
 
-  /* Scrollbar nascosta ma scroll abilitato. */
+  /* Desktop: keep scrollbars visible for discoverability. */
   ::-webkit-scrollbar {
-    width: 0;
-    height: 0;
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 }
 

@@ -8,7 +8,7 @@ const router = useRouter()
 </script>
 
 <template>
-  <div class="w-full px-4 space-y-4 pb-6">
+  <div class="w-full max-w-6xl mx-auto px-4 lg:px-6 space-y-4 pb-6">
 
     <!-- Header Hiragana -->
     <div
@@ -50,22 +50,24 @@ const router = useRouter()
     </div>
 
     <!-- Legenda colori -->
-    <div class="flex flex-wrap items-center ml-[20px] gap-2 px-1">
-      <div class="flex items-center gap-1.5">
-        <div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
-        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Da studiare</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
-        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">In corso</span>
-      </div>
-      <div class="flex items-center gap-1.5">
-        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
-        <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Padronanza</span>
+    <div class="flex items-center justify-between gap-2 px-1">
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div class="flex items-center gap-1.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Da studiare</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">In corso</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide">Padronanza</span>
+        </div>
       </div>
       <button
         type="button"
-        class="ml-auto flex items-center justify-center w-9 h-9 rounded-xl border-2 border-pink-200 bg-white text-pink-600 hover:bg-pink-50 hover:border-pink-300 active:scale-90 transition-all"
+        class="shrink-0 flex items-center justify-center w-9 h-9 lg:w-11 lg:h-11 rounded-xl border-2 border-pink-200 bg-white text-pink-600 hover:bg-pink-50 hover:border-pink-300 active:scale-90 transition-all"
         :title="store.hideGridRomaji ? 'Mostra romaji' : 'Nascondi romaji'"
         @click="store.hideGridRomaji = !store.hideGridRomaji"
       >
@@ -102,7 +104,7 @@ const router = useRouter()
             >{{ item.c }}</span>
             <span
               v-if="!store.hideGridRomaji"
-              class="text-[9px] font-bold uppercase opacity-50 mt-0.5 tracking-wide leading-none"
+              class="text-[9px] lg:text-[11px] font-bold uppercase opacity-50 mt-0.5 tracking-wide leading-none"
             >{{ item.r }}</span>
           </button>
         </template>

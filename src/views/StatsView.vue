@@ -257,10 +257,10 @@ const selectDay = (key) => {
 </script>
 
 <template>
-  <div class="w-full px-4 space-y-4 pb-6">
+  <div class="w-full max-w-6xl mx-auto px-4 lg:px-6 space-y-4 lg:space-y-5 pb-6">
 
     <!-- Banner principale: Onigiri Sensei (logo Erica solo per profilo Erica) -->
-    <div class="w-full relative overflow-hidden bg-transparent max-w-sm mx-auto">
+    <div class="w-full relative overflow-hidden bg-transparent max-w-sm lg:max-w-md mx-auto">
       <img
         :src="store.currentProfile === 'erica' ? '/erica-home-logo.png' : '/andrea-home-logo.png'"
         :alt="store.currentProfile === 'erica' ? 'Onigiri Sensei – La via del riso' : 'Onigiri Sensei'"
@@ -269,9 +269,9 @@ const selectDay = (key) => {
     </div>
     <div class="border-b border-slate-200 w-full mt-2" aria-hidden="true"></div>
 
-    <!-- Card statistiche padronanza -->
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5 flex flex-col">
+    <!-- Card statistiche padronanza + streak -->
+    <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+      <div class="bg-white rounded-3xl shadow-sm border border-pink-50 p-5 flex flex-col lg:min-h-[124px]">
         <div class="min-h-[1.25rem] flex items-center">
           <span class="text-[11px] font-black text-pink-400 uppercase tracking-widest">Kana</span>
         </div>
@@ -286,7 +286,7 @@ const selectDay = (key) => {
         </div>
         <span class="pt-2 text-[11px] text-slate-300 font-bold">{{ store.kanaData.length + store.katakanaData.length }} totale</span>
       </div>
-      <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5 flex flex-col">
+      <div class="bg-white rounded-3xl shadow-sm border border-violet-50 p-5 flex flex-col lg:min-h-[124px]">
         <div class="min-h-[1.25rem] flex items-center">
           <span class="text-[11px] font-black text-green-600 uppercase tracking-widest">Vocaboli</span>
         </div>
@@ -301,17 +301,17 @@ const selectDay = (key) => {
         </div>
         <span class="pt-2 text-[11px] text-slate-300 font-bold">{{ store.vocabData.length }} totale</span>
       </div>
-    </div>
 
-    <!-- Giorni consecutivi: icona streak + numero -->
-    <div class="bg-white rounded-3xl shadow-sm border border-amber-50 p-5 flex flex-col justify-center">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <img :src="streakImage" alt="Streak giorni consecutivi" class="w-12 h-12 object-contain shrink-0" />
-        </div>
-        <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest text-center ">Giorni <br> consecutivi</h2>
-        <div class="flex items-center gap-1">
-          <span class="text-5xl font-black text-gradient-rise">{{ consecutiveDays }}</span>
+      <!-- Giorni consecutivi: icona streak + numero -->
+      <div class="col-span-2 lg:col-span-1 bg-white rounded-3xl shadow-sm border border-amber-50 p-5 flex flex-col justify-center lg:min-h-[124px]">
+        <div class="flex items-center justify-between lg:justify-around">
+          <div class="flex items-center gap-2">
+            <img :src="streakImage" alt="Streak giorni consecutivi" class="w-12 h-12 object-contain shrink-0" />
+          </div>
+          <h2 class="text-xs lg:text-sm font-black text-slate-400 uppercase tracking-widest text-center ">Giorni <br> consecutivi</h2>
+          <div class="flex items-center gap-1">
+            <span class="text-5xl lg:text-6xl font-black text-gradient-rise">{{ consecutiveDays }}</span>
+          </div>
         </div>
       </div>
     </div>

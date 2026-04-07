@@ -16,6 +16,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  ariaCurrent: {
+    type: [String, null],
+    default: null,
+  },
 })
 
 defineEmits(['click'])
@@ -38,13 +42,13 @@ const buttonClass = computed(() => {
   const state = props.plain
     ? (isOn ? 'scale-105 text-slate-800' : c.off)
     : (isOn ? c.on + (props.active ? ' scale-105' : ' ring-2 ring-offset-2 ring-slate-300') : c.off)
-  return `flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 ${state} active:scale-95 group`
+  return `flex flex-col items-center justify-center w-[76px] h-14 rounded-2xl transition-all duration-200 ${state} active:scale-95 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-300 focus-visible:ring-offset-2`
 })
 </script>
 
 <template>
-  <button type="button" :class="buttonClass" @click="$emit('click')">
-    <div class="flex items-center justify-center h-6 group-hover:scale-110 transition-transform">
+  <button type="button" :class="buttonClass" :aria-current="ariaCurrent" @click="$emit('click')">
+    <div class="flex items-center justify-center h-6 transition-transform group-hover:scale-110 group-focus-visible:scale-110">
       <slot />
     </div>
     <span v-if="label" class="text-[10px] font-black uppercase tracking-[0.08em] mt-0.5 leading-none">{{ label }}</span>

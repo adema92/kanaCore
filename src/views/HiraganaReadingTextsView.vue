@@ -439,11 +439,11 @@ const partTitle = (n) => {
 </script>
 
 <template>
-  <div class="w-full px-4 space-y-4 pb-6">
+  <div class="w-full max-w-[1400px] mx-auto px-4 lg:px-8 space-y-4 lg:space-y-6 pb-6">
     <!-- Lista -->
     <template v-if="!activeId">
       <div
-        class="p-6 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden"
+        class="p-6 lg:p-8 rounded-3xl text-white shadow-lg text-center w-full relative overflow-hidden"
         style="background: rgb(235 188 213);"
       >
         <div class="absolute -top-2 -right-2 opacity-10 text-[80px] leading-none">📜</div>
@@ -455,11 +455,11 @@ const partTitle = (n) => {
           height="112"
           draggable="false"
         />
-        <p class="text-white/95 text-lg sm:text-base font-semibold uppercase tracking-widest mb-0">
+        <p class="text-white/95 text-lg lg:text-2xl font-semibold uppercase tracking-widest mb-0">
           Kaguya-hime · {{ sentences.length }} frasi
         </p>
         <p
-          class="text-white/90 text-sm sm:text-[14px] mt-3 leading-snug max-w-md mx-auto line-clamp-5 font-serif text-center italic"
+          class="text-white/90 text-sm lg:text-lg mt-3 leading-snug max-w-md lg:max-w-3xl mx-auto line-clamp-5 font-serif text-center italic"
         >
           Un vecchio trova una neonata in un bambù che luccica: diventa la principessa Kaguya-hime, affronta pretendenti e corteggiamenti, poi lascia la terra per tornare alla luna.
         </p>
@@ -471,7 +471,7 @@ const partTitle = (n) => {
         class="bg-white rounded-3xl shadow-sm border border-pink-100 overflow-hidden"
       >
         <div
-          class="px-4 py-3 text-xs font-black uppercase tracking-widest text-pink-500 bg-pink-50/80 border-b border-pink-100"
+          class="px-4 lg:px-6 py-3 lg:py-4 text-xs lg:text-sm font-black uppercase tracking-widest text-pink-500 bg-pink-50/80 border-b border-pink-100"
         >
           Parte {{ part }} — {{ partTitle(part) }}
         </div>
@@ -479,14 +479,14 @@ const partTitle = (n) => {
           <li v-for="row in rows" :key="row.id">
             <button
               type="button"
-              class="w-full text-left px-4 py-3 flex gap-3 items-start active:bg-pink-50/60 transition-colors"
+              class="w-full text-left px-4 lg:px-6 py-3 lg:py-4 flex gap-3 lg:gap-4 items-start active:bg-pink-50/60 transition-colors"
               @click="openSentence(row.id)"
             >
               <span
-                class="shrink-0 w-8 h-8 rounded-xl bg-pink-100 text-pink-600 font-black text-xs flex items-center justify-center"
+                class="shrink-0 w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-pink-100 text-pink-600 font-black text-xs lg:text-sm flex items-center justify-center"
               >{{ row.sentenceIndex }}</span>
               <div class="flex-1 min-w-0 flex flex-col gap-0.5">
-                <span class="text-sm text-slate-700 leading-relaxed font-medium break-all text-left">{{
+                <span class="text-sm lg:text-lg text-slate-700 leading-relaxed font-medium break-all text-left">{{
                   listPreviewHiragana(row).slice(0, 56)
                 }}{{ listPreviewHiragana(row).length > 56 ? '…' : '' }}</span>
                 <time
@@ -507,22 +507,22 @@ const partTitle = (n) => {
 
     <!-- Dettaglio frase -->
     <template v-else-if="activeSentence">
-      <div class="flex items-center gap-2 mb-2">
+      <div class="flex items-center gap-2 lg:gap-3 mb-2">
         <button
           type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-2xl border-2 border-pink-200 bg-white text-pink-600 active:scale-95 transition-all"
+          class="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-2xl border-2 border-pink-200 bg-white text-pink-600 active:scale-95 transition-all"
           aria-label="Indietro"
           @click="goList"
         >
           <ArrowLeft :size="20" />
         </button>
-        <span class="text-xs font-black uppercase tracking-widest text-pink-500">
+        <span class="text-xs lg:text-sm font-black uppercase tracking-widest text-pink-500">
           Frase {{ activeSentence.sentenceIndex }} · Parte {{ activeSentence.part }}
         </span>
       </div>
 
       <div
-        class="bg-white rounded-3xl shadow-sm border border-pink-100 space-y-2 px-4 pt-4"
+        class="bg-white rounded-3xl shadow-sm border border-pink-100 space-y-2 px-4 lg:px-6 pt-4 lg:pt-5"
         :class="showFullTranslation ? 'pb-10 sm:pb-12' : 'pb-4'"
       >
         <div
@@ -531,7 +531,7 @@ const partTitle = (n) => {
         >
           <div
             v-if="hasWordMode && displayWordsWithStatus"
-            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium flex flex-wrap gap-x-1 gap-y-1.5"
+            class="text-lg sm:text-xl lg:text-[2.6rem] leading-[1.75] lg:leading-[1.6] text-slate-800 font-medium flex flex-wrap gap-x-1 lg:gap-x-2 gap-y-1.5 lg:gap-y-2"
             lang="ja"
           >
             <button
@@ -553,13 +553,13 @@ const partTitle = (n) => {
 
           <p
             v-else-if="!hasWordMode && !displayWithStatus"
-            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium break-all"
+            class="text-lg sm:text-xl lg:text-[2.6rem] leading-[1.75] lg:leading-[1.6] text-slate-800 font-medium break-all"
             lang="ja"
           >{{ activeSentence.hiragana }}</p>
 
           <div
             v-else-if="displayWithStatus"
-            class="text-lg sm:text-xl leading-[1.75] text-slate-800 font-medium break-all flex flex-wrap gap-y-1"
+            class="text-lg sm:text-xl lg:text-[2.6rem] leading-[1.75] lg:leading-[1.6] text-slate-800 font-medium break-all flex flex-wrap gap-y-1 lg:gap-y-2"
             lang="ja"
           >
             <template v-for="(cell, idx) in displayWithStatus" :key="idx">
@@ -627,7 +627,7 @@ const partTitle = (n) => {
               :disabled="saved"
               rows="4"
               lang="ja"
-              class="w-full rounded-2xl border-2 border-pink-100 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-300 focus:ring-0 outline-none resize-y min-h-[76px] disabled:opacity-60"
+              class="w-full rounded-2xl border-2 border-pink-100 bg-white px-3 lg:px-5 py-2.5 lg:py-4 text-sm lg:text-xl text-slate-800 placeholder:text-slate-400 focus:border-pink-300 focus:ring-0 outline-none resize-y min-h-[76px] lg:min-h-[180px] disabled:opacity-60"
               :placeholder="hasWordMode ? 'es. Mukashi, miyako no chikaku no mura ...' : 'es. mu ka shi , mi ya ko no chi ka ku ...'"
               @focus="onRomajiTextareaFocus"
             />
@@ -635,7 +635,7 @@ const partTitle = (n) => {
 
           <button
             type="button"
-            class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-sm uppercase tracking-widest bg-white border-2 border-pink-300 text-pink-700 shadow-sm active:scale-[0.98] transition-all disabled:opacity-45"
+            class="w-full flex items-center justify-center gap-2 py-3 lg:py-4 rounded-2xl font-black text-sm lg:text-lg uppercase tracking-widest bg-white border-2 border-pink-300 text-pink-700 shadow-sm active:scale-[0.98] transition-all disabled:opacity-45"
             :disabled="!canConfirmReading || store.isSyncing || resultModalPhase === 'loading'"
             @click="onConfirmSave"
           >
@@ -694,9 +694,9 @@ const partTitle = (n) => {
               </button>
             </div>
             <div
-              class="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-5"
+              class="flex-1 overflow-y-auto overscroll-contain px-4 lg:px-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-5 max-w-[1200px] w-full mx-auto"
             >
-              <div class="text-center relative rounded-3xl border border-pink-200/70 bg-gradient-to-br from-pink-100/70 via-rose-50/70 to-amber-50/60 px-3 py-4 shadow-sm">
+              <div class="text-center relative rounded-3xl border border-pink-200/70 bg-gradient-to-br from-pink-100/70 via-rose-50/70 to-amber-50/60 px-3 lg:px-6 py-4 lg:py-6 shadow-sm">
                 <p class="text-xs font-black uppercase tracking-[0.24em] bg-gradient-to-r from-fuchsia-500 via-pink-500 to-rose-500 bg-clip-text text-transparent">Riepilogo</p>
                 <div class="mt-2 flex items-center justify-center gap-4">
                   <img
@@ -713,7 +713,7 @@ const partTitle = (n) => {
                 </p>
               </div>
               <div class="space-y-2 rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 shadow-sm">
-                <p class="text-center text-[16px] font-semibold break-words leading-relaxed">
+                <p class="text-center text-[16px] lg:text-[26px] font-semibold break-words leading-relaxed">
                   <template v-for="chunk in recapInlineChunks" :key="chunk.key">
                     <span
                       :class="[
@@ -732,10 +732,10 @@ const partTitle = (n) => {
                     v-for="(cell, idx) in displayWordsWithStatus"
                     :key="'rw'+idx"
                     :ref="(el) => setRecapWordCardRef(el, idx)"
-                    class="min-w-[11rem] max-w-[11rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 text-center text-xs shadow-sm"
+                    class="min-w-[11rem] max-w-[11rem] lg:min-w-[15rem] lg:max-w-[15rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 lg:p-4 text-center text-xs lg:text-sm shadow-sm"
                   >
                     <div class="flex items-center justify-center gap-1.5">
-                      <span class="text-2xl leading-none" lang="ja">{{ cell.hiragana }}</span>
+                      <span class="text-2xl lg:text-4xl leading-none" lang="ja">{{ cell.hiragana }}</span>
                       <span :class="cell.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ cell.ok ? '✓' : '✗' }}</span>
                     </div>
                     <span class="mt-2 block text-slate-500">
@@ -752,10 +752,10 @@ const partTitle = (n) => {
                   v-for="(row, idx) in recapMoraRows"
                   :key="'rm'+idx"
                   :ref="(el) => setRecapMoraCardRef(el, idx)"
-                  class="min-w-[9.5rem] max-w-[9.5rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 text-center text-xs shadow-sm"
+                  class="min-w-[9.5rem] max-w-[9.5rem] lg:min-w-[12rem] lg:max-w-[12rem] snap-start rounded-2xl border border-pink-200/80 bg-gradient-to-b from-pink-100/75 to-rose-100/60 p-3 lg:p-4 text-center text-xs lg:text-sm shadow-sm"
                 >
                   <div class="flex items-center justify-center gap-1.5 w-full">
-                    <span lang="ja" class="text-2xl font-medium text-slate-800">{{ row.graph }}</span>
+                    <span lang="ja" class="text-2xl lg:text-4xl font-medium text-slate-800">{{ row.graph }}</span>
                     <span :class="row.ok ? 'font-bold text-emerald-700' : 'font-bold text-rose-600'">{{ row.ok ? '✓' : '✗' }}</span>
                   </div>
                   <span class="mt-2 block font-semibold text-slate-600">{{ row.expected }}</span>

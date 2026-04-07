@@ -95,6 +95,8 @@ let homeLongPressTimer = null
 const LONG_PRESS_MS = 400
 const homeLongPressStart = ref(null)
 const LONG_PRESS_MOVE_THRESHOLD = 18
+const navPaths = ['home', '/hiragana', '/katakana', '/vocab']
+const isCoarsePointer = ref(false)
 
 function clearHomeLongPress() {
   if (homeLongPressTimer) {
@@ -211,9 +213,6 @@ function onNavPointerMove(e) {
   } else {
     clearHomeLongPress()
   }
-  if (path && path !== currentNavPath.value) {
-    goToNav(path)
-  }
 }
 
 function onNavPointerUp(e) {
@@ -253,6 +252,30 @@ function onProfilePickerPointerUp(e) {
   } else if (profile === 'andrea') {
     router.push('/andrea')
     profilePickerJustSelected.value = true
+  }
+}
+
+function updatePointerCapabilities() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
+  isCoarsePointer.value = window.matchMedia('(pointer: coarse)').matches
+}
+
+function onNavKeydown(e) {
+  if (hideBottomNavForKeyboard.value || profilePickerOpen.value) return
+  const currentIndex = Math.max(0, navPaths.indexOf(currentNavPath.value))
+  if (e.key === 'ArrowRight') {
+    e.preventDefault()
+    goToNav(navPaths[(currentIndex + 1) % navPaths.length])
+    return
+  }
+  if (e.key === 'ArrowLeft') {
+    e.preventDefault()
+    goToNav(navPaths[(currentIndex - 1 + navPaths.length) % navPaths.length])
+    return
+  }
+  if (e.key === 'Home') {
+    e.preventDefault()
+    goToNav('home')
   }
 }
 
@@ -325,8 +348,8 @@ const vocabRomajiSubtitle = computed(() => {
 const finalInputClass = computed(() => {
   const isKanaRomaji = store.quizType === 'vocab-kana-to-romaji'
   const base = isKanaRomaji
-    ? 'w-full p-3 rounded-xl border-2 text-center font-black text-base focus:outline-none transition-all duration-150 '
-    : 'w-full p-5 rounded-2xl border-4 text-center font-black text-2xl focus:outline-none transition-all duration-150 '
+    ? 'w-full p-3 lg:p-5 rounded-xl lg:rounded-2xl border-2 lg:border-4 text-center font-black text-base lg:text-2xl focus:outline-none transition-all duration-150 '
+    : 'w-full p-5 lg:p-6 rounded-2xl border-4 text-center font-black text-2xl lg:text-4xl focus:outline-none transition-all duration-150 '
   if (!store.isAnswered) return base + 'border-slate-100 bg-white shadow-lg ' + (store.quizType === 'katakana' ? 'focus:border-blue-300' : store.quizType?.startsWith('vocab') ? 'focus:border-amber-300' : 'focus:border-pink-300')
   const userText = store.manualInput.trim().toLowerCase()
   const q = currentQuestion.value
@@ -595,14 +618,17 @@ function syncBottomNavForKeyboard() {
 
 onMounted(() => {
   store.init()
+  updatePointerCapabilities()
   preloadImages().then(() => {
     imagesPreloaded.value = true
   })
+  window.addEventListener('resize', updatePointerCapabilities, { passive: true })
   document.addEventListener('focusin', syncBottomNavForKeyboard)
   document.addEventListener('focusout', syncBottomNavForKeyboard)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('resize', updatePointerCapabilities)
   document.removeEventListener('focusin', syncBottomNavForKeyboard)
   document.removeEventListener('focusout', syncBottomNavForKeyboard)
 })
@@ -690,7 +716,7 @@ onUnmounted(() => {
         class="fixed inset-0 z-[350] flex flex-col items-center justify-center bg-slate-800/75 backdrop-blur-sm overflow-hidden touch-none"
       >
         <div
-          class="flex flex-col items-center justify-center w-full max-w-sm px-6 py-8"
+          class="flex flex-col items-center justify-center w-full max-w-sm lg:max-w-[720px] px-6 lg:px-10 py-8 lg:py-10"
         >
           <h2 class="text-lg font-black text-white uppercase tracking-widest mb-1">Risultati quiz</h2>
           <p class="text-slate-300 text-lg mb-6">Totale: <strong class="text-white">{{ quizEndChartData.total }}</strong></p>
@@ -732,7 +758,7 @@ onUnmounted(() => {
         style="touch-action:none;"
         @click.self="store.quizSetupModalOpen = false"
       >
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh]">
+        <div class="bg-white w-full max-w-xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh] lg:max-h-[92dvh]">
           <!-- Handle bar + header -->
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
@@ -759,8 +785,8 @@ onUnmounted(() => {
                   :key="p.id"
                   type="button"
                   :class="[
-                    'inline-flex items-center justify-center w-[4.25rem] min-w-[4.25rem] min-h-11 px-3 font-black rounded-xl uppercase border-2 transition-all',
-                    p.compactLabel ? 'text-[10px] leading-tight tracking-wide' : 'text-xs',
+                    'inline-flex items-center justify-center w-[4.25rem] min-w-[4.25rem] min-h-11 lg:min-h-12 lg:w-[5rem] lg:min-w-[5rem] px-3 font-black rounded-xl uppercase border-2 transition-all',
+                    p.compactLabel ? 'text-[10px] lg:text-xs leading-tight tracking-wide' : 'text-xs lg:text-sm',
                     p.kanaIds.every(id => store.selectedKanaIds.includes(id))
                       ? 'bg-pink-400 border-pink-400 text-white'
                       : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
@@ -779,13 +805,13 @@ onUnmounted(() => {
               </div>
 
             <!-- Griglia kana selezionabili (5 colonne = una riga per tipologia: vocali, ka, ga, sa, …) -->
-            <div class="grid grid-cols-5 gap-2 pb-2">
+            <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 pb-2">
                 <button
                 v-for="k in store.kanaData"
                 :key="k.id"
                 :class="[
-                  'aspect-square rounded-xl flex items-center justify-center font-black border-2 transition-all active:scale-90',
-                  k.character.length > 1 ? 'text-sm sm:text-base tracking-tight' : 'text-lg',
+                  'aspect-square lg:aspect-auto lg:h-16 rounded-xl flex items-center justify-center font-black lg:font-semibold border-2 transition-all active:scale-90',
+                  k.character.length > 1 ? 'text-sm sm:text-base lg:text-xl tracking-tight' : 'text-lg lg:text-3xl',
                   store.selectedKanaIds.includes(k.id)
                     ? 'bg-pink-400 border-pink-400 text-white shadow-md'
                     : 'bg-white border-slate-100 text-slate-300'
@@ -836,7 +862,7 @@ onUnmounted(() => {
         style="touch-action:none;"
         @click.self="store.katakanaSetupModalOpen = false"
       >
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh]">
+        <div class="bg-white w-full max-w-xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh] lg:max-h-[92dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -862,7 +888,7 @@ onUnmounted(() => {
                   :key="p.id"
                   type="button"
                   :class="[
-                    'w-[4.25rem] min-w-[4.25rem] px-5 py-2.5 font-black rounded-xl uppercase text-xs border-2 transition-all',
+                    'w-[4.25rem] min-w-[4.25rem] lg:w-[5rem] lg:min-w-[5rem] px-5 py-2.5 lg:py-3 font-black rounded-xl uppercase text-xs lg:text-sm border-2 transition-all',
                     p.kanaIds.every(id => store.selectedKatakanaIds.includes(id))
                       ? 'text-white'
                       : 'bg-blue-50 text-blue-600 border-blue-100 active:bg-blue-100'
@@ -884,12 +910,12 @@ onUnmounted(() => {
             </div>
 
             <!-- Griglia katakana selezionabili -->
-            <div class="grid grid-cols-5 gap-2 pb-2">
+            <div class="grid grid-cols-5 lg:grid-cols-10 gap-2 pb-2">
               <button
                 v-for="k in store.katakanaData"
                 :key="k.id"
                 :class="[
-                  'aspect-square rounded-xl flex items-center justify-center text-lg font-black border-2 transition-all active:scale-90',
+                  'aspect-square lg:aspect-auto lg:h-16 rounded-xl flex items-center justify-center text-lg lg:text-3xl font-black lg:font-semibold border-2 transition-all active:scale-90',
                   store.selectedKatakanaIds.includes(k.id)
                     ? 'text-white shadow-md'
                     : 'bg-white border-slate-100 text-slate-300'
@@ -969,19 +995,19 @@ onUnmounted(() => {
         <div
           v-if="store.quizType === 'vocab-kana-read' || store.quizType === 'vocab-romaji-input'"
           ref="quizScrollRef"
-          class="flex-1 overflow-y-auto overscroll-contain px-4 py-5 flex flex-col items-center gap-5"
+          class="flex-1 overflow-y-auto overscroll-contain px-4 lg:px-8 py-5 lg:py-8 flex flex-col items-center gap-5 lg:gap-6"
         >
           <!-- Card: mostra il significato → l'utente deve leggere i kana della parola -->
           <div
             ref="quizCardRef"
-            class="bg-white rounded-3xl shadow-lg border border-emerald-100 flex flex-col items-center w-full max-w-sm px-6 py-5 shrink-0"
+            class="bg-white rounded-3xl shadow-lg border border-emerald-100 flex flex-col items-center w-full max-w-sm lg:max-w-[1100px] px-6 lg:px-12 py-5 lg:py-8 shrink-0"
           >
             <p class="text-[11px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-3">🌿 Come si scrive in kana?</p>
             <!-- Significato grande -->
-            <p class="text-4xl font-black text-slate-700 text-center leading-tight">{{ questionText }}</p>
+            <p class="text-4xl lg:text-6xl font-black text-slate-700 text-center leading-tight">{{ questionText }}</p>
             <!-- Parola in kana in piccolo sotto, sempre visibile come riferimento -->
             <div class="mt-3 flex items-center gap-2">
-              <p class="text-2xl font-black text-emerald-600 tracking-widest leading-none">{{ currentQuestion?.word?.split('/')[0] }}</p>
+              <p class="text-2xl lg:text-4xl font-black text-emerald-600 tracking-widest leading-none">{{ currentQuestion?.word?.split('/')[0] }}</p>
               <button
                 class="text-emerald-200 active:text-emerald-500 transition-all p-1"
                 @click="store.speakText(currentQuestion?.word)"
@@ -991,7 +1017,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Blocchi kana con progress -->
-          <div class="w-full max-w-sm flex flex-col gap-4">
+          <div class="w-full max-w-sm lg:max-w-[1100px] flex flex-col gap-4 lg:gap-5">
 
             <!-- Riga di blocchi: ogni kana della parola -->
             <div class="flex flex-wrap justify-center gap-3">
@@ -1010,7 +1036,7 @@ onUnmounted(() => {
                 <!-- Kana sempre visibile -->
                 <span
                   :class="[
-                    'text-4xl font-black leading-none',
+                    'text-4xl lg:text-6xl font-black leading-none',
                     block.state === 'ok'    ? 'text-emerald-500' :
                     block.state === 'wrong' ? 'text-rose-400' :
                     i === store.vocabRomajiCurrentIdx ? 'text-emerald-700' :
@@ -1077,12 +1103,12 @@ onUnmounted(() => {
         <div
           v-else
           ref="quizScrollRef"
-          class="flex-1 overflow-y-auto overscroll-contain px-4 py-5 flex flex-col items-center gap-5"
+          class="flex-1 overflow-y-auto overscroll-contain px-4 lg:px-8 py-5 lg:py-8 flex flex-col items-center gap-5 lg:gap-6"
         >
           <div
             ref="quizCardRef"
             :class="[
-              'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm shrink-0 bg-white',
+              'rounded-3xl shadow-lg border flex flex-col items-center w-full max-w-sm lg:max-w-[1100px] shrink-0 bg-white',
               quizAccent.cardBorder,
               store.quizType === 'vocab-kana-to-romaji' ? 'px-5 py-4' : 'px-6 py-5'
             ]"
@@ -1093,8 +1119,8 @@ onUnmounted(() => {
                 :class="[
                   'font-black text-slate-700 text-center leading-tight break-words w-full',
                   store.vocabKanaToRomajiInputLang === 'it'
-                    ? (questionText.length > 20 ? 'text-lg' : questionText.length > 12 ? 'text-xl' : 'text-3xl')
-                    : (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-3xl' : 'text-[2.75rem]'
+                    ? (questionText.length > 20 ? 'text-lg lg:text-2xl' : questionText.length > 12 ? 'text-xl lg:text-3xl' : 'text-3xl lg:text-5xl')
+                    : (currentQuestion?.word?.split('/')[0]?.length || 0) > 4 ? 'text-3xl lg:text-5xl' : 'text-[2.75rem] lg:text-[5.5rem]'
                 ]"
               >{{ questionText }}</div>
               <p class="text-slate-400 text-xs font-semibold mt-1.5">
@@ -1109,7 +1135,7 @@ onUnmounted(() => {
               <p class="text-[11px] font-black uppercase tracking-[0.3em] mb-3" :class="quizAccent.text">Come si traduce?</p>
               <p :class="[
                 'font-black text-slate-700 text-center leading-tight break-words w-full',
-                questionText.length > 20 ? 'text-lg' : questionText.length > 12 ? 'text-xl' : 'text-3xl'
+                questionText.length > 20 ? 'text-lg lg:text-2xl' : questionText.length > 12 ? 'text-xl lg:text-3xl' : 'text-3xl lg:text-5xl'
               ]">{{ questionText }}</p>
               <p class="text-sm font-semibold text-slate-400 mt-2 text-center italic">{{ vocabRomajiSubtitle }}</p>
               <button
@@ -1129,8 +1155,8 @@ onUnmounted(() => {
                 :class="[
                   'font-black text-slate-700 text-center leading-tight break-words w-full',
                   store.quizDifficulty === 'difficile'
-                    ? (isKanaQuiz ? 'text-5xl' : 'text-4xl')
-                    : (isKanaQuiz ? 'text-[5rem]' : 'text-[4.5rem]')
+                    ? (isKanaQuiz ? 'text-5xl lg:text-7xl' : 'text-4xl lg:text-6xl')
+                    : (isKanaQuiz ? 'text-[5rem] lg:text-[8.5rem]' : 'text-[4.5rem] lg:text-[7rem]')
                 ]"
               >{{ questionText }}</div>
               <button
@@ -1143,7 +1169,7 @@ onUnmounted(() => {
           <!-- Input difficile o quiz Kana→Romaji -->
           <form
             v-if="store.quizDifficulty === 'difficile' || store.quizType === 'vocab-kana-to-romaji'"
-            :class="['w-full max-w-sm flex flex-col gap-3', store.quizType === 'vocab-kana-to-romaji' ? 'gap-2' : '']"
+            :class="['w-full max-w-sm lg:max-w-[1100px] flex flex-col gap-3', store.quizType === 'vocab-kana-to-romaji' ? 'gap-2' : '']"
             @submit.prevent="handleManualSubmitEvent"
           >
             <input
@@ -1182,7 +1208,7 @@ onUnmounted(() => {
           <!-- Scelta multipla (solo se non difficile e non vocab-kana-to-romaji) -->
           <div
             v-else
-            class="w-full max-w-sm grid grid-cols-2 gap-3"
+            class="w-full max-w-sm lg:max-w-[1100px] grid grid-cols-2 gap-3 lg:gap-5"
           >
             <button
               v-for="(opt, i) in store.options"
@@ -1210,7 +1236,7 @@ onUnmounted(() => {
         style="touch-action:none;"
         @click.self="store.closeVocabSetupModal()"
       >
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[80dvh] min-h-0">
+        <div class="bg-white w-full max-w-xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[80dvh] lg:h-[86dvh] min-h-0">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1304,7 +1330,7 @@ onUnmounted(() => {
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center p-4"
         @click.self="store.closeDifficultyModal()"
       >
-        <div class="bg-white w-full max-w-2xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
+        <div class="bg-white w-full max-w-2xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col">
           <div class="flex justify-center pt-4 pb-2 sm:hidden">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1472,7 +1498,7 @@ onUnmounted(() => {
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
         @click.self="store.selectedKanaModal = null"
       >
-        <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
+        <div class="bg-white w-full max-w-lg lg:max-w-[820px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1531,7 +1557,7 @@ onUnmounted(() => {
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
         @click.self="store.selectedKatakanaModal = null"
       >
-        <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
+        <div class="bg-white w-full max-w-lg lg:max-w-[820px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[90dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1590,7 +1616,7 @@ onUnmounted(() => {
         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center"
         @click.self="store.selectedVocabModal = null"
       >
-        <div class="bg-white w-full max-w-xl rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[92dvh]">
+        <div class="bg-white w-full max-w-xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[92dvh]">
           <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
             <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
           </div>
@@ -1687,7 +1713,7 @@ onUnmounted(() => {
       <!-- ===== BOTTONE SALVA (solo icona) — nascosto per ora ===== -->
       <button
         v-if="store.currentProfile && !store.quizActive"
-        class="hidden fixed top-[calc(1.75rem+env(safe-area-inset-top))] left-6 z-[300] flex items-center justify-center w-11 h-11 rounded-2xl shadow-lg transition-all duration-300 disabled:pointer-events-none"
+        class="hidden fixed top-[calc(1.75rem+env(safe-area-inset-top))] left-6 z-[300] w-11 h-11 rounded-2xl shadow-lg transition-all duration-300 disabled:pointer-events-none"
         :class="store.isSyncing
           ? 'bg-amber-400 text-white'
           : store.saveSuccess
@@ -1711,7 +1737,7 @@ onUnmounted(() => {
       <!-- ===== CONTENUTO PRINCIPALE ===== -->
       <main
         ref="mainScrollRef"
-        class="w-full flex-1 pt-4 flex flex-col items-center transition-[padding-bottom] duration-200"
+        class="w-full flex-1 pt-4 lg:pt-6 flex flex-col items-center transition-[padding-bottom] duration-200"
         :class="[
           hideBottomNavForKeyboard
             ? 'pb-[max(0.75rem,env(safe-area-inset-bottom))]'
@@ -1756,7 +1782,7 @@ onUnmounted(() => {
           <div class="absolute top-1/2 left-2 text-3xl opacity-5 select-none text-amber-200">あ</div>
           <div class="absolute top-1/3 right-2 text-3xl opacity-5 select-none text-orange-200">ん</div>
         </div>
-        <div class="w-full max-w-2xl mx-auto flex flex-col items-center relative z-10">
+        <div class="w-full max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 flex flex-col items-center relative z-10">
           <router-view v-slot="{ Component }">
             <Transition name="view-fade" mode="out-in">
               <component :is="Component" />
@@ -1767,7 +1793,7 @@ onUnmounted(() => {
 
       <!-- ===== BARRA NAVIGAZIONE BOTTOM ===== -->
       <nav
-        class="fixed bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)] pt-0.5 pb-0.5 transition-[transform,opacity] duration-200 ease-out"
+        class="fixed bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 shadow-[0_-8px_30px_rgba(236,72,153,0.06)] pt-0.5 pb-0.5 lg:pt-2 lg:pb-2 transition-[transform,opacity] duration-200 ease-out"
         :class="
           hideBottomNavForKeyboard
             ? 'translate-y-full opacity-0 pointer-events-none'
@@ -1778,17 +1804,21 @@ onUnmounted(() => {
       >
         <div
           ref="navInnerRef"
-          class="w-full max-w-lg mx-auto flex justify-around px-2 h-16 items-center select-none touch-none"
-          style="-webkit-user-select: none; -webkit-touch-callout: none;"
-          @pointerdown="onNavPointerDown"
-          @pointermove="onNavPointerMove"
-          @pointerup="onNavPointerUp"
+          class="w-full max-w-xl mx-auto flex justify-around px-2 lg:px-4 h-16 lg:h-20 items-center select-none"
+          style="-webkit-user-select: none; user-select: none; -webkit-touch-callout: none;"
+          tabindex="0"
+          role="tablist"
+          aria-label="Navigazione principale"
+          @keydown="onNavKeydown"
+          @pointerdown="isCoarsePointer ? onNavPointerDown($event) : null"
+          @pointermove="isCoarsePointer ? onNavPointerMove($event) : null"
+          @pointerup="isCoarsePointer ? onNavPointerUp($event) : null"
         >
           <div
             ref="homeNavWrapRef"
             class="flex flex-col items-center justify-center"
           >
-            <NavItem :label="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" color="dark" plain @click="goToNav('home')">
+            <NavItem :label="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" :aria-current="(route.path === '/andrea' || route.path === '/erica') ? 'page' : null" color="dark" plain @click="goToNav('home')">
               <img
                 :src="store.currentProfile === 'erica' ? '/avatar-erica.png' : '/avatar-andrea.png'"
                 :alt="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'"
@@ -1800,17 +1830,17 @@ onUnmounted(() => {
             </NavItem>
           </div>
           <div ref="navSlotHiraganaRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" color="pink" @click="goToNav('/hiragana')">
+            <NavItem label="Hiragana" :active="isNavActive('/hiragana')" :highlight="navDragOverPath === '/hiragana'" :aria-current="isNavActive('/hiragana') ? 'page' : null" color="pink" @click="goToNav('/hiragana')">
             <span class="text-xl font-black">あ</span>
           </NavItem>
           </div>
           <div ref="navSlotKatakanaRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Katakana" :active="isNavActive('/katakana')" :highlight="navDragOverPath === '/katakana'" color="blue" @click="goToNav('/katakana')">
+            <NavItem label="Katakana" :active="isNavActive('/katakana')" :highlight="navDragOverPath === '/katakana'" :aria-current="isNavActive('/katakana') ? 'page' : null" color="blue" @click="goToNav('/katakana')">
               <span class="text-xl font-black leading-none">ア</span>
             </NavItem>
           </div>
           <div ref="navSlotVocabRef" class="flex flex-col items-center justify-center">
-            <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" color="amber" @click="goToNav('/vocab')">
+            <NavItem label="Vocaboli" :active="isNavActive('/vocab')" :highlight="navDragOverPath === '/vocab'" :aria-current="isNavActive('/vocab') ? 'page' : null" color="amber" @click="goToNav('/vocab')">
             <BookOpen :size="22" />
           </NavItem>
           </div>
@@ -1847,7 +1877,7 @@ onUnmounted(() => {
         class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[600] flex items-end sm:items-center justify-center p-4 overflow-hidden"
         @click.self="store.saveErrorModal = null"
       >
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center relative">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm lg:max-w-[640px] p-8 lg:p-10 text-center relative">
           <button
             class="absolute top-4 right-4 p-1 rounded-full text-slate-400 hover:bg-slate-100 active:bg-slate-200 transition-colors"
             aria-label="Chiudi"
@@ -1870,7 +1900,7 @@ onUnmounted(() => {
         v-if="store.customAlert"
         class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[600] flex items-end sm:items-center justify-center p-4"
       >
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm lg:max-w-[640px] p-8 lg:p-10 text-center">
           <div class="text-5xl mb-4">🌸</div>
           <p class="text-slate-700 font-black mb-8 text-xl leading-relaxed uppercase tracking-widest">
             {{ store.customAlert }}
@@ -1887,7 +1917,7 @@ onUnmounted(() => {
         v-if="store.confirmModal"
         class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[400] flex items-end sm:items-center justify-center p-4"
       >
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 text-center">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm lg:max-w-[640px] p-8 lg:p-10 text-center">
           <div class="text-5xl mb-4">⚠️</div>
           <h3 class="font-black text-slate-700 text-2xl mb-2">{{ store.confirmModal.title }}</h3>
           <p class="text-slate-500 text-base mb-8 leading-relaxed">{{ store.confirmModal.text }}</p>
@@ -1913,7 +1943,7 @@ onUnmounted(() => {
           class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[500] flex items-end justify-center outline-none"
           @keydown.enter.prevent="store.advanceAfterFeedback()"
         >
-          <div class="bg-white w-full max-w-lg rounded-t-[2.5rem] shadow-2xl pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div class="bg-white w-full max-w-lg lg:max-w-[820px] rounded-t-[2.5rem] shadow-2xl pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             <!-- Handle -->
             <div class="flex justify-center pt-3 pb-2">
               <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
