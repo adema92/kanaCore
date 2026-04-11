@@ -347,6 +347,21 @@ export const useAppStore = defineStore('app', () => {
   const quizResults = ref({ correct: 0, total: 0 })
   const manualInput = ref('')
 
+  /** Session counters for kana-mixed quiz (hiragana vs katakana, correct vs wrong). */
+  const quickMixedQuizSession = ref({
+    hiraCorrect: 0,
+    hiraWrong: 0,
+    kataCorrect: 0,
+    kataWrong: 0,
+  })
+  /** Saved selection for quick mixed quiz (empty = use full grids). Synced to cloud. */
+  const quickMixedQuizHiraIds = ref([])
+  const quickMixedQuizKataIds = ref([])
+  const quickMixedSetupModalOpen = ref(false)
+  /** Working copy while setup modal is open. */
+  const quickMixedModalHiraIds = ref([])
+  const quickMixedModalKataIds = ref([])
+
   const vocabWriteMistakes = ref(0)
 
   // Blocco quiz vocab: { romaji, kana, userInput, state: 'idle'|'ok'|'wrong' }
@@ -432,6 +447,8 @@ export const useAppStore = defineStore('app', () => {
       vocabData: vocabData.value.map(v => ({ ...v })),
       dailyStats: { ...dailyStats.value },
       readingTextsCompletedAt: { ...readingTextsCompletedAt.value },
+      quickMixedQuizHiraIds: [...quickMixedQuizHiraIds.value],
+      quickMixedQuizKataIds: [...quickMixedQuizKataIds.value],
       _vocabStatsResetVersion: VOCAB_STATS_RESET_VERSION,
       _savedAt: new Date().toISOString(),
       _profile: currentProfile.value,
@@ -633,6 +650,12 @@ export const useAppStore = defineStore('app', () => {
     answerFeedback.value = null
     showSaveProgressAfterQuiz.value = false
     quizResults.value = { correct: 0, total: 0 }
+    quickMixedQuizSession.value = {
+      hiraCorrect: 0,
+      hiraWrong: 0,
+      kataCorrect: 0,
+      kataWrong: 0,
+    }
   }
 
   function openQuizEndModalAndSave() {
@@ -663,7 +686,10 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     const num = quizDifficulty.value === 'facile' ? 3 : 4
-    const pool = quizPendingItems.value
+    const pool =
+      quizType.value === 'kana-mixed' && cur?.__mixedScript
+        ? quizPendingItems.value.filter((i) => i.__mixedScript === cur.__mixedScript)
+        : quizPendingItems.value
     const wr =
       quizType.value === 'vocab'
         ? _pickVocabDistractors(cur, pool, num - 1)
@@ -767,9 +793,16 @@ export const useAppStore = defineStore('app', () => {
     const hiraOutcomes = vocabMoraOutcomes.filter((o) => o.script === 'hiragana')
     const kataOutcomes = vocabMoraOutcomes.filter((o) => o.script === 'katakana')
     const getItemState = (arr) => arr.find((x) => x.id === item.id)
-    const k = quizType.value === 'kana' ? getItemState(kanaData.value)
-      : quizType.value === 'katakana' ? getItemState(katakanaData.value)
-      : getItemState(vocabData.value)
+    const k =
+      quizType.value === 'kana'
+        ? getItemState(kanaData.value)
+        : quizType.value === 'katakana'
+          ? getItemState(katakanaData.value)
+          : quizType.value === 'kana-mixed'
+            ? (item.__mixedScript === 'kata'
+              ? getItemState(katakanaData.value)
+              : getItemState(kanaData.value))
+            : getItemState(vocabData.value)
     const kanaStatsBefore = {}
     const katakanaStatsBefore = {}
     const hiraCharSet = new Set(hiraOutcomes.map((x) => x.character).filter(Boolean))
@@ -802,17 +835,20 @@ export const useAppStore = defineStore('app', () => {
       isVocabKanaStatsQuiz,
       kanaStatsBefore,
       katakanaStatsBefore,
+      quickMixedSessionBefore:
+        quizType.value === 'kana-mixed' ? { ...quickMixedQuizSession.value } : null,
     }
     if (ok) {
       quizResults.value = { ...quizResults.value, correct: quizResults.value.correct + 1 }
       speakText(
-        quizType.value === 'kana' || quizType.value === 'katakana'
+        quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed'
           ? item.character
           : item.word
       )
     }
 
     const isKanaQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
+    const isKanaMixedQuiz = quizType.value === 'kana-mixed'
     const kanaTotalAdd = isVocabKanaStatsQuiz ? hiraOutcomes.length : 0
     const kanaCorrectAdd = isVocabKanaStatsQuiz ? hiraOutcomes.filter((x) => x.ok).length : 0
     const kataTotalAdd = isVocabKanaStatsQuiz ? kataOutcomes.length : 0
@@ -823,23 +859,25 @@ export const useAppStore = defineStore('app', () => {
       ...curDay,
       total: curDay.total + (isVocabKanaStatsQuiz ? vocabMoraAttempts : 1),
       correct: curDay.correct + (isVocabKanaStatsQuiz ? vocabMoraCorrect : (ok ? 1 : 0)),
-      kana: quizType.value === 'kana'
-        ? { total: curDay.kana.total + 1, correct: curDay.kana.correct + (ok ? 1 : 0) }
-        : isVocabKanaStatsQuiz
-          ? {
-            total: curDay.kana.total + kanaTotalAdd,
-            correct: curDay.kana.correct + kanaCorrectAdd,
-          }
-        : curDay.kana,
-      katakana: quizType.value === 'katakana'
-        ? { total: curDay.katakana.total + 1, correct: curDay.katakana.correct + (ok ? 1 : 0) }
-        : isVocabKanaStatsQuiz
-          ? {
-            total: curDay.katakana.total + kataTotalAdd,
-            correct: curDay.katakana.correct + kataCorrectAdd,
-          }
-          : curDay.katakana,
-      vocab: !isKanaQuiz && !isVocabKanaStatsQuiz
+      kana:
+        quizType.value === 'kana' || (isKanaMixedQuiz && item.__mixedScript === 'hira')
+          ? { total: curDay.kana.total + 1, correct: curDay.kana.correct + (ok ? 1 : 0) }
+          : isVocabKanaStatsQuiz
+            ? {
+              total: curDay.kana.total + kanaTotalAdd,
+              correct: curDay.kana.correct + kanaCorrectAdd,
+            }
+            : curDay.kana,
+      katakana:
+        quizType.value === 'katakana' || (isKanaMixedQuiz && item.__mixedScript === 'kata')
+          ? { total: curDay.katakana.total + 1, correct: curDay.katakana.correct + (ok ? 1 : 0) }
+          : isVocabKanaStatsQuiz
+            ? {
+              total: curDay.katakana.total + kataTotalAdd,
+              correct: curDay.katakana.correct + kataCorrectAdd,
+            }
+            : curDay.katakana,
+      vocab: !isKanaQuiz && !isVocabKanaStatsQuiz && !isKanaMixedQuiz
         ? { total: curDay.vocab.total + 1, correct: curDay.vocab.correct + (ok ? 1 : 0) }
         : curDay.vocab,
     }
@@ -861,6 +899,18 @@ export const useAppStore = defineStore('app', () => {
       kanaData.value = upd(kanaData.value)
     } else if (quizType.value === 'katakana') {
       katakanaData.value = upd(katakanaData.value)
+    } else if (quizType.value === 'kana-mixed') {
+      if (item.__mixedScript === 'kata') katakanaData.value = upd(katakanaData.value)
+      else kanaData.value = upd(kanaData.value)
+      const q = { ...quickMixedQuizSession.value }
+      if (item.__mixedScript === 'hira') {
+        if (ok) q.hiraCorrect++
+        else q.hiraWrong++
+      } else if (item.__mixedScript === 'kata') {
+        if (ok) q.kataCorrect++
+        else q.kataWrong++
+      }
+      quickMixedQuizSession.value = q
     } else if (isVocabKanaStatsQuiz) {
       for (const row of hiraOutcomes) {
         kanaData.value = kanaData.value.map((x) => {
@@ -882,10 +932,11 @@ export const useAppStore = defineStore('app', () => {
 
     sync()
 
-    const isKanaTypeQuiz = quizType.value === 'kana' || quizType.value === 'katakana'
+    const isKanaTypeQuiz =
+      quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed'
     const isVocabKanaToRomaji = quizType.value === 'vocab-kana-to-romaji'
     let correctAnswer = ''
-    if (quizType.value === 'kana' || quizType.value === 'katakana') {
+    if (quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.romaji : item.character
     } else if (quizType.value === 'vocab') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.meaning : item.word
@@ -987,6 +1038,12 @@ export const useAppStore = defineStore('app', () => {
       kanaData.value = revert(kanaData.value)
     } else if (quizType.value === 'katakana') {
       katakanaData.value = revert(katakanaData.value)
+    } else if (quizType.value === 'kana-mixed') {
+      kanaData.value = revert(kanaData.value)
+      katakanaData.value = revert(katakanaData.value)
+      if (s.quickMixedSessionBefore) {
+        quickMixedQuizSession.value = { ...s.quickMixedSessionBefore }
+      }
     } else {
       vocabData.value = revert(vocabData.value)
     }
@@ -1017,7 +1074,7 @@ export const useAppStore = defineStore('app', () => {
       const item = quizQueue.value[currentQuestionIndex.value]
       const userText = manualInput.value.trim()
       let correctText
-      if (quizType.value === 'kana' || quizType.value === 'katakana') {
+      if (quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed') {
         correctText = quizDirection.value === 'ja-to-romaji'
           ? item.romaji.split('/')[0].trim().toLowerCase()
           : item.character.trim()
@@ -1056,8 +1113,12 @@ export const useAppStore = defineStore('app', () => {
   function getOptionLabel_internal(opt) {
     if (quizType.value === 'vocab-romaji') return opt.romaji.split('/')[0]
     if (quizDirection.value === 'ja-to-romaji')
-      return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.romaji : opt.meaning
-    return (quizType.value === 'kana' || quizType.value === 'katakana') ? opt.character : opt.word.split('/')[0]
+      return (quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed')
+        ? opt.romaji
+        : opt.meaning
+    return (quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed')
+      ? opt.character
+      : opt.word.split('/')[0]
   }
 
   /** Last up to VOCAB_LAST_BATCH_MAX items by id order within the current vocab pool. */
@@ -1239,11 +1300,85 @@ export const useAppStore = defineStore('app', () => {
     difficultyModalOpen.value = true
   }
 
+  function _effectiveQuickMixedHiraIds() {
+    return quickMixedQuizHiraIds.value.length > 0
+      ? quickMixedQuizHiraIds.value
+      : kanaData.value.map((k) => k.id)
+  }
+
+  function _effectiveQuickMixedKataIds() {
+    return quickMixedQuizKataIds.value.length > 0
+      ? quickMixedQuizKataIds.value
+      : katakanaData.value.map((k) => k.id)
+  }
+
+  function openQuickMixedSetupModal() {
+    const allH = kanaData.value.map((k) => k.id)
+    const allK = katakanaData.value.map((k) => k.id)
+    quickMixedModalHiraIds.value =
+      quickMixedQuizHiraIds.value.length > 0 ? [...quickMixedQuizHiraIds.value] : [...allH]
+    quickMixedModalKataIds.value =
+      quickMixedQuizKataIds.value.length > 0 ? [...quickMixedQuizKataIds.value] : [...allK]
+    quickMixedSetupModalOpen.value = true
+  }
+
+  function saveQuickMixedSetup() {
+    if (quickMixedModalHiraIds.value.length < 1 || quickMixedModalKataIds.value.length < 1) {
+      customAlert.value = 'Seleziona almeno un hiragana e un katakana.'
+      return
+    }
+    quickMixedQuizHiraIds.value = [...quickMixedModalHiraIds.value]
+    quickMixedQuizKataIds.value = [...quickMixedModalKataIds.value]
+    quickMixedSetupModalOpen.value = false
+    saveNow().catch(() => {})
+  }
+
+  function closeQuickMixedSetupModal() {
+    quickMixedSetupModalOpen.value = false
+  }
+
+  /** Home: quick mixed quiz from saved (or full) selection, difficile, ja→romaji. */
+  function startQuickMixedKanaQuiz() {
+    if (kanaData.value.length < 1 || katakanaData.value.length < 1) {
+      customAlert.value = 'Servono hiragana e katakana in griglia per il quiz rapido.'
+      return
+    }
+    const hSet = new Set(_effectiveQuickMixedHiraIds())
+    const kSet = new Set(_effectiveQuickMixedKataIds())
+    const hCount = kanaData.value.filter((k) => hSet.has(k.id)).length
+    const kCount = katakanaData.value.filter((k) => kSet.has(k.id)).length
+    if (hCount < 1 || kCount < 1) {
+      customAlert.value = 'Configura il quiz rapido: serve almeno un hiragana e un katakana.'
+      return
+    }
+    quizType.value = 'kana-mixed'
+    quizDirection.value = 'ja-to-romaji'
+    startQuizFinal('difficile')
+  }
+
   function startQuizFinal(diff, forceLast20 = false) {
     quizDifficulty.value = diff
     enteredDifficultyFromVocabCategories.value = false
     difficultyModalOpen.value = false
     let pool = quizPendingItems.value
+    if (quizType.value === 'kana-mixed') {
+      quickMixedQuizSession.value = {
+        hiraCorrect: 0,
+        hiraWrong: 0,
+        kataCorrect: 0,
+        kataWrong: 0,
+      }
+      const hSet = new Set(_effectiveQuickMixedHiraIds())
+      const kSet = new Set(_effectiveQuickMixedKataIds())
+      const hira = kanaData.value
+        .filter((row) => hSet.has(row.id))
+        .map((row) => ({ ...row, __mixedScript: 'hira' }))
+      const kata = katakanaData.value
+        .filter((row) => kSet.has(row.id))
+        .map((row) => ({ ...row, __mixedScript: 'kata' }))
+      pool = [...hira, ...kata]
+      quizPendingItems.value = pool
+    }
     if ((quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') && forceLast20) {
       const last20 = getLast20FromVocabPool(pool)
       pool = last20.length > 0 ? last20 : pool
@@ -1373,6 +1508,8 @@ export const useAppStore = defineStore('app', () => {
     } else {
       readingTextsCompletedAt.value = {}
     }
+    quickMixedQuizHiraIds.value = Array.isArray(raw.quickMixedQuizHiraIds) ? [...raw.quickMixedQuizHiraIds] : []
+    quickMixedQuizKataIds.value = Array.isArray(raw.quickMixedQuizKataIds) ? [...raw.quickMixedQuizKataIds] : []
     if (needsVocabReset) sync()
   }
 
@@ -1526,11 +1663,12 @@ export const useAppStore = defineStore('app', () => {
     currentProfile, profileSelectOpen, isSyncing, saveSuccess, saveErrorModal,
     selectedKanaModal, selectedKatakanaModal, selectedVocabModal, customAlert, confirmModal,
     hideGridRomaji, hideKatakanaGridRomaji, statsTimeRange,
-    quizActive, quizEndModalPhase, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
+    quizActive, quizEndModalPhase, showSaveProgressAfterQuiz, quizSavedToast, quizSetupModalOpen, katakanaSetupModalOpen, quickMixedSetupModalOpen, vocabSetupModalOpen, difficultyModalOpen, vocabKanaToRomajiMaxQuestions, vocabKanaToRomajiInputLang,
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
     selectedVocabCategories, selectedVocabScript, enteredDifficultyFromVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
-    quizType, options, selectedOption, isAnswered, quizResults, manualInput,
+    quizType, options, selectedOption, isAnswered, quizResults, manualInput, quickMixedQuizSession,
+    quickMixedQuizHiraIds, quickMixedQuizKataIds, quickMixedModalHiraIds, quickMixedModalKataIds,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
     answerFeedback, lastAnswerSnapshot,
     speakText, sync, saveNow, endQuiz, closeQuizAndOptionalSave, openQuizEndModalAndSave, closeQuizEndModal, restartQuizFromEndModal, genOptions, initVocabKanaRead, initVocabRomajiInput,
@@ -1541,7 +1679,9 @@ export const useAppStore = defineStore('app', () => {
     advanceAfterFeedback, undoLastAnswer,
     orderVocabCategories,
     getVocabScriptsFromWord, matchVocabItemByScript, filterVocabByScript,
-    handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, backFromDifficultyToVocabSetup, closeDifficultyModal, closeVocabSetupModal, startQuizFinal, restartLastKanaQuiz, restartLastKatakanaQuiz,
+    handleStartQuizClick, proceedFromSetup, proceedFromKatakanaSetup, proceedFromVocabSetup, backFromDifficultyToVocabSetup, closeDifficultyModal, closeVocabSetupModal, startQuizFinal, startQuickMixedKanaQuiz,
+    openQuickMixedSetupModal, saveQuickMixedSetup, closeQuickMixedSetupModal,
+    restartLastKanaQuiz, restartLastKatakanaQuiz,
     updateVocabNoteLocal,
     resetKanaScore, resetKatakanaScore, resetVocabScore,
     selectProfile, setProfileFromRoute, switchProfile,

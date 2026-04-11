@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, nextTick, onMounted } from 'vue'
-import { RotateCcw, BookOpen } from 'lucide-vue-next'
+import { RotateCcw, BookOpen, Settings } from 'lucide-vue-next'
 import { useAppStore, INITIAL_KANA, INITIAL_KATAKANA, INITIAL_VOCAB } from '../stores/appStore'
 
 const store = useAppStore()
@@ -144,24 +144,41 @@ const periodWrongPct = computed(() =>
   periodTotal.value > 0 ? Math.round((periodWrong.value / periodTotal.value) * 100) : 0
 )
 
-// Giorni consecutivi: richiede attività anche oggi (reset automatico a mezzanotte se oggi è vuoto).
+// Giorni consecutivi: oggi ancora senza quiz non azzera la streak (si conta da ieri).
+// Zero solo se anche ieri è vuoto = è passata almeno una giornata calendario senza attività.
 const consecutiveDays = computed(() => {
   const stats = store.dailyStats
-  const d = new Date()
-  let count = 0
-  for (let i = 0; i < 365; i++) {
-    const key = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+
+  const dayTotal = (key) => {
     const raw = stats[key]
+    if (!raw) return 0
     const kanaRaw = raw?.kana && typeof raw.kana === 'object' ? (raw.kana.total ?? 0) : (raw?.total ?? 0)
     const katakanaRaw = raw?.katakana && typeof raw.katakana === 'object' ? (raw.katakana.total ?? 0) : 0
     const vocabTotal = raw?.vocab && typeof raw.vocab === 'object' ? (raw.vocab.total ?? 0) : 0
-    const total = (kanaRaw + katakanaRaw + vocabTotal) || (raw?.total ?? 0)
-    if (total > 0) {
-      count++
-    } else {
-      break
-    }
-    d.setDate(d.getDate() - 1)
+    return (kanaRaw + katakanaRaw + vocabTotal) || (raw?.total ?? 0)
+  }
+
+  const now = new Date()
+  const todayKey = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+  const y = new Date(now)
+  y.setDate(y.getDate() - 1)
+  const yesterdayKey = new Date(y.getTime() - y.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+
+  let walk = new Date(now)
+  if (dayTotal(todayKey) > 0) {
+    // chain ends today
+  } else if (dayTotal(yesterdayKey) > 0) {
+    walk.setDate(walk.getDate() - 1)
+  } else {
+    return 0
+  }
+
+  let count = 0
+  for (let i = 0; i < 365; i++) {
+    const key = new Date(walk.getTime() - walk.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    if (dayTotal(key) <= 0) break
+    count++
+    walk.setDate(walk.getDate() - 1)
   }
   return count
 })
@@ -314,6 +331,27 @@ const selectDay = (key) => {
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="flex items-stretch gap-2 w-full">
+      <div class="flex-1 min-w-0 rounded-3xl p-px border-gradient-rise shadow-sm active:scale-[0.98] transition-transform">
+        <button
+          type="button"
+          class="w-full rounded-[1.4375rem] bg-white py-4 px-5 text-center text-xs sm:text-sm font-black text-slate-400 uppercase tracking-widest"
+          @click="store.startQuickMixedKanaQuiz()"
+        >
+          Quiz rapido
+        </button>
+      </div>
+      <button
+        type="button"
+        class="shrink-0 w-14 sm:w-[3.75rem] flex items-center justify-center rounded-3xl border border-slate-200 bg-white text-slate-400 shadow-sm active:scale-95 transition-all hover:bg-slate-50 hover:border-slate-300"
+        title="Configura quiz rapido"
+        aria-label="Configura quiz rapido"
+        @click="store.openQuickMixedSetupModal()"
+      >
+        <Settings :size="22" :stroke-width="2" />
+      </button>
     </div>
 
     <!-- Kana oggi: viola chiaro palette calda -->

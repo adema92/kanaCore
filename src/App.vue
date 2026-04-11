@@ -40,13 +40,21 @@ const vocabSetupScriptLabel = computed(() => {
 
 const quizActiveBgStyle = computed(() => {
   const t = store.quizType
-  const bg = t === 'katakana' ? '#f0f6ff' : t?.startsWith('vocab') ? '#fffbeb' : '#fff0f5'
+  const bg =
+    t === 'katakana'
+      ? '#f0f6ff'
+      : t === 'kana-mixed'
+        ? '#faf5ff'
+        : t?.startsWith('vocab')
+          ? '#fffbeb'
+          : '#fff0f5'
   return { background: bg, height: '100dvh' }
 })
 
 const quizAccent = computed(() => {
   const t = store.quizType
   if (t === 'katakana') return { border: 'border-blue-50', progress: 'bg-blue-400', cardBorder: 'border-blue-100', text: 'text-blue-300', textActive: 'active:text-blue-400', cta: 'bg-blue-400 active:bg-blue-500', ctaText: 'text-blue-500', focusBorder: 'focus:border-blue-300' }
+  if (t === 'kana-mixed') return { border: 'border-violet-50', progress: 'bg-violet-400', cardBorder: 'border-violet-100', text: 'text-violet-400', textActive: 'active:text-violet-500', cta: 'bg-violet-500 active:bg-violet-600', ctaText: 'text-violet-600', focusBorder: 'focus:border-violet-300' }
   if (t?.startsWith('vocab')) return { border: 'border-amber-50', progress: 'bg-amber-400', cardBorder: 'border-amber-100', text: 'text-amber-300', textActive: 'active:text-amber-400', cta: 'bg-amber-400 active:bg-amber-500', ctaText: 'text-amber-500', focusBorder: 'focus:border-amber-300' }
   return { border: 'border-pink-50', progress: 'bg-pink-400', cardBorder: 'border-pink-100', text: 'text-pink-300', textActive: 'active:text-pink-400', cta: 'bg-pink-400 active:bg-pink-500', ctaText: 'text-pink-500', focusBorder: 'focus:border-pink-300' }
 })
@@ -65,6 +73,9 @@ const quizEndChartData = computed(() => {
   if (t === 'katakana') {
     correctColor = 'rgb(168 249 173)'
     wrongColor = '#63a8eb'
+  } else if (t === 'kana-mixed') {
+    correctColor = '#a78bfa'
+    wrongColor = '#f9a8d4'
   } else if (t?.startsWith('vocab')) {
     correctColor = '#34d399'
     wrongColor = '#f9a8d4'
@@ -305,7 +316,9 @@ const preloadImages = () =>
     )
   )
 
-const isKanaQuiz = computed(() => store.quizType === 'kana' || store.quizType === 'katakana')
+const isKanaQuiz = computed(() =>
+  store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'kana-mixed'
+)
 
 const currentQuestion = computed(() =>
   store.quizQueue.length && store.currentQuestionIndex < store.quizQueue.length
@@ -321,6 +334,7 @@ const quizModeLabel = computed(() => {
   if (type === 'vocab-romaji') return '🗣️ Significato → scrivi il romaji'
   if (type === 'kana') return dir === 'ja-to-romaji' ? '👁 Kana → Lettura' : '👁 Lettura → Kana'
   if (type === 'katakana') return dir === 'ja-to-romaji' ? '👁 Katakana → Lettura' : '👁 Lettura → Katakana'
+  if (type === 'kana-mixed') return '⚡ Quiz rapido · Hiragana + Katakana'
   if (type === 'vocab') return dir === 'ja-to-romaji' ? '👁 Parola → Significato' : '👁 Romaji → Parola'
   return 'Quiz'
 })
@@ -350,14 +364,19 @@ const finalInputClass = computed(() => {
   const base = isKanaRomaji
     ? 'w-full p-3 lg:p-5 rounded-xl lg:rounded-2xl border-2 lg:border-4 text-center font-black text-base lg:text-2xl focus:outline-none transition-all duration-150 '
     : 'w-full p-5 lg:p-6 rounded-2xl border-4 text-center font-black text-2xl lg:text-4xl focus:outline-none transition-all duration-150 '
-  if (!store.isAnswered) return base + 'border-slate-100 bg-white shadow-lg ' + (store.quizType === 'katakana' ? 'focus:border-blue-300' : store.quizType?.startsWith('vocab') ? 'focus:border-amber-300' : 'focus:border-pink-300')
+  if (!store.isAnswered) {
+    const kataFocus =
+      store.quizType === 'katakana' ||
+      (store.quizType === 'kana-mixed' && currentQuestion.value?.__mixedScript === 'kata')
+    return base + 'border-slate-100 bg-white shadow-lg ' + (kataFocus ? 'focus:border-blue-300' : store.quizType?.startsWith('vocab') ? 'focus:border-amber-300' : store.quizType === 'kana-mixed' ? 'focus:border-violet-300' : 'focus:border-pink-300')
+  }
   const userText = store.manualInput.trim().toLowerCase()
   const q = currentQuestion.value
   let correctText = ''
   let correct = false
   if (store.quizType === 'vocab-kana-to-romaji' && store.answerFeedback != null) {
     correct = store.answerFeedback.ok
-  } else if (store.quizType === 'kana' || store.quizType === 'katakana') {
+  } else if (store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'kana-mixed') {
     correctText = store.quizDirection === 'ja-to-romaji'
       ? (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || '')
       : (q?.character?.trim() || '')
@@ -424,9 +443,11 @@ function getToneConfig(tone) {
 
 function getOptionLabel(opt) {
   if (store.quizType === 'vocab-romaji') return opt.romaji.split('/')[0]
+  const isKanaLike =
+    store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'kana-mixed'
   if (store.quizDirection === 'ja-to-romaji')
-    return (store.quizType === 'kana' || store.quizType === 'katakana') ? opt.romaji : opt.meaning
-  return (store.quizType === 'kana' || store.quizType === 'katakana') ? opt.character : opt.word.split('/')[0]
+    return isKanaLike ? opt.romaji : opt.meaning
+  return isKanaLike ? opt.character : opt.word.split('/')[0]
 }
 
 function getOptionTone(opt) {
@@ -456,6 +477,7 @@ const isAnyModalOpen = computed(() =>
     store.quizEndModalPhase ||
     store.quizSetupModalOpen ||
     store.katakanaSetupModalOpen ||
+    store.quickMixedSetupModalOpen ||
     store.vocabSetupModalOpen ||
     store.difficultyModalOpen ||
     store.showSaveProgressAfterQuiz ||
@@ -736,6 +758,13 @@ onUnmounted(() => {
             <span class="text-slate-300">Corrette: <strong :style="{ color: quizEndChartData.correctColor }">{{ quizEndChartData.correct }}</strong></span>
             <span class="text-slate-300">Errate: <strong :style="{ color: quizEndChartData.wrongColor }">{{ quizEndChartData.wrong }}</strong></span>
           </div>
+          <p
+            v-if="store.quizType === 'kana-mixed'"
+            class="text-center text-xs font-semibold mb-2 max-w-sm flex flex-wrap justify-center gap-x-2 gap-y-1"
+          >
+            <span class="text-violet-600 font-bold">hiragana ✓ {{ store.quickMixedQuizSession.hiraCorrect }} · ✗ {{ store.quickMixedQuizSession.hiraWrong }}</span>
+            <span class="text-blue-500 font-bold">katakana ✓ {{ store.quickMixedQuizSession.kataCorrect }} · ✗ {{ store.quickMixedQuizSession.kataWrong }}</span>
+          </p>
           <div class="flex flex-col sm:flex-row gap-3 w-full mt-6">
             <button
               type="button"
@@ -966,6 +995,107 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- ===== MODAL CONFIG QUIZ RAPIDO (hiragana + katakana, difficoltà fissa digitazione) ===== -->
+      <div
+        v-if="store.quickMixedSetupModalOpen"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-end sm:items-center justify-center overflow-hidden"
+        style="touch-action:none;"
+        @click.self="store.closeQuickMixedSetupModal()"
+      >
+        <div class="bg-white w-full max-w-xl lg:max-w-[980px] rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl flex flex-col h-[97dvh] sm:max-h-[97dvh] lg:max-h-[92dvh]">
+          <div class="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
+            <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
+          </div>
+          <div class="flex justify-between items-center px-6 pt-4 pb-2 shrink-0 border-b border-slate-100">
+            <div>
+              <h3 class="text-lg font-black text-slate-700 uppercase tracking-widest">Quiz rapido</h3>
+              <p class="text-[11px] font-semibold text-slate-400 mt-1">Digitazione romaji (fissa). Scegli solo con i preset; le scelte si salvano sul profilo.</p>
+            </div>
+            <button
+              type="button"
+              class="bg-slate-100 p-2.5 rounded-full text-slate-500 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
+              aria-label="Chiudi"
+              @click="store.closeQuickMixedSetupModal()"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+
+          <div class="overflow-y-auto flex-1 px-6 space-y-8 py-4 pb-2">
+            <!-- Hiragana -->
+            <section>
+              <p class="text-[11px] font-black text-pink-400 uppercase tracking-[0.3em] mb-3">Hiragana</p>
+              <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
+              <div class="flex flex-wrap gap-2 mb-4 items-stretch justify-center">
+                <button
+                  v-for="p in hiraganaPresets"
+                  :key="p.id"
+                  type="button"
+                  :class="[
+                    'inline-flex items-center justify-center w-[4.25rem] min-w-[4.25rem] min-h-11 lg:min-h-12 lg:w-[5rem] lg:min-w-[5rem] px-3 font-black rounded-xl uppercase border-2 transition-all',
+                    p.compactLabel ? 'text-[10px] lg:text-xs leading-tight tracking-wide' : 'text-xs lg:text-sm',
+                    p.kanaIds.every(id => store.quickMixedModalHiraIds.includes(id))
+                      ? 'bg-pink-400 border-pink-400 text-white'
+                      : 'bg-pink-50 text-pink-600 border-pink-100 active:bg-pink-100'
+                  ]"
+                  @click="() => {
+                    const ids = p.kanaIds
+                    const allIn = ids.every(id => store.quickMixedModalHiraIds.includes(id))
+                    if (allIn)
+                      store.quickMixedModalHiraIds = store.quickMixedModalHiraIds.filter(id => !ids.includes(id))
+                    else
+                      store.quickMixedModalHiraIds = [...new Set([...store.quickMixedModalHiraIds, ...ids])]
+                  }"
+                >{{ p.name }}</button>
+              </div>
+            </section>
+
+            <!-- Katakana -->
+            <section>
+              <p class="text-[11px] font-black uppercase tracking-[0.3em] mb-3" style="color:#63a8eb;">Katakana</p>
+              <p class="text-[11px] font-black text-slate-300 uppercase tracking-[0.3em] mb-3">✨ Preset rapidi</p>
+              <div class="flex flex-wrap gap-2 mb-4 items-center justify-center">
+                <button
+                  v-for="p in katakanaPresets"
+                  :key="p.id"
+                  type="button"
+                  :class="[
+                    'w-[4.25rem] min-w-[4.25rem] lg:w-[5rem] lg:min-w-[5rem] px-5 py-2.5 lg:py-3 font-black rounded-xl uppercase text-xs lg:text-sm border-2 transition-all',
+                    p.kanaIds.every(id => store.quickMixedModalKataIds.includes(id))
+                      ? 'text-white'
+                      : 'bg-blue-50 text-blue-600 border-blue-100 active:bg-blue-100'
+                  ]"
+                  :style="p.kanaIds.every(id => store.quickMixedModalKataIds.includes(id))
+                    ? 'background:#63a8eb; border-color:#63a8eb;'
+                    : ''"
+                  @click="() => {
+                    const ids = p.kanaIds
+                    const allIn = ids.every(id => store.quickMixedModalKataIds.includes(id))
+                    if (allIn)
+                      store.quickMixedModalKataIds = store.quickMixedModalKataIds.filter(id => !ids.includes(id))
+                    else
+                      store.quickMixedModalKataIds = [...new Set([...store.quickMixedModalKataIds, ...ids])]
+                  }"
+                >{{ p.name }}</button>
+              </div>
+            </section>
+          </div>
+
+          <div class="px-6 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] shrink-0 border-t border-slate-200 flex gap-3 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+            <button
+              type="button"
+              class="flex-1 bg-slate-100 text-slate-600 font-black py-4 rounded-2xl uppercase tracking-widest text-sm active:scale-[0.98] transition-all"
+              @click="store.closeQuickMixedSetupModal()"
+            >Annulla</button>
+            <button
+              type="button"
+              class="flex-1 bg-violet-500 text-white font-black py-4 rounded-2xl shadow-lg uppercase tracking-widest text-sm active:scale-[0.98] active:bg-violet-600 transition-all"
+              @click="store.saveQuickMixedSetup()"
+            >Salva</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== QUIZ ATTIVO ===== -->
       <div
         v-if="store.quizActive"
@@ -973,21 +1103,34 @@ onUnmounted(() => {
         :style="quizActiveBgStyle"
       >
         <!-- Header quiz: solo barra avanzamento -->
-        <div :class="['shrink-0 flex items-center gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-white border-b', quizAccent.border]">
-          <button
-            class="p-2.5 bg-slate-50 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
-            @click="store.endQuiz()"
-          ><X :size="20" /></button>
-          <div class="flex-1 min-w-0 flex items-center gap-2">
-            <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                :class="['h-full transition-all duration-300', quizAccent.progress]"
+        <div :class="['shrink-0 flex flex-col gap-1.5 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 bg-white border-b', quizAccent.border]">
+          <div class="flex items-center gap-2 w-full">
+            <button
+              class="p-2.5 bg-slate-50 rounded-full text-slate-400 active:bg-rose-50 active:text-rose-500 transition-all shrink-0"
+              @click="store.endQuiz()"
+            ><X :size="20" /></button>
+            <div class="flex-1 min-w-0 flex items-center gap-2">
+              <div class="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  :class="['h-full transition-all duration-300', quizAccent.progress]"
                   :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
                 ></div>
               </div>
-            <span class="text-[11px] font-black text-slate-400 shrink-0">
+              <span class="text-[11px] font-black text-slate-400 shrink-0 tabular-nums">
                 {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
               </span>
+            </div>
+          </div>
+          <div
+            v-if="store.quizType === 'kana-mixed'"
+            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5 w-full text-[10px] font-black leading-tight"
+          >
+            <span class="text-violet-600">
+              hiragana ✓{{ store.quickMixedQuizSession.hiraCorrect }} ✗{{ store.quickMixedQuizSession.hiraWrong }}
+            </span>
+            <span class="text-blue-500">
+              katakana ✓{{ store.quickMixedQuizSession.kataCorrect }} ✗{{ store.quickMixedQuizSession.kataWrong }}
+            </span>
           </div>
         </div>
 
@@ -1143,13 +1286,20 @@ onUnmounted(() => {
                 @click="store.speakText(currentQuestion?.word)"
               ><Volume2 :size="28" /></button>
             </template>
-            <!-- Layout standard: kana / parola -->
+            <!-- Layout standard: kana / parola (quiz misto: niente etichetta/occhio per non rivelare lo script) -->
             <template v-else>
               <p
+                v-if="store.quizType !== 'kana-mixed'"
                 class="text-[11px] font-black uppercase tracking-[0.3em] mb-2"
                 :class="quizAccent.text"
               >
-                {{ store.quizDirection === 'ja-to-romaji' ? (store.quizType === 'katakana' ? '👁 Katakana' : isKanaQuiz ? '👁 Kana' : '👁 Parola') : '👁 Lettura' }}
+                {{ store.quizDirection === 'ja-to-romaji'
+                  ? (store.quizType === 'katakana'
+                    ? '👁 Katakana'
+                    : isKanaQuiz
+                      ? '👁 Kana'
+                      : '👁 Parola')
+                  : '👁 Lettura' }}
               </p>
               <div
                 :class="[
@@ -1185,7 +1335,7 @@ onUnmounted(() => {
               :lang="store.quizType === 'vocab-kana-to-romaji' ? 'ja' : undefined"
               :placeholder="store.quizType === 'vocab-kana-to-romaji'
                 ? (store.vocabKanaToRomajiInputLang === 'it' ? 'Scrivi la parola in kana...' : 'es: sushi, ohayō...')
-                : store.quizType === 'kana'
+                : (store.quizType === 'kana' || store.quizType === 'kana-mixed')
                 ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
                 : store.quizType === 'vocab-romaji'
                   ? 'es: ohayō, arigatō...'
@@ -1991,7 +2141,7 @@ onUnmounted(() => {
 
               <!-- Blocco centrale: nascosto se sbagliato kana/katakana romaji→kana finché non si tocca "Vedi risposta" (evita spoiler) -->
               <div
-                v-if="store.answerFeedback.ok || (!store.quizType.startsWith('vocab') && (!['kana','katakana'].includes(store.quizType) || store.quizDirection !== 'romaji-to-ja' || showCorrectAnswerInFeedback))"
+                v-if="store.answerFeedback.ok || (!store.quizType.startsWith('vocab') && (!['kana','katakana','kana-mixed'].includes(store.quizType) || store.quizDirection !== 'romaji-to-ja' || showCorrectAnswerInFeedback))"
                 class="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center"
               >
                 <p class="text-3xl font-black text-slate-700 mb-1">{{ store.answerFeedback.questionLabel }}</p>

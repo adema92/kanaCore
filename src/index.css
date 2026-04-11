@@ -79,6 +79,22 @@
     animation: gradient-rise 4s ease-in-out infinite;
   }
 
+  /* Ring 1px: stessi colori e animazione del numero «giorni consecutivi». */
+  .border-gradient-rise {
+    background: linear-gradient(
+      to bottom,
+      #e9d5ff 0%,
+      #f5d0eb 16%,
+      #ddd6fe 33%,
+      #fbcfe8 50%,
+      #c4b5fd 66%,
+      #f9a8d4 83%,
+      #e9d5ff 100%
+    );
+    background-size: 100% 400%;
+    animation: gradient-rise 4s ease-in-out infinite;
+  }
+
   /* Gradiente bianco-rosa da sinistra a destra per scritta caricamento. */
   @keyframes gradient-shimmer {
     0% { background-position: 200% 50%; }
