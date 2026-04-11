@@ -55,5 +55,15 @@
   { "id": "rkt_54", "word": "ミュージカル", "romaji": "Myūjikaru", "meaning": "Musical", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rkt_55", "word": "シュークリーム", "romaji": "Shūkurīmu", "meaning": "Bignè alla crema", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rkt_56", "word": "ジャンル", "romaji": "Janru", "meaning": "Genere", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "rkt_57", "word": "ニュース", "romaji": "Nyūsu", "meaning": "Notizie", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "rkt_57", "word": "ニュース", "romaji": "Nyūsu", "meaning": "Notizie", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_58", "word": "ピザ", "romaji": "Piza", "meaning": "Pizza", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_59", "word": "ウィキペディア", "romaji": "Uikipedia", "meaning": "Wikipedia", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_60", "word": "ポテトチップス", "romaji": "Potetochippusu", "meaning": "Patatine", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_61", "word": "ワイン", "romaji": "Wain", "meaning": "Vino / Wine", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_62", "word": "インスタグラム", "romaji": "Insutaguramu", "meaning": "Instagram", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_63", "word": "フェイスブック", "romaji": "Feisubukku", "meaning": "Facebook", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_64", "word": "ヴェネツィア", "romaji": "Venetsia", "meaning": "Venezia", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_65", "word": "フィレンツェ", "romaji": "Firentse", "meaning": "Firenze", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_66", "word": "イタリア", "romaji": "Itaria", "meaning": "Italia", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_67", "word": "ローマ", "romaji": "Rōma", "meaning": "Roma", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
 ]
