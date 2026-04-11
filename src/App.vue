@@ -102,19 +102,42 @@ const profilePickerJustSelected = ref(false)
 const profilePickerStyle = ref({})
 const profileEricaRef = ref(null)
 const profileAndreaRef = ref(null)
-let homeLongPressTimer = null
-const LONG_PRESS_MS = 400
-const homeLongPressStart = ref(null)
-const LONG_PRESS_MOVE_THRESHOLD = 18
 const navPaths = ['home', '/hiragana', '/katakana', '/vocab']
 const isCoarsePointer = ref(false)
+/** Pointer id captured on nav bar (swipe tra tab su touch). */
+let navCapturedPointerId = null
+/** After swipe-to-home on touch, ignore the synthetic click (navigation already ran). */
+let suppressNextHomeClick = false
+let navPointerStart = null
+let navPointerMoved = false
+const NAV_SWIPE_MOVE_THRESHOLD = 10
 
-function clearHomeLongPress() {
-  if (homeLongPressTimer) {
-    clearTimeout(homeLongPressTimer)
-    homeLongPressTimer = null
+function releaseNavPointerCaptureIfAny() {
+  if (navCapturedPointerId == null || !navInnerRef.value) return
+  try {
+    navInnerRef.value.releasePointerCapture(navCapturedPointerId)
+  } catch (_) {
+    /* already released */
   }
-  homeLongPressStart.value = null
+  navCapturedPointerId = null
+}
+
+/** Close picker, remove document listeners, optional navigate (erica | andrea | null = cancel). */
+function finalizeProfilePickerSelection(profile) {
+  if (!profilePickerOpen.value) return
+  profilePickerOpen.value = false
+  profilePickerHover.value = null
+  document.removeEventListener('pointermove', onProfilePickerPointerMove, true)
+  document.removeEventListener('pointerup', onProfilePickerPointerUp, true)
+  document.removeEventListener('pointercancel', onProfilePickerPointerUp, true)
+  releaseNavPointerCaptureIfAny()
+  if (profile === 'erica') {
+    router.push('/erica')
+    profilePickerJustSelected.value = true
+  } else if (profile === 'andrea') {
+    router.push('/andrea')
+    profilePickerJustSelected.value = true
+  }
 }
 
 function getProfileAtPoint(clientX, clientY) {
@@ -131,15 +154,35 @@ function getProfileAtPoint(clientX, clientY) {
   return null
 }
 
-function onHomePointerUp(e) {
-  if (profilePickerJustSelected.value) {
-    profilePickerJustSelected.value = false
+function openProfilePickerFromHome() {
+  if (profilePickerOpen.value) return
+  profilePickerHover.value = null
+  if (homeNavWrapRef.value) {
+    const rect = homeNavWrapRef.value.getBoundingClientRect()
+    const pickerWidth = 72
+    profilePickerStyle.value = {
+      left: `${rect.left + rect.width / 2 - pickerWidth / 2}px`,
+      bottom: `${window.innerHeight - rect.top + 8}px`,
+    }
+  }
+  profilePickerOpen.value = true
+  navVibrate()
+  document.addEventListener('pointermove', onProfilePickerPointerMove, true)
+  document.addEventListener('pointerup', onProfilePickerPointerUp, true)
+  document.addEventListener('pointercancel', onProfilePickerPointerUp, true)
+}
+
+/** Home: se sei già su profilo/utente → apre il picker; altrimenti naviga alla home. */
+function handleHomeNavClick() {
+  if (suppressNextHomeClick) {
+    suppressNextHomeClick = false
     return
   }
-  if (!profilePickerOpen.value) {
-    clearHomeLongPress()
-    router.push(store.currentProfile === 'erica' ? '/erica' : '/andrea')
+  if (currentNavPath.value === 'home') {
+    openProfilePickerFromHome()
+    return
   }
+  goToNav('home')
 }
 
 function getNavPathAtPoint(clientX, clientY) {
@@ -186,63 +229,50 @@ function goToNav(path) {
 }
 
 function onNavPointerDown(e) {
-  e.preventDefault()
+  if (e.pointerType === 'mouse' && e.button !== 0) return
   navInnerRef.value?.setPointerCapture(e.pointerId)
+  navCapturedPointerId = e.pointerId
+  navPointerStart = { x: e.clientX, y: e.clientY }
+  navPointerMoved = false
   const path = getNavPathAtPoint(e.clientX, e.clientY)
   navDragOverPath.value = path
-  if (path === 'home') {
-    profilePickerHover.value = null
-    clearHomeLongPress()
-    homeLongPressStart.value = { x: e.clientX, y: e.clientY }
-    homeLongPressTimer = setTimeout(() => {
-      homeLongPressTimer = null
-      homeLongPressStart.value = null
-      if (homeNavWrapRef.value) {
-        const rect = homeNavWrapRef.value.getBoundingClientRect()
-        const pickerWidth = 72
-        profilePickerStyle.value = {
-          left: `${rect.left + rect.width / 2 - pickerWidth / 2}px`,
-          bottom: `${window.innerHeight - rect.top + 8}px`,
-        }
-      }
-      profilePickerOpen.value = true
-      document.addEventListener('pointermove', onProfilePickerPointerMove, true)
-      document.addEventListener('pointerup', onProfilePickerPointerUp, true)
-      document.addEventListener('pointercancel', onProfilePickerPointerUp, true)
-    }, LONG_PRESS_MS)
-  }
 }
 
 function onNavPointerMove(e) {
   const path = getNavPathAtPoint(e.clientX, e.clientY)
   navDragOverPath.value = path
-  if (homeLongPressStart.value != null) {
-    const dx = e.clientX - homeLongPressStart.value.x
-    const dy = e.clientY - homeLongPressStart.value.y
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    if (path !== 'home' || dist > LONG_PRESS_MOVE_THRESHOLD) clearHomeLongPress()
-  } else {
-    clearHomeLongPress()
+  if (navPointerStart) {
+    const dx = e.clientX - navPointerStart.x
+    const dy = e.clientY - navPointerStart.y
+    if (Math.hypot(dx, dy) > NAV_SWIPE_MOVE_THRESHOLD) navPointerMoved = true
   }
 }
 
 function onNavPointerUp(e) {
   if (profilePickerOpen.value) {
-    navInnerRef.value?.releasePointerCapture(e.pointerId)
     navDragOverPath.value = null
+    navPointerStart = null
+    navPointerMoved = false
     return
   }
   if (profilePickerJustSelected.value) {
     profilePickerJustSelected.value = false
-    navInnerRef.value?.releasePointerCapture(e.pointerId)
+    releaseNavPointerCaptureIfAny()
     navDragOverPath.value = null
+    navPointerStart = null
+    navPointerMoved = false
     return
   }
-  clearHomeLongPress()
   const path = getNavPathAtPoint(e.clientX, e.clientY)
   navDragOverPath.value = null
-  navInnerRef.value?.releasePointerCapture(e.pointerId)
+  releaseNavPointerCaptureIfAny()
+  const moved = navPointerMoved
+  navPointerMoved = false
+  navPointerStart = null
+  // Tap su Home senza swipe: solo click (già su profilo → picker). Swipe che termina su Home → goToNav qui.
+  if (path === 'home' && !moved) return
   if (!path || path === currentNavPath.value) return
+  if (path === 'home' && moved) suppressNextHomeClick = true
   goToNav(path)
 }
 
@@ -252,23 +282,19 @@ function onProfilePickerPointerMove(e) {
 
 function onProfilePickerPointerUp(e) {
   const profile = profilePickerOpen.value ? getProfileAtPoint(e.clientX, e.clientY) : null
-  profilePickerOpen.value = false
-  profilePickerHover.value = null
-  document.removeEventListener('pointermove', onProfilePickerPointerMove, true)
-  document.removeEventListener('pointerup', onProfilePickerPointerUp, true)
-  document.removeEventListener('pointercancel', onProfilePickerPointerUp, true)
-  if (profile === 'erica') {
-    router.push('/erica')
-    profilePickerJustSelected.value = true
-  } else if (profile === 'andrea') {
-    router.push('/andrea')
-    profilePickerJustSelected.value = true
-  }
+  finalizeProfilePickerSelection(profile)
+}
+
+function onProfileTileActivate(profile) {
+  finalizeProfilePickerSelection(profile)
 }
 
 function updatePointerCapabilities() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
-  isCoarsePointer.value = window.matchMedia('(pointer: coarse)').matches
+  const mqCoarse = window.matchMedia('(pointer: coarse)')
+  const mqAnyCoarse = window.matchMedia('(any-pointer: coarse)')
+  const mqNoHover = window.matchMedia('(hover: none)')
+  isCoarsePointer.value = mqCoarse.matches || mqAnyCoarse.matches || mqNoHover.matches
 }
 
 function onNavKeydown(e) {
@@ -1968,7 +1994,7 @@ onUnmounted(() => {
             ref="homeNavWrapRef"
             class="flex flex-col items-center justify-center"
           >
-            <NavItem :label="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" :aria-current="(route.path === '/andrea' || route.path === '/erica') ? 'page' : null" color="dark" plain @click="goToNav('home')">
+            <NavItem :label="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'" :active="route.path === '/andrea' || route.path === '/erica'" :highlight="navDragOverPath === 'home'" :aria-current="(route.path === '/andrea' || route.path === '/erica') ? 'page' : null" color="dark" plain @click="handleHomeNavClick">
               <img
                 :src="store.currentProfile === 'erica' ? '/avatar-erica.png' : '/avatar-andrea.png'"
                 :alt="store.currentProfile === 'erica' ? 'Erica' : 'Andrea'"
@@ -1997,27 +2023,35 @@ onUnmounted(() => {
         </div>
       </nav>
 
-      <!-- Picker profilo: long-press su Home, due quadrati verticali sopra Home -->
+      <!-- Picker profilo: tap su Home quando sei già su profilo/utente -->
       <Transition name="fade">
         <div
           v-if="profilePickerOpen"
-          class="fixed z-[60] flex flex-col gap-2 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl p-2"
+          class="fixed z-[60] flex flex-col gap-2 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl p-2 touch-manipulation"
           :style="profilePickerStyle"
+          role="dialog"
+          aria-label="Cambia profilo"
         >
-          <div
+          <button
+            type="button"
             ref="profileEricaRef"
-            class="w-14 h-14 rounded-xl flex items-center justify-center border-2 transition-colors"
+            class="w-14 h-14 rounded-xl flex items-center justify-center border-2 transition-colors touch-manipulation"
             :class="profilePickerHover === 'erica' ? 'border-pink-400 bg-pink-50' : 'border-slate-100 bg-slate-50'"
+            aria-label="Profilo Erica"
+            @click.stop="onProfileTileActivate('erica')"
           >
-            <img src="/avatar-erica.png" alt="Erica" class="w-10 h-10 object-contain" />
-          </div>
-          <div
+            <img src="/avatar-erica.png" alt="" class="w-10 h-10 object-contain pointer-events-none" draggable="false" />
+          </button>
+          <button
+            type="button"
             ref="profileAndreaRef"
-            class="w-14 h-14 rounded-xl flex items-center justify-center border-2 transition-colors"
+            class="w-14 h-14 rounded-xl flex items-center justify-center border-2 transition-colors touch-manipulation"
             :class="profilePickerHover === 'andrea' ? 'border-indigo-400 bg-indigo-50' : 'border-slate-100 bg-slate-50'"
+            aria-label="Profilo Andrea"
+            @click.stop="onProfileTileActivate('andrea')"
           >
-            <img src="/avatar-andrea.png" alt="Andrea" class="w-10 h-10 object-contain" />
-          </div>
+            <img src="/avatar-andrea.png" alt="" class="w-10 h-10 object-contain pointer-events-none" draggable="false" />
+          </button>
         </div>
       </Transition>
 
