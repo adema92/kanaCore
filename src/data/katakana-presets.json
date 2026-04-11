@@ -28,7 +28,7 @@
   { "id": "ktp17", "name": "VA", "kanaIds": ["kt105", "kt106", "kt107", "kt108", "kt109"] },
   { "id": "ktp18", "name": "FA", "kanaIds": ["kt110", "kt111", "kt112", "kt113"] },
   { "id": "ktp19", "name": "WI", "kanaIds": ["kt114", "kt115", "kt116"] },
-  { "id": "ktp20", "name": "TSA", "kanaIds": ["kt116", "kt117", "kt118", "kt119"] },
-  { "id": "ktp21", "name": "TD", "kanaIds": ["kt120", "kt121", "kt122", "kt123"] },
-  { "id": "ktp22", "name": "SHE", "kanaIds": ["kt124", "kt125", "kt126"] }
+  { "id": "ktp20", "name": "TSA", "kanaIds": ["kt117", "kt118", "kt119", "kt120"] },
+  { "id": "ktp21", "name": "TD", "kanaIds": ["kt121", "kt122", "kt123", "kt124"] },
+  { "id": "ktp22", "name": "SHE", "kanaIds": ["kt125", "kt126", "kt127"] }
 ]
