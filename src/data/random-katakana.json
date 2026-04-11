@@ -48,5 +48,12 @@
   { "id": "rkt_47", "word": "パン", "romaji": "Pan", "meaning": "Pane", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rkt_48", "word": "ピアノ", "romaji": "Piano", "meaning": "Pianoforte", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "rkt_49", "word": "ペンギン", "romaji": "Pengin", "meaning": "Pinguino", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "rkt_50", "word": "ポスト", "romaji": "Posuto", "meaning": "Cassetta delle lettere", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
+  { "id": "rkt_50", "word": "ポスト", "romaji": "Posuto", "meaning": "Cassetta delle lettere", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_51", "word": "シャーム", "romaji": "Shāmu", "meaning": "Charm", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_52", "word": "ジョン", "romaji": "Jon", "meaning": "John", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_53", "word": "ボローニャ", "romaji": "Borōnya", "meaning": "Bologna", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_54", "word": "ミュージカル", "romaji": "Myūjikaru", "meaning": "Musical", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_55", "word": "シュークリーム", "romaji": "Shūkurīmu", "meaning": "Bignè alla crema", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_56", "word": "ジャンル", "romaji": "Janru", "meaning": "Genere", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "rkt_57", "word": "ニュース", "romaji": "Nyūsu", "meaning": "Notizie", "category": "Random Katakana", "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
 ]
