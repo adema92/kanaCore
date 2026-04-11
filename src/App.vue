@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import {
   BookOpen, X, Volume2, ChevronLeft,
   Info, AlertTriangle, CheckCheck, Square, Save, Eye, ListOrdered,
+  CircleCheck, CircleX,
 } from 'lucide-vue-next'
 import {
   useAppStore,
@@ -784,13 +785,37 @@ onUnmounted(() => {
             <span class="text-slate-300">Corrette: <strong :style="{ color: quizEndChartData.correctColor }">{{ quizEndChartData.correct }}</strong></span>
             <span class="text-slate-300">Errate: <strong :style="{ color: quizEndChartData.wrongColor }">{{ quizEndChartData.wrong }}</strong></span>
           </div>
-          <p
+          <div
             v-if="store.quizType === 'kana-mixed'"
-            class="text-center text-xs font-semibold mb-2 max-w-sm flex flex-wrap justify-center gap-x-2 gap-y-1"
+            class="flex flex-wrap justify-center gap-2 mb-2 w-full max-w-sm"
           >
-            <span class="text-violet-600 font-bold">hiragana ✓ {{ store.quickMixedQuizSession.hiraCorrect }} · ✗ {{ store.quickMixedQuizSession.hiraWrong }}</span>
-            <span class="text-blue-500 font-bold">katakana ✓ {{ store.quickMixedQuizSession.kataCorrect }} · ✗ {{ store.quickMixedQuizSession.kataWrong }}</span>
-          </p>
+            <div
+              class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-2.5 py-1.5"
+            >
+              <span class="text-[10px] font-black uppercase tracking-widest text-pink-200">Hiragana</span>
+              <span class="inline-flex items-center gap-0.5 text-slate-300 tabular-nums text-xs font-black">
+                <CircleCheck :size="15" :stroke-width="2.25" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.hiraCorrect }}
+              </span>
+              <span class="inline-flex items-center gap-0.5 text-slate-400 tabular-nums text-xs font-black">
+                <CircleX :size="15" :stroke-width="2.25" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.hiraWrong }}
+              </span>
+            </div>
+            <div
+              class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-2.5 py-1.5"
+            >
+              <span class="text-[10px] font-black uppercase tracking-widest text-sky-200">Katakana</span>
+              <span class="inline-flex items-center gap-0.5 text-slate-300 tabular-nums text-xs font-black">
+                <CircleCheck :size="15" :stroke-width="2.25" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.kataCorrect }}
+              </span>
+              <span class="inline-flex items-center gap-0.5 text-slate-400 tabular-nums text-xs font-black">
+                <CircleX :size="15" :stroke-width="2.25" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.kataWrong }}
+              </span>
+            </div>
+          </div>
           <div class="flex flex-col sm:flex-row gap-3 w-full mt-6">
             <button
               type="button"
@@ -1142,21 +1167,43 @@ onUnmounted(() => {
                   :style="{ width: `${(store.currentQuestionIndex / store.quizQueue.length) * 100}%` }"
                 ></div>
               </div>
-              <span class="text-[11px] font-black text-slate-400 shrink-0 tabular-nums">
+              <span class="text-[11px] font-black text-slate-400 shrink-0 tabular-nums leading-none">
                 {{ store.currentQuestionIndex + 1 }}/{{ store.quizQueue.length }}
               </span>
             </div>
           </div>
           <div
             v-if="store.quizType === 'kana-mixed'"
-            class="flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5 w-full text-[10px] font-black leading-tight"
+            class="flex flex-wrap items-center justify-center gap-2 w-full"
           >
-            <span class="text-violet-600">
-              hiragana ✓{{ store.quickMixedQuizSession.hiraCorrect }} ✗{{ store.quickMixedQuizSession.hiraWrong }}
-            </span>
-            <span class="text-blue-500">
-              katakana ✓{{ store.quickMixedQuizSession.kataCorrect }} ✗{{ store.quickMixedQuizSession.kataWrong }}
-            </span>
+            <div
+              class="inline-flex items-center gap-1.5 rounded-full border border-pink-100 bg-pink-50/90 px-2 py-0.5"
+            >
+              <span class="text-[9px] font-black uppercase tracking-wider text-pink-600">Hiragana</span>
+              <span class="inline-flex items-center gap-0.5 text-slate-600 tabular-nums text-[10px] font-black">
+                <CircleCheck :size="12" :stroke-width="2.5" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.hiraCorrect }}
+              </span>
+              <span class="h-3 w-px shrink-0 bg-pink-200/80" aria-hidden="true" />
+              <span class="inline-flex items-center gap-0.5 text-slate-500 tabular-nums text-[10px] font-black">
+                <CircleX :size="12" :stroke-width="2.5" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.hiraWrong }}
+              </span>
+            </div>
+            <div
+              class="inline-flex items-center gap-1.5 rounded-full border border-sky-100 bg-sky-50/90 px-2 py-0.5"
+            >
+              <span class="text-[9px] font-black uppercase tracking-wider text-sky-700">Katakana</span>
+              <span class="inline-flex items-center gap-0.5 text-slate-600 tabular-nums text-[10px] font-black">
+                <CircleCheck :size="12" :stroke-width="2.5" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.kataCorrect }}
+              </span>
+              <span class="h-3 w-px shrink-0 bg-sky-200/80" aria-hidden="true" />
+              <span class="inline-flex items-center gap-0.5 text-slate-500 tabular-nums text-[10px] font-black">
+                <CircleX :size="12" :stroke-width="2.5" class="shrink-0" aria-hidden="true" />
+                {{ store.quickMixedQuizSession.kataWrong }}
+              </span>
+            </div>
           </div>
         </div>
 
