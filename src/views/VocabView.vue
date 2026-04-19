@@ -1,11 +1,18 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onActivated, onMounted, ref } from 'vue'
 import { BookOpen, Languages } from 'lucide-vue-next'
 import { useAppStore, vocabCategoryLabelForScript } from '../stores/appStore'
 
 const store = useAppStore()
 
-const homeScriptFilter = ref('hiragana')
+const homeScriptFilter = ref('capitoli')
+
+const resetScriptFilter = () => {
+  homeScriptFilter.value = 'capitoli'
+}
+
+onMounted(resetScriptFilter)
+onActivated(resetScriptFilter)
 
 const filteredVocabData = computed(() =>
   store.filterVocabByScript(store.vocabData, homeScriptFilter.value)
@@ -95,6 +102,16 @@ function catStats(words) {
           type="button"
           :class="[
             'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
+            homeScriptFilter === 'capitoli'
+              ? 'bg-white text-amber-600 border-amber-400'
+              : 'text-slate-500 border-transparent bg-transparent',
+          ]"
+          @click="homeScriptFilter = 'capitoli'"
+        >Capitoli</button>
+        <button
+          type="button"
+          :class="[
+            'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
             homeScriptFilter === 'hiragana'
               ? 'bg-white text-amber-600 border-amber-400'
               : 'text-slate-500 border-transparent bg-transparent',
@@ -111,16 +128,6 @@ function catStats(words) {
           ]"
           @click="homeScriptFilter = 'katakana'"
         >Katakana</button>
-        <button
-          type="button"
-          :class="[
-            'flex-1 py-2 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider border border-solid',
-            homeScriptFilter === 'both'
-              ? 'bg-white text-amber-600 border-amber-400'
-              : 'text-slate-500 border-transparent bg-transparent',
-          ]"
-          @click="homeScriptFilter = 'both'"
-        >Mix</button>
       </div>
     </div>
 

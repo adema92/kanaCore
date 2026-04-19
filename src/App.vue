@@ -36,7 +36,8 @@ const orderedVocabCategoriesList = computed(() => {
 const vocabSetupScriptLabel = computed(() => {
   if (store.selectedVocabScript === 'hiragana') return 'hiragana'
   if (store.selectedVocabScript === 'katakana') return 'katakana'
-  return 'hiragana + katakana'
+  if (store.selectedVocabScript === 'capitoli') return 'capitoli'
+  return 'hiragana'
 })
 
 const quizActiveBgStyle = computed(() => {
@@ -1479,6 +1480,11 @@ onUnmounted(() => {
             <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100 mb-3">
               <button
                 type="button"
+                :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'capitoli' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
+                @click="store.selectedVocabScript = 'capitoli'"
+              >Capitoli</button>
+              <button
+                type="button"
                 :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'hiragana' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                 @click="store.selectedVocabScript = 'hiragana'"
               >Hiragana</button>
@@ -1487,11 +1493,6 @@ onUnmounted(() => {
                 :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'katakana' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
                 @click="store.selectedVocabScript = 'katakana'"
               >Katakana</button>
-              <button
-                type="button"
-                :class="['flex-1 py-2.5 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider', store.selectedVocabScript === 'both' ? 'bg-white shadow-md text-amber-600 border border-amber-100' : 'text-slate-400']"
-                @click="store.selectedVocabScript = 'both'"
-              >Mix</button>
             </div>
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">

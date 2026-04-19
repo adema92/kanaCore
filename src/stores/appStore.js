@@ -9,9 +9,8 @@ import randomVocab from '../data/random.json'
 import randomKatakanaVocab from '../data/random-katakana.json'
 import combinateVocab from '../data/combinate.json'
 import allungamentiVocab from '../data/allungamenti.json'
-import presentazioneVocab from '../data/presentazione.json'
 import presentazioneKatakanaVocab from '../data/presentazione-katakana.json'
-import presentazioneMixVocab from '../data/presentazione-mix.json'
+import capitoloUnoVocab from '../data/capitolo_uno.json'
 import hiraganaGrid from '../data/hiragana-grid.json'
 import katakanaGrid from '../data/katakana-grid.json'
 import hiraganaPresetsJson from '../data/hiragana-presets.json'
@@ -84,9 +83,8 @@ export const INITIAL_VOCAB = [
   ...randomKatakanaVocab,
   ...combinateVocab,
   ...allungamentiVocab,
-  ...presentazioneVocab,
   ...presentazioneKatakanaVocab,
-  ...presentazioneMixVocab,
+  ...capitoloUnoVocab,
 ]
 
 /**
@@ -101,14 +99,12 @@ export function vocabCategoryLabelForScript(category, script) {
     return s || c
   }
   if (script === 'hiragana') {
-    const s = c.replace(/\s+Hiragana\s*$/i, '').trim()
+    const s = c.replace(/\s+Hiragana\s*$/i, '').replace(/\s+Mix\s*$/i, '').trim()
     return s || c
   }
-  if (script === 'both') {
-    const s = c.replace(/\s+Mix\s*$/i, '').trim()
-    return s || c
-  }
-  return c
+  if (script === 'capitoli') return c
+  const s = c.replace(/\s+Mix\s*$/i, '').trim()
+  return s || c
 }
 
 // Mappa romaji → kana per quiz lettura.
@@ -329,7 +325,7 @@ export const useAppStore = defineStore('app', () => {
   const newKatakanaPresetName = ref('')
   const quizPendingItems = ref([])
   const selectedVocabCategories = ref([])
-  const selectedVocabScript = ref('hiragana')
+  const selectedVocabScript = ref('capitoli')
   /** True after proceedFromVocabSetup; used to show "back to categories" in difficulty modal. */
   const enteredDifficultyFromVocabCategories = ref(false)
   const quizDifficulty = ref('medio')
@@ -1156,10 +1152,12 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function matchVocabItemByScript(item, script = selectedVocabScript.value) {
+    const inCapitoli = !!item?.capitoliSection
+    if (inCapitoli) return script === 'capitoli'
     const { hasHiragana, hasKatakana } = getVocabScriptsFromWord(item?.word)
-    if (script === 'both') return hasHiragana && hasKatakana
-    if (script === 'hiragana') return hasHiragana && !hasKatakana
-    if (script === 'katakana') return hasKatakana && !hasHiragana
+    if (script === 'capitoli') return false
+    if (script === 'hiragana') return hasHiragana
+    if (script === 'katakana') return hasKatakana
     return true
   }
 
@@ -1191,7 +1189,7 @@ export const useAppStore = defineStore('app', () => {
       selectedKatakanaIds.value = []
       katakanaSetupModalOpen.value = true
     } else if (type === 'vocab-kana-to-romaji') {
-      selectedVocabScript.value = 'hiragana'
+      selectedVocabScript.value = 'capitoli'
       const scriptFiltered = filterVocabByScript(vocabData.value, selectedVocabScript.value)
       const allCats = [...new Set(scriptFiltered.map(v => v.category))]
       if (allCats.length < 1) {
@@ -1204,8 +1202,14 @@ export const useAppStore = defineStore('app', () => {
       vocabSetupModalOpen.value = true
     } else {
       enteredDifficultyFromVocabCategories.value = false
-      selectedVocabScript.value = 'hiragana'
-      selectedVocabCategories.value = defaultSelectedVocabCategories([...new Set(vocabData.value.map(v => v.category))])
+      selectedVocabScript.value = 'capitoli'
+      const scriptFiltered = filterVocabByScript(vocabData.value, selectedVocabScript.value)
+      const allCats = [...new Set(scriptFiltered.map((v) => v.category))]
+      if (allCats.length < 1) {
+        customAlert.value = '🌸 Nessuna categoria vocabolario disponibile!'
+        return
+      }
+      selectedVocabCategories.value = defaultSelectedVocabCategories(allCats)
       vocabSetupModalOpen.value = true
     }
   }
@@ -1481,6 +1485,7 @@ export const useAppStore = defineStore('app', () => {
         score: cloud?.score ?? base.score,
         attempts: cloud?.attempts ?? base.attempts,
         personalNote: cloud?.personalNote ?? base.personalNote,
+        capitoliSection: cloud?.capitoliSection ?? base.capitoliSection,
       }
     })
     const normalizedDaily = {}
