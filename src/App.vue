@@ -1557,7 +1557,7 @@ onUnmounted(() => {
             </div>
             <p class="text-xs font-semibold text-slate-400">
               <template v-if="store.quizType === 'vocab-kana-to-romaji'">
-                Scegli una o più <b>categorie</b> per il quiz parole (Kana → romaji), filtrate per <b>{{ vocabSetupScriptLabel }}</b>.
+                Scegli una o più <b>categorie</b> per il quiz filtrato per <b>{{ vocabSetupScriptLabel }}</b>.
               </template>
               <template v-else>
                 Seleziona le <b>categorie</b> filtrate per <b>{{ vocabSetupScriptLabel }}</b>, il test influenzerà le <b>statistiche</b>
