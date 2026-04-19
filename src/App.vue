@@ -1664,9 +1664,8 @@ onUnmounted(() => {
 
           <!-- Toggle direzione (solo per kana/katakana e vocab standard, non per vocab-kana-to-romaji) -->
           <div v-if="(store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'vocab' || store.quizType === 'vocab-romaji')" class="px-8 pb-6">
-            <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
+            <div class="border-t border-slate-200 mb-8" aria-hidden="true"></div>
 
-            <p class="text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Direzione</p>
             <div class="flex bg-slate-50 p-1 rounded-2xl gap-1 border border-slate-100">
               <button
                 :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'ja-to-romaji' ? ('bg-white shadow-md ' + (store.quizType === 'katakana' ? '' : quizAccent.ctaText)) : 'text-slate-400']"
@@ -1719,13 +1718,7 @@ onUnmounted(() => {
           </div>
 
           <div v-else class="px-8 pb-8 pt-0">
-            <div v-if="isVocabRomajiKanaToIt" class="mb-8">
-              <div class="py-6" aria-hidden="true">
-                <div class="border-t border-slate-200"></div>
-              </div>
-              <p class="text-sm text-slate-500 font-semibold text-center">
-                Modalita fissa: <b>medio</b> (4 flashcard)
-              </p>
+            <div v-if="isVocabRomajiKanaToIt" class="mb-2">
             </div>
             <!-- Tastiera + Max domande (solo per Kana → Romaji) -->
             <div v-if="store.quizType === 'vocab-kana-to-romaji'" class="mb-8">
