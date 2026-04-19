@@ -354,12 +354,26 @@ const currentQuestion = computed(() =>
     : null
 )
 
+const isVocabRomajiKanaToIt = computed(() =>
+  store.quizType === 'vocab-romaji' && store.quizDirection === 'ja-to-romaji'
+)
+
+const showVocabKanaPeek = ref(false)
+watch(
+  () => [store.quizType, store.quizDirection, store.currentQuestionIndex],
+  () => {
+    showVocabKanaPeek.value = false
+  }
+)
+
 const quizModeLabel = computed(() => {
   const type = store.quizType
   const dir = store.quizDirection
   if (type === 'vocab-kana-read' || type === 'vocab-romaji-input') return '👁 Leggi i kana → scrivi romaji'
   if (type === 'vocab-kana-to-romaji') return '👁 Kana → scrivi romaji'
-  if (type === 'vocab-romaji') return '🗣️ Significato → scrivi il romaji'
+  if (type === 'vocab-romaji') return dir === 'ja-to-romaji'
+    ? '🗣️ Kana → scrivi il significato'
+    : '🗣️ Significato → scrivi kana'
   if (type === 'kana') return dir === 'ja-to-romaji' ? '👁 Kana → Lettura' : '👁 Lettura → Kana'
   if (type === 'katakana') return dir === 'ja-to-romaji' ? '👁 Katakana → Lettura' : '👁 Lettura → Katakana'
   if (type === 'kana-mixed') return '⚡ Quiz rapido · Hiragana + Katakana'
@@ -373,7 +387,11 @@ const questionText = computed(() => {
   if (store.quizType === 'vocab-kana-to-romaji') return store.vocabKanaToRomajiInputLang === 'it'
     ? (currentQuestion.value.romaji?.split('/')[0] ?? '')
     : (currentQuestion.value.word?.split('/')[0] ?? '')
-  if (store.quizType === 'vocab-romaji') return currentQuestion.value.meaning
+  if (store.quizType === 'vocab-romaji') {
+    return store.quizDirection === 'ja-to-romaji'
+      ? currentQuestion.value.word?.split('/')[0]
+      : currentQuestion.value.meaning
+  }
   if (store.quizDirection === 'ja-to-romaji')
     return isKanaQuiz.value ? currentQuestion.value.character : currentQuestion.value.word
   return isKanaQuiz.value ? currentQuestion.value.romaji.split('/')[0] : currentQuestion.value.romaji.split('/')[0]
@@ -416,10 +434,18 @@ const finalInputClass = computed(() => {
     correct = userText === correctText
   } else if (store.quizType === 'vocab-romaji' || store.quizType === 'vocab-kana-to-romaji') {
     const isKanaInput = store.quizType === 'vocab-kana-to-romaji' && store.vocabKanaToRomajiInputLang === 'it'
-    correctText = isKanaInput
-      ? (q?.word?.split('/')[0]?.trim().replace(/\s/g, '') || '')
-      : (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || '')
-    correct = isKanaInput ? (userText.replace(/\s/g, '') === correctText) : (userText === correctText)
+    correctText = store.quizType === 'vocab-romaji'
+      ? (store.quizDirection === 'ja-to-romaji'
+        ? (q?.meaning?.trim()?.toLowerCase() || '')
+        : (q?.word?.split('/')[0]?.trim().replace(/\s/g, '') || ''))
+      : (isKanaInput
+        ? (q?.word?.split('/')[0]?.trim().replace(/\s/g, '') || '')
+        : (q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''))
+    correct = store.quizType === 'vocab-romaji'
+      ? (store.quizDirection === 'ja-to-romaji'
+        ? (userText === correctText)
+        : (userText.replace(/\s/g, '') === correctText))
+      : (isKanaInput ? (userText.replace(/\s/g, '') === correctText) : (userText === correctText))
   } else {
     correctText = q?.romaji?.split('/')[0]?.trim()?.toLowerCase() || ''
     correct = userText === correctText
@@ -470,7 +496,10 @@ function getToneConfig(tone) {
 }
 
 function getOptionLabel(opt) {
-  if (store.quizType === 'vocab-romaji') return opt.romaji.split('/')[0]
+  if (store.quizType === 'vocab-romaji')
+    return store.quizDirection === 'ja-to-romaji'
+      ? opt.meaning
+      : opt.word.split('/')[0]
   const isKanaLike =
     store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'kana-mixed'
   if (store.quizDirection === 'ja-to-romaji')
@@ -484,7 +513,7 @@ function getOptionTone(opt) {
 }
 
 function getOptionClass(opt) {
-  const base = 'w-full py-3 px-3 rounded-2xl border-2 text-center font-black shadow-md transition-all flex flex-col items-center justify-center min-h-[72px] active:scale-95 gap-0.5 overflow-hidden '
+  const base = 'w-full py-5 px-4 rounded-2xl border-2 text-center font-black shadow-md transition-all flex flex-col items-center justify-center min-h-[156px] lg:min-h-[200px] active:scale-95 gap-1.5 overflow-hidden '
   if (!store.isAnswered)
     return base + 'bg-white border-slate-100 text-slate-700 active:bg-slate-50'
   if (opt.id === currentQuestion.value?.id)
@@ -1354,11 +1383,33 @@ onUnmounted(() => {
                 'font-black text-slate-700 text-center leading-tight break-words w-full',
                 questionText.length > 20 ? 'text-lg lg:text-2xl' : questionText.length > 12 ? 'text-xl lg:text-3xl' : 'text-3xl lg:text-5xl'
               ]">{{ questionText }}</p>
+              <div v-if="isVocabRomajiKanaToIt" class="w-full min-h-[2.5rem] lg:min-h-[4.25rem] mt-1">
+                <p :class="[
+                  'font-black text-center leading-tight break-words w-full transition-opacity',
+                  questionText.length > 20 ? 'text-base lg:text-xl' : questionText.length > 12 ? 'text-lg lg:text-2xl' : 'text-2xl lg:text-4xl',
+                  showVocabKanaPeek ? 'opacity-100 text-amber-700' : 'opacity-0'
+                ]">
+                  {{ currentQuestion?.romaji?.split('/')[0] }}
+                </p>
+              </div>
               <p class="text-sm font-semibold text-slate-400 mt-2 text-center italic">{{ vocabRomajiSubtitle }}</p>
-              <button
-                :class="['transition-all p-3 mt-1 text-slate-200', quizAccent.textActive]"
-                @click="store.speakText(currentQuestion?.word)"
-              ><Volume2 :size="28" /></button>
+              <div class="mt-1 flex items-center justify-center gap-2">
+                <button
+                  :class="['transition-all p-3 text-slate-200', quizAccent.textActive]"
+                  @click="store.speakText(currentQuestion?.word)"
+                ><Volume2 :size="28" /></button>
+                <button
+                  v-if="isVocabRomajiKanaToIt"
+                  type="button"
+                  :class="[
+                    'transition-all p-4 rounded-2xl active:scale-95 border',
+                    showVocabKanaPeek
+                      ? 'text-amber-700 bg-amber-100 border-amber-300 shadow-sm'
+                      : 'text-slate-200 border-transparent'
+                  ]"
+                  @click="showVocabKanaPeek = !showVocabKanaPeek"
+                ><Eye :size="28" /></button>
+              </div>
             </template>
             <!-- Layout standard: kana / parola (quiz misto: niente etichetta/occhio per non rivelare lo script) -->
             <template v-else>
@@ -1412,7 +1463,7 @@ onUnmounted(() => {
                 : (store.quizType === 'kana' || store.quizType === 'kana-mixed')
                 ? (store.quizDirection === 'ja-to-romaji' ? 'es: a, ka, shi...' : 'Scrivi il kana...')
                 : store.quizType === 'vocab-romaji'
-                  ? 'es: ohayō, arigatō...'
+                  ? (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')
                   : (store.quizDirection === 'ja-to-romaji' ? 'Scrivi il significato...' : 'Scrivi la parola in kana...')"
               :class="finalInputClass"
               @input="store.manualInput = $event.target.value"
@@ -1430,23 +1481,33 @@ onUnmounted(() => {
           </form>
 
           <!-- Scelta multipla (solo se non difficile e non vocab-kana-to-romaji) -->
-          <div
-            v-else
-            class="w-full max-w-sm lg:max-w-[1100px] grid grid-cols-2 gap-3 lg:gap-5"
-          >
+          <div v-else class="w-full max-w-sm lg:max-w-[1100px]">
             <button
-              v-for="(opt, i) in store.options"
-              :key="i"
-              :disabled="store.isAnswered"
-              :class="getOptionClass(opt)"
-              @click="store.handleAnswer(opt)"
+              v-if="isVocabRomajiKanaToIt && !store.revealVocabRomajiOptions"
+              type="button"
+              class="w-full py-5 rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
+              @click="store.revealVocabRomajiOptions = true"
             >
-              <span :class="[
-                'font-black leading-tight w-full text-center break-words line-clamp-2',
-                getOptionLabel(opt).length > 12 ? 'text-sm' : getOptionLabel(opt).length > 8 ? 'text-base' : 'text-xl'
-              ]">{{ getOptionLabel(opt) }}</span>
-              <span v-if="getOptionTone(opt)" class="text-[10px] font-semibold opacity-70 leading-none">{{ getOptionTone(opt) === 'Informale' ? '😊' : '🎩' }} {{ getOptionTone(opt) }}</span>
+              <span class="inline-flex items-center gap-2">
+                <Eye :size="18" />
+                Mostra flashcard
+              </span>
             </button>
+            <div v-else class="grid grid-cols-2 gap-3 lg:gap-5">
+              <button
+                v-for="(opt, i) in store.options"
+                :key="i"
+                :disabled="store.isAnswered"
+                :class="getOptionClass(opt)"
+                @click="store.handleAnswer(opt)"
+              >
+                <span :class="[
+                  'font-black leading-tight w-full text-center break-words whitespace-normal',
+                  getOptionLabel(opt).length > 12 ? 'text-base lg:text-xl' : getOptionLabel(opt).length > 8 ? 'text-lg lg:text-2xl' : 'text-2xl lg:text-3xl'
+                ]">{{ getOptionLabel(opt) }}</span>
+                <span v-if="getOptionTone(opt)" class="text-[10px] font-semibold opacity-70 leading-none">{{ getOptionTone(opt) === 'Informale' ? '😊' : '🎩' }} {{ getOptionTone(opt) }}</span>
+              </button>
+            </div>
           </div>
 
           <div class="h-8 shrink-0"></div>
@@ -1591,7 +1652,10 @@ onUnmounted(() => {
               <template v-else-if="store.quizType === 'kana' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina il <b>kana</b></template>
               <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'ja-to-romaji'">Vedi la <b>parola</b> → indovina il <b>significato</b></template>
               <template v-else-if="store.quizType === 'vocab' && store.quizDirection === 'romaji-to-ja'">Vedi il <b>romaji</b> → indovina la <b>parola</b></template>
-              <template v-else-if="store.quizType === 'vocab-romaji'">Parola in <b>italiano</b> con il tono → traduci in <b>romaji</b></template>
+              <template v-else-if="store.quizType === 'vocab-romaji'">
+                <template v-if="store.quizDirection === 'ja-to-romaji'">Vedi la <b>parola in kana</b> → scrivi il <b>significato</b></template>
+                <template v-else>Vedi il <b>significato</b> → scrivi la <b>parola in kana</b></template>
+              </template>
               <template v-else-if="store.quizType === 'vocab-kana-to-romaji'">Parole dalle <b>categorie</b> scelte. Kana → scrivi romaji (o inverso).</template>
               <template v-else> <span class="text-slate-400 font-semibold text-xs leading-relaxed">Parole estratte da categoria <b>Random</b>.</span></template>
               </p>
@@ -1599,7 +1663,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Toggle direzione (solo per kana/katakana e vocab standard, non per vocab-kana-to-romaji) -->
-          <div v-if="(store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'vocab')" class="px-8 pb-6">
+          <div v-if="(store.quizType === 'kana' || store.quizType === 'katakana' || store.quizType === 'vocab' || store.quizType === 'vocab-romaji')" class="px-8 pb-6">
             <div class="border-t border-slate-200 mb-6" aria-hidden="true"></div>
 
             <p class="text-[11px] font-black text-slate-300 uppercase mb-2 tracking-[0.3em]">Direzione</p>
@@ -1608,17 +1672,23 @@ onUnmounted(() => {
                 :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'ja-to-romaji' ? ('bg-white shadow-md ' + (store.quizType === 'katakana' ? '' : quizAccent.ctaText)) : 'text-slate-400']"
                 :style="store.quizDirection === 'ja-to-romaji' && store.quizType === 'katakana' ? 'color:#63a8eb;' : ''"
                 @click="store.quizDirection = 'ja-to-romaji'"
-              >🇯🇵 → 🇮🇹</button>
+              >{{ store.quizType === 'vocab-romaji' ? 'かな → 🇮🇹' : '🇯🇵 → 🇮🇹' }}</button>
               <button
                 :class="['flex-1 py-3 text-sm font-black rounded-xl transition-all', store.quizDirection === 'romaji-to-ja' ? ('bg-white shadow-md ' + (store.quizType === 'katakana' ? '' : quizAccent.ctaText)) : 'text-slate-400']"
                 :style="store.quizDirection === 'romaji-to-ja' && store.quizType === 'katakana' ? 'color:#63a8eb;' : ''"
                 @click="store.quizDirection = 'romaji-to-ja'"
-              >🇮🇹 → 🇯🇵</button>
+              >{{ store.quizType === 'vocab-romaji' ? '🇮🇹 → かな' : '🇮🇹 → 🇯🇵' }}</button>
             </div>
           </div>
 
           <!-- Difficoltà (nascosta per vocab-kana-read, vocab-romaji-input, vocab-kana-to-romaji) -->
-          <div v-if="store.quizType !== 'vocab-kana-read' && store.quizType !== 'vocab-romaji-input' && store.quizType !== 'vocab-kana-to-romaji'" class="px-8 space-y-4 pb-8">
+          <div
+            v-if="store.quizType !== 'vocab-kana-read'
+              && store.quizType !== 'vocab-romaji-input'
+              && store.quizType !== 'vocab-kana-to-romaji'
+              && !isVocabRomajiKanaToIt"
+            class="px-8 space-y-4 pb-8"
+          >
             <div class="flex items-stretch gap-3">
               <div class="flex-1 space-y-4">
                 <button
@@ -1649,6 +1719,14 @@ onUnmounted(() => {
           </div>
 
           <div v-else class="px-8 pb-8 pt-0">
+            <div v-if="isVocabRomajiKanaToIt" class="mb-8">
+              <div class="py-6" aria-hidden="true">
+                <div class="border-t border-slate-200"></div>
+              </div>
+              <p class="text-sm text-slate-500 font-semibold text-center">
+                Modalita fissa: <b>medio</b> (4 flashcard)
+              </p>
+            </div>
             <!-- Tastiera + Max domande (solo per Kana → Romaji) -->
             <div v-if="store.quizType === 'vocab-kana-to-romaji'" class="mb-8">
               <div class="py-6" aria-hidden="true">
@@ -1690,7 +1768,7 @@ onUnmounted(() => {
             <div class="flex items-stretch gap-3">
               <button
                 class="flex-1 py-4 rounded-2xl text-white font-black uppercase tracking-widest text-base active:scale-95 shadow-xl transition-all"
-                :class="store.quizType === 'vocab-kana-to-romaji'
+                :class="store.quizType === 'vocab-kana-to-romaji' || isVocabRomajiKanaToIt
                   ? 'bg-[#ffc99e] text-slate-900 active:bg-[#f0b078]'
                   : store.quizType?.startsWith('vocab')
                     ? 'bg-amber-400 active:bg-amber-500'

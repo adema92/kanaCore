@@ -342,6 +342,7 @@ export const useAppStore = defineStore('app', () => {
   const isAnswered = ref(false)
   const quizResults = ref({ correct: 0, total: 0 })
   const manualInput = ref('')
+  const revealVocabRomajiOptions = ref(false)
 
   /** Session counters for kana-mixed quiz (hiragana vs katakana, correct vs wrong). */
   const quickMixedQuizSession = ref({
@@ -762,6 +763,7 @@ export const useAppStore = defineStore('app', () => {
       } else if (quizType.value === 'vocab-romaji') {
         _genVocabRomajiOptions(next)
         manualInput.value = ''
+        revealVocabRomajiOptions.value = false
       } else if (quizType.value === 'vocab-kana-to-romaji') {
         manualInput.value = ''
         isAnswered.value = false
@@ -937,9 +939,13 @@ export const useAppStore = defineStore('app', () => {
     } else if (quizType.value === 'vocab') {
       correctAnswer = quizDirection.value === 'ja-to-romaji' ? item.meaning : item.word
     } else if (quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') {
-      correctAnswer = (quizType.value === 'vocab-kana-to-romaji' && vocabKanaToRomajiInputLang.value === 'it')
-        ? item.word.split('/')[0]
-        : item.romaji.split('/')[0]
+      correctAnswer = quizType.value === 'vocab-romaji'
+        ? (quizDirection.value === 'ja-to-romaji'
+          ? (item.meaning || '')
+          : item.word.split('/')[0])
+        : (vocabKanaToRomajiInputLang.value === 'it'
+          ? item.word.split('/')[0]
+          : item.romaji.split('/')[0])
     } else {
       correctAnswer = item.meaning || ''
     }
@@ -952,7 +958,13 @@ export const useAppStore = defineStore('app', () => {
           ok,
           userAnswer: userAnswerText || '',
           correctAnswer,
-          questionLabel: isKanaTypeQuiz ? item.character : item.word,
+          questionLabel: isKanaTypeQuiz
+            ? item.character
+            : (quizType.value === 'vocab-romaji'
+              ? (quizDirection.value === 'ja-to-romaji'
+                ? item.word
+                : (item.meaning || ''))
+              : item.word),
           romaji: item.romaji || '',
           meaning: item.meaning || '',
         }
@@ -1079,17 +1091,25 @@ export const useAppStore = defineStore('app', () => {
           ? item.meaning.trim().toLowerCase()
           : item.word.split('/')[0].trim()
     } else if (quizType.value === 'vocab-romaji' || quizType.value === 'vocab-kana-to-romaji') {
-      correctText = quizType.value === 'vocab-kana-to-romaji' && vocabKanaToRomajiInputLang.value === 'it'
-        ? item.word.split('/')[0].trim().replace(/\s+/g, ' ').replace(/\s/g, '')
-        : normalizeRomajiForCompare(item.romaji.split('/')[0].trim())
+      correctText = quizType.value === 'vocab-romaji'
+        ? (quizDirection.value === 'ja-to-romaji'
+          ? item.meaning.trim().toLowerCase()
+          : item.word.split('/')[0].trim().replace(/\s+/g, ' ').replace(/\s/g, ''))
+        : (vocabKanaToRomajiInputLang.value === 'it'
+          ? item.word.split('/')[0].trim().replace(/\s+/g, ' ').replace(/\s/g, '')
+          : normalizeRomajiForCompare(item.romaji.split('/')[0].trim()))
     } else {
         correctText = item.romaji.split('/')[0].trim().toLowerCase()
       }
-      const normalizedUser = (quizType.value === 'vocab-kana-to-romaji' && vocabKanaToRomajiInputLang.value === 'it')
-        ? userText.trim().replace(/\s+/g, ' ').replace(/\s/g, '')
-        : (quizType.value === 'vocab-kana-to-romaji' || quizType.value === 'vocab-romaji')
-          ? normalizeRomajiForCompare(userText)
-          : userText.toLowerCase()
+      const normalizedUser = quizType.value === 'vocab-romaji'
+        ? (quizDirection.value === 'ja-to-romaji'
+          ? userText.toLowerCase()
+          : userText.trim().replace(/\s+/g, ' ').replace(/\s/g, ''))
+        : (quizType.value === 'vocab-kana-to-romaji' && vocabKanaToRomajiInputLang.value === 'it')
+          ? userText.trim().replace(/\s+/g, ' ').replace(/\s/g, '')
+          : quizType.value === 'vocab-kana-to-romaji'
+            ? normalizeRomajiForCompare(userText)
+            : userText.toLowerCase()
       const ok = normalizedUser === correctText
       processAnswer(ok, item, userText)
     }
@@ -1107,7 +1127,10 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function getOptionLabel_internal(opt) {
-    if (quizType.value === 'vocab-romaji') return opt.romaji.split('/')[0]
+    if (quizType.value === 'vocab-romaji')
+      return quizDirection.value === 'ja-to-romaji'
+        ? opt.meaning
+        : opt.word.split('/')[0]
     if (quizDirection.value === 'ja-to-romaji')
       return (quizType.value === 'kana' || quizType.value === 'katakana' || quizType.value === 'kana-mixed')
         ? opt.romaji
@@ -1202,6 +1225,7 @@ export const useAppStore = defineStore('app', () => {
       vocabSetupModalOpen.value = true
     } else {
       enteredDifficultyFromVocabCategories.value = false
+      if (type === 'vocab-romaji') quizDirection.value = 'ja-to-romaji'
       selectedVocabScript.value = 'capitoli'
       const scriptFiltered = filterVocabByScript(vocabData.value, selectedVocabScript.value)
       const allCats = [...new Set(scriptFiltered.map((v) => v.category))]
@@ -1410,6 +1434,7 @@ export const useAppStore = defineStore('app', () => {
     } else if (quizType.value === 'vocab-romaji') {
       _genVocabRomajiOptions(shuffled[0])
       manualInput.value = ''
+      revealVocabRomajiOptions.value = false
     } else if (quizType.value === 'vocab-kana-to-romaji') {
       manualInput.value = ''
       isAnswered.value = false
@@ -1672,7 +1697,7 @@ export const useAppStore = defineStore('app', () => {
     selectedKanaIds, selectedKatakanaIds, quizPendingItems,
     selectedVocabCategories, selectedVocabScript, enteredDifficultyFromVocabCategories,
     quizDifficulty, quizDirection, quizQueue, currentQuestionIndex,
-    quizType, options, selectedOption, isAnswered, quizResults, manualInput, quickMixedQuizSession,
+    quizType, options, selectedOption, isAnswered, quizResults, manualInput, revealVocabRomajiOptions, quickMixedQuizSession,
     quickMixedQuizHiraIds, quickMixedQuizKataIds, quickMixedModalHiraIds, quickMixedModalKataIds,
     vocabRomajiBlocks, vocabRomajiCurrentIdx, vocabRomajiBlockInput, lastKanaQuizSelection, lastKatakanaQuizSelection,
     answerFeedback, lastAnswerSnapshot,
