@@ -1511,7 +1511,7 @@ onUnmounted(() => {
               <button
                 v-if="!store.revealVocabRomajiOptions"
                 type="button"
-                class="w-full py-5 rounded-2xl border-2 border-[#e8d3ba] bg-gradient-to-r from-[#f9f1e6] to-[#f5eadc] text-[#9a5a2f] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
+                class="w-full py-5 rounded-2xl border-2 border-[#e8d3ba] bg-white text-[#9a5a2f] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
                 @click="store.revealVocabRomajiOptions = true"
               >
                 <span class="inline-flex items-center gap-2">
@@ -1521,7 +1521,7 @@ onUnmounted(() => {
               <button
                 v-if="!store.revealVocabRomajiOptions"
                 type="button"
-                class="w-full mt-3 py-4 rounded-2xl border-2 border-[#e3c2bd] bg-gradient-to-r from-[#f8ece9] to-[#f5e6e2] text-[#a4554a] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
+                class="w-full mt-3 py-4 rounded-2xl border-2 border-[#e8ccc7] bg-gradient-to-r from-[#f3dfdc] to-[#edd7d3] text-[#a4554a] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
                 @click="handleUnknownVocab"
               >Sconosciuta</button>
               <div v-if="store.revealVocabRomajiOptions" class="grid grid-cols-2 gap-3 lg:gap-5 mt-3">
