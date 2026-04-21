@@ -366,6 +366,18 @@ watch(
   }
 )
 
+const handleOptionClick = (opt) => {
+  showVocabKanaPeek.value = false
+  store.handleAnswer(opt)
+}
+
+const handleUnknownVocab = () => {
+  if (!isVocabRomajiKanaToIt.value || store.isAnswered || !currentQuestion.value) return
+  showVocabKanaPeek.value = false
+  store.revealVocabRomajiOptions = false
+  store.processAnswer(false, currentQuestion.value, 'Sconosciuta', true)
+}
+
 const quizModeLabel = computed(() => {
   const type = store.quizType
   const dir = store.quizDirection
@@ -1392,7 +1404,6 @@ onUnmounted(() => {
                   {{ currentQuestion?.romaji?.split('/')[0] }}
                 </p>
               </div>
-              <p class="text-sm font-semibold text-slate-400 mt-2 text-center italic">{{ vocabRomajiSubtitle }}</p>
               <div class="mt-1 flex items-center justify-center gap-2">
                 <button
                   :class="['transition-all p-3 text-slate-200', quizAccent.textActive]"
@@ -1489,17 +1500,22 @@ onUnmounted(() => {
               @click="store.revealVocabRomajiOptions = true"
             >
               <span class="inline-flex items-center gap-2">
-                <Eye :size="18" />
                 Mostra flashcard
               </span>
             </button>
+            <button
+              v-if="isVocabRomajiKanaToIt"
+              type="button"
+              class="w-full mt-3 py-4 rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-red-50 text-rose-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
+              @click="handleUnknownVocab"
+            >Sconosciuta</button>
             <div v-else class="grid grid-cols-2 gap-3 lg:gap-5">
               <button
                 v-for="(opt, i) in store.options"
                 :key="i"
                 :disabled="store.isAnswered"
                 :class="getOptionClass(opt)"
-                @click="store.handleAnswer(opt)"
+                @click="handleOptionClick(opt)"
               >
                 <span :class="[
                   'font-black leading-tight w-full text-center break-words whitespace-normal',

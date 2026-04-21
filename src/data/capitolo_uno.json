@@ -5,9 +5,9 @@
   { "id": "cap1_3b", "word": "あのかた", "romaji": "Ano kata", "meaning": "Quella persona", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Cortese", "personalNote": "forma cortese", "score": 0, "attempts": 0 },
   { "id": "cap1_4", "word": "〜さん", "romaji": "~san", "meaning": "Signor/Signora", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Cortese", "personalNote": "suffisso di cortesia", "score": 0, "attempts": 0 },
   { "id": "cap1_5", "word": "〜ちゃん", "romaji": "~chan", "meaning": "Suffisso vezzeggiativo", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Informale", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "cap1_6", "word": "せんせい", "romaji": "Sensei", "meaning": "Insegnante, maestro, istruttore", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "cap1_6", "word": "せんせい", "romaji": "Sensē", "meaning": "Insegnante, maestro, istruttore", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_7", "word": "きょうし", "romaji": "Kyōshi", "meaning": "Insegnante", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "riferito al proprio lavoro", "score": 0, "attempts": 0 },
-  { "id": "cap1_8", "word": "がくせい", "romaji": "Gakusei", "meaning": "Studente/ssa", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "cap1_8", "word": "がくせい", "romaji": "Gakusē", "meaning": "Studente/ssa", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_9", "word": "かいしゃ", "romaji": "Kaisha", "meaning": "Azienda", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_10", "word": "かいしゃいん", "romaji": "Kaishain", "meaning": "Impiegato/dipendente di azienda", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_11", "word": "しゃいん", "romaji": "Shain", "meaning": "Dipendente", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "spesso dopo il nome di un'azienda", "score": 0, "attempts": 0 },
@@ -33,5 +33,5 @@
   { "id": "cap1_28", "word": "こちらは 〜 です", "romaji": "Kochira wa ~ desu", "meaning": "Questo signore/questa signora e ~", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Cortese", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_36", "word": "にほん", "romaji": "Nihon", "meaning": "Giappone", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
   { "id": "cap1_37", "word": "ちゅうごく", "romaji": "Chūgoku", "meaning": "Cina", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
-  { "id": "cap1_38", "word": "かんこく", "romaji": "Kankoku", "meaning": "Corea del Sud", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 },
+  { "id": "cap1_38", "word": "かんこく", "romaji": "Kankoku", "meaning": "Corea del Sud", "category": "vocaboli p-1", "capitoliSection": true, "tone": "Neutro", "personalNote": "", "score": 0, "attempts": 0 }
 ]
