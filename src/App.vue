@@ -42,6 +42,12 @@ const vocabSetupScriptLabel = computed(() => {
 
 const quizActiveBgStyle = computed(() => {
   const t = store.quizType
+  if (t === 'vocab-romaji') {
+    return {
+      background: 'linear-gradient(180deg, #f7f1df 0%, #efe6d3 100%)',
+      height: '100dvh',
+    }
+  }
   const bg =
     t === 'katakana'
       ? '#f0f6ff'
@@ -357,6 +363,11 @@ const currentQuestion = computed(() =>
 const isVocabRomajiKanaToIt = computed(() =>
   store.quizType === 'vocab-romaji' && store.quizDirection === 'ja-to-romaji'
 )
+const isUnknownFeedback = computed(() =>
+  store.answerFeedback?.userAnswer === 'Sconosciuta'
+  && store.quizType === 'vocab-romaji'
+  && store.quizDirection === 'ja-to-romaji'
+)
 
 const showVocabKanaPeek = ref(false)
 watch(
@@ -375,7 +386,7 @@ const handleUnknownVocab = () => {
   if (!isVocabRomajiKanaToIt.value || store.isAnswered || !currentQuestion.value) return
   showVocabKanaPeek.value = false
   store.revealVocabRomajiOptions = false
-  store.processAnswer(false, currentQuestion.value, 'Sconosciuta', true)
+  store.processAnswer(false, currentQuestion.value, 'Sconosciuta')
 }
 
 const quizModeLabel = computed(() => {
@@ -1390,7 +1401,10 @@ onUnmounted(() => {
               ><Volume2 :size="24" /></button>
             </template>
             <template v-else-if="store.quizType === 'vocab-romaji'">
-              <p class="text-[11px] font-black uppercase tracking-[0.3em] mb-3" :class="quizAccent.text">Come si traduce?</p>
+              <p
+                class="text-[11px] font-black uppercase tracking-[0.3em] mb-3"
+                :class="isVocabRomajiKanaToIt ? 'text-[#c89f63]' : quizAccent.text"
+              >Come si traduce?</p>
               <p :class="[
                 'font-black text-slate-700 text-center leading-tight break-words w-full',
                 questionText.length > 20 ? 'text-lg lg:text-2xl' : questionText.length > 12 ? 'text-xl lg:text-3xl' : 'text-3xl lg:text-5xl'
@@ -1415,8 +1429,8 @@ onUnmounted(() => {
                   :class="[
                     'transition-all p-4 rounded-2xl active:scale-95 border',
                     showVocabKanaPeek
-                      ? 'text-amber-700 bg-amber-100 border-amber-300 shadow-sm'
-                      : 'text-slate-200 border-transparent'
+                      ? 'text-[#9a5a2f] bg-[#f7e8d8] border-[#e8c8ab] shadow-sm'
+                      : 'text-slate-300 border-transparent'
                   ]"
                   @click="showVocabKanaPeek = !showVocabKanaPeek"
                 ><Eye :size="28" /></button>
@@ -1493,22 +1507,39 @@ onUnmounted(() => {
 
           <!-- Scelta multipla (solo se non difficile e non vocab-kana-to-romaji) -->
           <div v-else class="w-full max-w-sm lg:max-w-[1100px]">
-            <button
-              v-if="isVocabRomajiKanaToIt && !store.revealVocabRomajiOptions"
-              type="button"
-              class="w-full py-5 rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-md hover:shadow-lg"
-              @click="store.revealVocabRomajiOptions = true"
-            >
-              <span class="inline-flex items-center gap-2">
-                Mostra flashcard
-              </span>
-            </button>
-            <button
-              v-if="isVocabRomajiKanaToIt"
-              type="button"
-              class="w-full mt-3 py-4 rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 to-red-50 text-rose-600 font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
-              @click="handleUnknownVocab"
-            >Sconosciuta</button>
+            <template v-if="isVocabRomajiKanaToIt">
+              <button
+                v-if="!store.revealVocabRomajiOptions"
+                type="button"
+                class="w-full py-5 rounded-2xl border-2 border-[#e8d3ba] bg-gradient-to-r from-[#f9f1e6] to-[#f5eadc] text-[#9a5a2f] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
+                @click="store.revealVocabRomajiOptions = true"
+              >
+                <span class="inline-flex items-center gap-2">
+                  Mostra flashcard
+                </span>
+              </button>
+              <button
+                v-if="!store.revealVocabRomajiOptions"
+                type="button"
+                class="w-full mt-3 py-4 rounded-2xl border-2 border-[#e3c2bd] bg-gradient-to-r from-[#f8ece9] to-[#f5e6e2] text-[#a4554a] font-black uppercase tracking-widest text-sm active:scale-95 transition-all shadow-sm hover:shadow-md"
+                @click="handleUnknownVocab"
+              >Sconosciuta</button>
+              <div v-if="store.revealVocabRomajiOptions" class="grid grid-cols-2 gap-3 lg:gap-5 mt-3">
+                <button
+                  v-for="(opt, i) in store.options"
+                  :key="i"
+                  :disabled="store.isAnswered"
+                  :class="getOptionClass(opt)"
+                  @click="handleOptionClick(opt)"
+                >
+                  <span :class="[
+                    'font-black leading-tight w-full text-center break-words whitespace-normal',
+                    getOptionLabel(opt).length > 12 ? 'text-base lg:text-xl' : getOptionLabel(opt).length > 8 ? 'text-lg lg:text-2xl' : 'text-2xl lg:text-3xl'
+                  ]">{{ getOptionLabel(opt) }}</span>
+                  <span v-if="getOptionTone(opt)" class="text-[10px] font-semibold opacity-70 leading-none">{{ getOptionTone(opt) === 'Informale' ? '😊' : '🎩' }} {{ getOptionTone(opt) }}</span>
+                </button>
+              </div>
+            </template>
             <div v-else class="grid grid-cols-2 gap-3 lg:gap-5">
               <button
                 v-for="(opt, i) in store.options"
@@ -2274,16 +2305,24 @@ onUnmounted(() => {
               <div class="flex items-center gap-3">
                 <div>
                   <p :class="['font-black text-xl uppercase tracking-widest', store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'text-emerald-500' : 'text-rose-500']">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : 'Sbagliato' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Corretto!' : isUnknownFeedback ? 'Sconosciuta' : 'Sbagliato' }}
                   </p>
                   <p class="text-slate-400 text-sm font-semibold">
-                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Memorizza la traduzione e la pronuncia' : 'Verifica la risposta corretta' }}
+                    {{ store.answerFeedback.ok && store.quizType === 'vocab-kana-to-romaji' ? 'Memorizza la traduzione e la pronuncia' : isUnknownFeedback ? 'La risposta corretta è:' : 'Verifica la risposta corretta' }}
                   </p>
                 </div>
               </div>
 
               <!-- Confronto risposta tua vs corretta (solo se sbagliato) -->
-              <div v-if="!store.answerFeedback.ok" class="grid grid-cols-2 gap-3">
+              <div v-if="!store.answerFeedback.ok && isUnknownFeedback" class="grid grid-cols-1 gap-3">
+                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 text-center">
+                  <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Risposta corretta</p>
+                  <p class="font-black text-emerald-700 text-xl leading-tight break-words">
+                    {{ store.answerFeedback.correctAnswer }}
+                  </p>
+                </div>
+              </div>
+              <div v-else-if="!store.answerFeedback.ok" class="grid grid-cols-2 gap-3">
                 <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-center">
                   <p class="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2">Hai risposto</p>
                   <p class="font-black text-rose-500 text-lg leading-tight break-words">
@@ -2323,11 +2362,11 @@ onUnmounted(() => {
               <!-- Spiegazione + Ripristina + Avanti: Ripristina e testo solo se risposta sbagliata -->
               <div class="flex flex-col gap-3">
                 <p
-                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok"
+                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok && !isUnknownFeedback"
                   class="text-slate-400 text-xs font-medium text-center"
                 >In caso di errore di battitura puoi tornare indietro e riprovare, in questo caso non verrà salvata la risposta errata.</p>
                 <button
-                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok"
+                  v-if="store.lastAnswerSnapshot && !store.answerFeedback.ok && !isUnknownFeedback"
                   type="button"
                   class="w-full border-2 border-slate-400 text-slate-600 font-black py-4 rounded-2xl uppercase tracking-widest active:scale-95 active:bg-slate-100 text-sm transition-all"
                   @click="store.undoLastAnswer()"
@@ -2335,7 +2374,7 @@ onUnmounted(() => {
                 <button
                   class="w-full bg-slate-800 text-white font-black py-5 rounded-2xl uppercase tracking-widest shadow-xl active:scale-95 active:bg-slate-900 text-base transition-all"
                   @click="store.advanceAfterFeedback()"
-                >Avanti →</button>
+                >{{ isUnknownFeedback ? 'Prosegui →' : 'Avanti →' }}</button>
               </div>
             </div>
           </div>
